@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from './tooltip';
+import { ThemeToggle } from './theme-toggle';
 
 const navItems = [
   {
@@ -92,6 +93,9 @@ export function DesktopNav() {
               </Tooltip>
             );
           })}
+        </div>
+        <div className='flex flex-col items-center justify-center border-t border-border/40 py-4'>
+          <ThemeToggle />
         </div>
       </nav>
     </TooltipProvider>

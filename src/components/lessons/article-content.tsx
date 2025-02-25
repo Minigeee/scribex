@@ -66,7 +66,7 @@ export function ArticleContent({ content, className }: ArticleContentProps) {
   }
 
   return (
-    <div className={cn('article-content prose space-y-6', className)}>
+    <div className={cn('article-content prose space-y-6 dark:prose-invert', className)}>
       <ReactMarkdown
         remarkPlugins={[
           remarkGfm,
@@ -136,7 +136,7 @@ export function ArticleContent({ content, className }: ArticleContentProps) {
                     </CardTitle>
                   </CardHeader>
                   <CardContent
-                    className='prose prose-sm max-w-none p-4'
+                    className='prose prose-sm max-w-none p-4 dark:prose-invert'
                     {...props}
                   ></CardContent>
                 </Card>
