@@ -383,6 +383,7 @@ export type Database = {
           id: string
           order_index: number | null
           published: boolean | null
+          slug: string | null
           title: string
           updated_at: string
         }
@@ -396,6 +397,7 @@ export type Database = {
           id?: string
           order_index?: number | null
           published?: boolean | null
+          slug?: string | null
           title: string
           updated_at?: string
         }
@@ -409,6 +411,7 @@ export type Database = {
           id?: string
           order_index?: number | null
           published?: boolean | null
+          slug?: string | null
           title?: string
           updated_at?: string
         }

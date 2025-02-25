@@ -9,7 +9,10 @@ export const metadata: Metadata = {
 };
 
 interface LoginPageProps {
-  searchParams?: { tab?: string };
+  searchParams?: { 
+    tab?: string;
+    callbackUrl?: string;
+  };
 }
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
@@ -17,13 +20,17 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
 
-  // If user is already logged in, redirect to dashboard
+  // If user is already logged in, redirect to callback URL or dashboard
   if (data?.user) {
-    redirect('/dashboard');
+    const callbackUrl = searchParams?.callbackUrl || '/map';
+    redirect(callbackUrl);
   }
 
   // Determine which tab to show by default
   const defaultTab = searchParams?.tab === 'register' ? 'register' : 'login';
+  
+  // Get the callback URL from query params or default to dashboard
+  const callbackUrl = searchParams?.callbackUrl || '/map';
 
   return (
     <>
@@ -33,7 +40,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           Sign in to your account or create a new one
         </p>
       </div>
-      <AuthForm defaultTab={defaultTab as 'login' | 'register'} />
+      <AuthForm 
+        defaultTab={defaultTab as 'login' | 'register'} 
+        callbackUrl={callbackUrl}
+      />
     </>
   );
 }

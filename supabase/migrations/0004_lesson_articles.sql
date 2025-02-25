@@ -73,8 +73,8 @@ BEGIN
         WHEN mark_lesson_article_read.mark_as_completed THEN true
         ELSE completed -- Keep existing value if not explicitly marking as completed
       END
-    WHERE lesson_id = mark_lesson_article_read.lesson_id
-    AND user_id = mark_lesson_article_read.user_id;
+    WHERE lesson_article_reads.lesson_id = mark_lesson_article_read.lesson_id
+    AND lesson_article_reads.user_id = mark_lesson_article_read.user_id;
   ELSE
     -- Insert new record
     INSERT INTO lesson_article_reads (

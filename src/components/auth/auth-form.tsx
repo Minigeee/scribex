@@ -20,9 +20,15 @@ import { useState } from 'react';
 
 interface AuthFormProps extends React.HTMLAttributes<HTMLDivElement> {
   defaultTab?: 'login' | 'register';
+  callbackUrl?: string;
 }
 
-export function AuthForm({ className, defaultTab = 'login', ...props }: AuthFormProps) {
+export function AuthForm({ 
+  className, 
+  defaultTab = 'login', 
+  callbackUrl = '/dashboard',
+  ...props 
+}: AuthFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,8 +76,8 @@ export function AuthForm({ className, defaultTab = 'login', ...props }: AuthForm
       // Refresh the page to update auth state
       router.refresh();
 
-      // Redirect to dashboard or home page
-      router.push('/dashboard');
+      // Redirect to callback URL or dashboard
+      router.push(callbackUrl);
     } catch (error: any) {
       setError(error.message || 'Failed to sign in');
     } finally {
@@ -92,7 +98,8 @@ export function AuthForm({ className, defaultTab = 'login', ...props }: AuthForm
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
+      // Sign up the user with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: registerData.email,
         password: registerData.password,
         options: {
@@ -100,12 +107,30 @@ export function AuthForm({ className, defaultTab = 'login', ...props }: AuthForm
         },
       });
 
-      if (error) {
-        throw error;
+      if (authError) {
+        throw authError;
       }
 
-      // Show success message or redirect
-      router.push('/dashboard');
+      // Create a profile for the new user
+      if (authData?.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: authData.user.id,
+            username: registerData.email.split('@')[0], // Default username from email
+            display_name: null,
+            user_type: 'student', // Default user type
+            avatar_url: null,
+          });
+
+        if (profileError) {
+          console.error('Error creating profile:', profileError);
+          // Continue anyway as the auth was successful
+        }
+      }
+
+      // Show success message or redirect to callback URL
+      router.push(callbackUrl);
     } catch (error: any) {
       setError(error.message || 'Failed to sign up');
     } finally {

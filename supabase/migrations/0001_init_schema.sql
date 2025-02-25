@@ -54,6 +54,7 @@ INSERT INTO content_layers (name, description, order_index) VALUES
 -- REDI Lessons
 CREATE TABLE lessons (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    slug TEXT UNIQUE NOT NULL,
     title TEXT NOT NULL,
     description TEXT,
     content_layer_id INTEGER REFERENCES content_layers(id) ON DELETE CASCADE,
@@ -63,6 +64,9 @@ CREATE TABLE lessons (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
 );
+
+-- Create index for lesson slug for faster lookups
+CREATE INDEX idx_lessons_slug ON lessons(slug);
 
 -- REDI Exercises
 CREATE TABLE exercises (

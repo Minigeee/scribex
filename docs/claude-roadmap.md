@@ -5,9 +5,10 @@
 - [X] Establish core data models
 - [X] Set up development environment
 - [X] Create authentication system
-- [ ] Design basic navigation flow
+- [X] Design basic navigation flow
 
 ## Phase 2: REDI System (4-5 weeks)
+- [X] Add seed data for lessons
 - [ ] Plan REDI lesson framework
 - [ ] Design exercise templates
 - [ ] Implement progress tracking
