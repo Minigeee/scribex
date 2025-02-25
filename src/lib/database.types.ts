@@ -61,6 +61,50 @@ export type Database = {
         }
         Relationships: []
       }
+      article_examples: {
+        Row: {
+          content: string
+          content_layer_id: number | null
+          created_at: string
+          description: string | null
+          difficulty: number | null
+          has_rich_content: boolean | null
+          id: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          content_layer_id?: number | null
+          created_at?: string
+          description?: string | null
+          difficulty?: number | null
+          has_rich_content?: boolean | null
+          id?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          content_layer_id?: number | null
+          created_at?: string
+          description?: string | null
+          difficulty?: number | null
+          has_rich_content?: boolean | null
+          id?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "article_examples_content_layer_id_fkey"
+            columns: ["content_layer_id"]
+            isOneToOne: false
+            referencedRelation: "content_layers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       classroom_members: {
         Row: {
           classroom_id: string
@@ -162,6 +206,53 @@ export type Database = {
         }
         Relationships: []
       }
+      exercise_templates: {
+        Row: {
+          content: string
+          content_layer_id: number | null
+          created_at: string
+          description: string | null
+          difficulty: number | null
+          id: number
+          solution_structure: Json | null
+          template_type: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          content_layer_id?: number | null
+          created_at?: string
+          description?: string | null
+          difficulty?: number | null
+          id?: number
+          solution_structure?: Json | null
+          template_type: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          content_layer_id?: number | null
+          created_at?: string
+          description?: string | null
+          difficulty?: number | null
+          id?: number
+          solution_structure?: Json | null
+          template_type?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercise_templates_content_layer_id_fkey"
+            columns: ["content_layer_id"]
+            isOneToOne: false
+            referencedRelation: "content_layers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exercises: {
         Row: {
           content: string
@@ -236,12 +327,59 @@ export type Database = {
         }
         Relationships: []
       }
+      lesson_article_reads: {
+        Row: {
+          completed: boolean | null
+          first_read_at: string
+          id: string
+          last_read_at: string
+          lesson_id: string | null
+          read_count: number | null
+          user_id: string | null
+        }
+        Insert: {
+          completed?: boolean | null
+          first_read_at?: string
+          id?: string
+          last_read_at?: string
+          lesson_id?: string | null
+          read_count?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          completed?: boolean | null
+          first_read_at?: string
+          id?: string
+          last_read_at?: string
+          lesson_id?: string | null
+          read_count?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_article_reads_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_article_reads_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lessons: {
         Row: {
+          article: string | null
           content_layer_id: number | null
           created_at: string
           description: string | null
           difficulty: number
+          has_rich_content: boolean | null
           id: string
           order_index: number | null
           published: boolean | null
@@ -249,10 +387,12 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          article?: string | null
           content_layer_id?: number | null
           created_at?: string
           description?: string | null
           difficulty: number
+          has_rich_content?: boolean | null
           id?: string
           order_index?: number | null
           published?: boolean | null
@@ -260,10 +400,12 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          article?: string | null
           content_layer_id?: number | null
           created_at?: string
           description?: string | null
           difficulty?: number
+          has_rich_content?: boolean | null
           id?: string
           order_index?: number | null
           published?: boolean | null
@@ -516,6 +658,19 @@ export type Database = {
         }
         Returns: string
       }
+      create_lesson_from_templates: {
+        Args: {
+          lesson_title: string
+          lesson_description: string
+          content_layer_id: number
+          difficulty: number
+          article_content: string
+          has_rich_content: boolean
+          template_ids: number[]
+          creator_id: string
+        }
+        Returns: string
+      }
       get_teacher_classroom_ids: {
         Args: Record<PropertyKey, never>
         Returns: string[]
@@ -528,11 +683,16 @@ export type Database = {
           total_exercises: number
           completed_exercises: number
           average_score: number
+          total_lessons: number
+          lessons_with_articles_read: number
+          lessons_completed: number
           content_layer_id: number
           content_layer_name: string
           layer_exercises: number
           layer_completed: number
           layer_average_score: number
+          layer_lessons: number
+          layer_lessons_read: number
         }[]
       }
       get_user_writing_activity: {
@@ -549,6 +709,7 @@ export type Database = {
           words_count: number
           exercise_id: string
           exercise_title: string
+          lesson_id: string
           lesson_title: string
           score: number
         }[]
@@ -591,6 +752,14 @@ export type Database = {
           classroom_id: string
           classroom_name: string
         }[]
+      }
+      mark_lesson_article_read: {
+        Args: {
+          lesson_id: string
+          user_id: string
+          mark_as_completed?: boolean
+        }
+        Returns: boolean
       }
     }
     Enums: {
