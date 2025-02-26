@@ -18,7 +18,8 @@ import {
   Undo,
   Redo,
   Code,
-  MoreHorizontal
+  MoreHorizontal,
+  LogOut
 } from 'lucide-react';
 import { 
   Tooltip, 
@@ -37,6 +38,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import sanitizeHtml from '@/lib/utils/sanitize-html';
+import { useRouter } from 'next/navigation';
 
 interface EditorProps {
   content: string;
@@ -80,6 +82,7 @@ function ToolbarButton({ onClick, disabled, icon, tooltip, isActive }: ToolbarBu
 }
 
 function EditorToolbar({ editor, extras }: { editor: ReturnType<typeof useEditor>, extras?: React.ReactNode }) {
+  const router = useRouter();
   const isDesktop = useBreakpoint('md');
   
   if (!editor) {
@@ -125,6 +128,14 @@ function EditorToolbar({ editor, extras }: { editor: ReturnType<typeof useEditor
   return (
     <TooltipProvider>
       <div className="border-b flex flex-wrap items-center p-2 gap-1">
+        <ToolbarButton
+          onClick={() => router.back()}
+          icon={<LogOut className="h-4 w-4 rotate-180" />}
+          tooltip="Exit"
+        />
+
+        <Separator orientation='vertical' />
+
         {/* Essential formatting controls - always visible */}
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBold().run()}

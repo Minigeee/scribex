@@ -23,6 +23,11 @@ import { toast } from 'sonner';
 import { useDebouncedCallback } from 'use-debounce';
 import { Button } from '../ui/button';
 import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from '../ui/resizable';
+import {
   Sheet,
   SheetContent,
   SheetHeader,
@@ -41,6 +46,106 @@ interface ProjectContentProps {
 
 type SaveStatus = 'idle' | 'unsaved' | 'saving' | 'saved';
 
+interface SidebarContentProps {
+  project: ProjectWithGenre;
+  content: string;
+  activeTab: string;
+  onTabChange: (value: string) => void;
+  onProjectUpdate: (updatedProject: ProjectWithGenre) => void;
+  onManualSave: () => Promise<void>;
+  saveStatus: SaveStatus;
+}
+
+function SidebarContent({
+  project,
+  content,
+  activeTab,
+  onTabChange,
+  onProjectUpdate,
+  onManualSave,
+  saveStatus,
+}: SidebarContentProps) {
+  // Define custom conversation starters with system prompts for the writing project
+  const projectConversationStarters: ConversationStarter[] = [
+    {
+      title: 'Get feedback',
+      prompt: 'Can you review my writing and provide constructive feedback?',
+      systemPrompt: `You are a professional writing coach and editor. Analyze the user's writing project and provide specific, constructive feedback focusing on structure, character development, plot coherence, and prose quality. Be encouraging but honest about areas that need improvement.`,
+    },
+    {
+      title: "Writer's block",
+      prompt:
+        "I'm experiencing writer's block. Can you suggest some ideas to continue my story?",
+      systemPrompt: `You are a creative writing consultant specializing in overcoming writer's block. Provide thoughtful, genre-appropriate suggestions to help the user continue their story. Focus on plot developments, character arcs, and scene ideas that align with their existing narrative.`,
+    },
+  ];
+
+  // Define the default system prompt for the writing project
+  const projectSystemPrompt = `You are a helpful writing assistant for ${project.genres?.name || 'creative'} writing. You're helping the user with their project titled "${project.title}". The prompt for the project is: ${project.prompt}
+  
+Your role is to provide constructive feedback, creative ideas, and technical suggestions to improve their writing. 
+  
+When analyzing their work, consider:
+- Character development and consistency
+- Plot structure and pacing
+- Dialogue authenticity
+- Setting and world-building
+- Genre conventions and expectations
+- Grammar and style (but focus more on content than mechanics)
+
+Be encouraging and supportive while offering honest, specific feedback. Suggest improvements rather than just pointing out flaws.
+
+But do *not* write the essay/story/article for them.`;
+
+  return (
+    <Tabs
+      value={activeTab}
+      onValueChange={onTabChange}
+      className='flex h-full flex-1 flex-col'
+    >
+      <div className='px-3'>
+        <TabsList className='w-full'>
+          <TabsTrigger value='chat' className='flex-1'>
+            <MessageSquareIcon className='mr-2 h-4 w-4' />
+            AI Chat
+          </TabsTrigger>
+          <TabsTrigger value='info' className='flex-1'>
+            <InfoIcon className='mr-2 h-4 w-4' />
+            Details
+          </TabsTrigger>
+          <TabsTrigger value='actions' className='flex-1'>
+            <WandIcon className='mr-2 h-4 w-4' />
+            Actions
+          </TabsTrigger>
+        </TabsList>
+      </div>
+
+      <TabsContent value='chat' className='mt-0 flex-1 overflow-auto'>
+        <ChatInterface
+          project={project}
+          projectContent={content}
+          customStarters={projectConversationStarters}
+          defaultSystemPrompt={projectSystemPrompt}
+          activeTab={activeTab}
+        />
+      </TabsContent>
+
+      <TabsContent value='info' className='mt-0 p-4'>
+        <ProjectInfoPanel project={project} onProjectUpdate={onProjectUpdate} />
+      </TabsContent>
+
+      <TabsContent value='actions' className='mt-0 p-4'>
+        <ProjectActionsPanel
+          projectId={project.id}
+          status={project.status}
+          onSave={onManualSave}
+          isSaving={saveStatus === 'saving'}
+        />
+      </TabsContent>
+    </Tabs>
+  );
+}
+
 export function ProjectContent({
   project: initialProject,
 }: ProjectContentProps) {
@@ -50,7 +155,7 @@ export function ProjectContent({
   const [lastSavedContent, setLastSavedContent] = useState(
     project.content || ''
   );
-  const [activeTab, setActiveTab] = useState('info');
+  const [activeTab, setActiveTab] = useState('chat');
   const [sheetOpen, setSheetOpen] = useState(false);
 
   // Check if we're on a mobile device
@@ -158,144 +263,86 @@ export function ProjectContent({
     };
   }, [content, lastSavedContent, project.id]);
 
-  // Define custom conversation starters with system prompts for the writing project
-  const projectConversationStarters: ConversationStarter[] = [
-    {
-      title: 'Get feedback',
-      prompt: 'Can you review my writing and provide constructive feedback?',
-      systemPrompt: `You are a professional writing coach and editor. Analyze the user's writing project and provide specific, constructive feedback focusing on structure, character development, plot coherence, and prose quality. Be encouraging but honest about areas that need improvement.`,
-    },
-    {
-      title: "Writer's block",
-      prompt:
-        "I'm experiencing writer's block. Can you suggest some ideas to continue my story?",
-      systemPrompt: `You are a creative writing consultant specializing in overcoming writer's block. Provide thoughtful, genre-appropriate suggestions to help the user continue their story. Focus on plot developments, character arcs, and scene ideas that align with their existing narrative.`,
-    },
-  ];
-
-  // Define the default system prompt for the writing project
-  const projectSystemPrompt = `You are a helpful writing assistant for ${project.genres?.name || 'creative'} writing. You're helping the user with their project titled "${project.title}". The prompt for the project is: ${project.prompt}
-  
-Your role is to provide constructive feedback, creative ideas, and technical suggestions to improve their writing. 
-  
-When analyzing their work, consider:
-- Character development and consistency
-- Plot structure and pacing
-- Dialogue authenticity
-- Setting and world-building
-- Genre conventions and expectations
-- Grammar and style (but focus more on content than mechanics)
-
-Be encouraging and supportive while offering honest, specific feedback. Suggest improvements rather than just pointing out flaws.
-
-But do *not* write the essay/story/article for them.`;
-
-  // Sidebar content component to reuse in both desktop and mobile views
-  const SidebarContent = () => (
-    <Tabs
-      value={activeTab}
-      onValueChange={handleTabChange}
-      className='flex h-full flex-1 flex-col'
-    >
-      <div className='px-3'>
-        <TabsList className='w-full'>
-          <TabsTrigger value='info' className='flex-1'>
-            <InfoIcon className='mr-2 h-4 w-4' />
-            Details
-          </TabsTrigger>
-          <TabsTrigger value='chat' className='flex-1'>
-            <MessageSquareIcon className='mr-2 h-4 w-4' />
-            AI Chat
-          </TabsTrigger>
-          <TabsTrigger value='actions' className='flex-1'>
-            <WandIcon className='mr-2 h-4 w-4' />
-            Actions
-          </TabsTrigger>
-        </TabsList>
-      </div>
-
-      <TabsContent value='info' className='mt-0 p-4'>
-        <ProjectInfoPanel
-          project={project}
-          onProjectUpdate={handleProjectUpdate}
-        />
-      </TabsContent>
-
-      <TabsContent value='chat' className='mt-0 flex-1 overflow-auto'>
-        <ChatInterface
-          project={project}
-          projectContent={content}
-          customStarters={projectConversationStarters}
-          defaultSystemPrompt={projectSystemPrompt}
-          activeTab={activeTab}
-        />
-      </TabsContent>
-
-      <TabsContent value='actions' className='mt-0 p-4'>
-        <ProjectActionsPanel
-          projectId={project.id}
-          status={project.status}
-          onSave={handleManualSave}
-          isSaving={saveStatus === 'saving'}
-        />
-      </TabsContent>
-    </Tabs>
-  );
-
   return (
     <div className='flex h-[calc(100vh-4rem)] md:h-screen'>
-      {/* Main content area */}
-      <div className='relative flex-1'>
-        <Editor
-          content={content}
-          onChange={handleContentChange}
-          className='min-h-full'
-          toolbarExtras={
-            !isDesktop ? (
-              <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-                <SheetTrigger asChild>
-                  <Button
-                    variant='ghost'
-                    size='icon'
-                    className='ml-auto h-8 w-8'
+      <ResizablePanelGroup direction='horizontal' className='h-full'>
+        {/* Main content area */}
+        <ResizablePanel defaultSize={75} minSize={50} className='relative'>
+          <Editor
+            content={content}
+            onChange={handleContentChange}
+            className='min-h-full'
+            toolbarExtras={
+              !isDesktop ? (
+                <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+                  <SheetTrigger asChild>
+                    <Button
+                      variant='ghost'
+                      size='icon'
+                      className='ml-auto h-8 w-8'
+                    >
+                      <PanelRightIcon className='h-4 w-4' />
+                      <span className='sr-only'>Open sidebar</span>
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent
+                    side='right'
+                    className='flex w-[350px] flex-col p-0 pt-5 sm:w-[350px]'
                   >
-                    <PanelRightIcon className='h-4 w-4' />
-                    <span className='sr-only'>Open sidebar</span>
-                  </Button>
-                </SheetTrigger>
-                <SheetContent
-                  side='right'
-                  className='flex w-[350px] flex-col p-0 pt-5 sm:w-[350px]'
-                >
-                  <SheetHeader>
-                    <SheetTitle>{project.title}</SheetTitle>
-                  </SheetHeader>
-                  <SidebarContent />
-                </SheetContent>
-              </Sheet>
-            ) : null
-          }
-        />
+                    <SheetHeader>
+                      <SheetTitle>{project.title}</SheetTitle>
+                    </SheetHeader>
+                    <SidebarContent
+                      project={project}
+                      content={content}
+                      activeTab={activeTab}
+                      onTabChange={handleTabChange}
+                      onProjectUpdate={handleProjectUpdate}
+                      onManualSave={handleManualSave}
+                      saveStatus={saveStatus}
+                    />
+                  </SheetContent>
+                </Sheet>
+              ) : null
+            }
+          />
 
-        {/* Save status indicator */}
-        {saveStatus !== 'idle' && (
-          <div className='absolute bottom-4 right-4 flex items-center gap-1.5 rounded-md border bg-background px-3 py-1.5 text-xs font-medium shadow-sm'>
-            {saveStatus === 'unsaved' && 'Unsaved changes'}
-            {saveStatus === 'saving' && 'Saving...'}
-            {saveStatus === 'saved' && (
-              <>
-                <CheckIcon className='h-3.5 w-3.5 text-green-500' />
-                <span>Saved</span>
-              </>
-            )}
+          {/* Save status indicator */}
+          {saveStatus !== 'idle' && (
+            <div className='absolute bottom-4 right-4 flex items-center gap-1.5 rounded-md border bg-background px-3 py-1.5 text-xs font-medium shadow-sm'>
+              {saveStatus === 'unsaved' && 'Unsaved changes'}
+              {saveStatus === 'saving' && 'Saving...'}
+              {saveStatus === 'saved' && (
+                <>
+                  <CheckIcon className='h-3.5 w-3.5 text-green-500' />
+                  <span>Saved</span>
+                </>
+              )}
+            </div>
+          )}
+        </ResizablePanel>
+
+        {/* Desktop Sidebar */}
+        <ResizableHandle className='hidden lg:flex' />
+        <ResizablePanel
+          defaultSize={25}
+          minSize={15}
+          maxSize={40}
+          className='hidden lg:flex'
+        >
+          <div className='h-screen max-h-screen w-full flex-col pt-5'>
+            <SidebarContent
+              project={project}
+              content={content}
+              activeTab={activeTab}
+              onTabChange={handleTabChange}
+              onProjectUpdate={handleProjectUpdate}
+              onManualSave={handleManualSave}
+              saveStatus={saveStatus}
+            />
           </div>
-        )}
-      </div>
-
-      {/* Desktop Sidebar */}
-      <div className='hidden h-screen max-h-screen w-[400px] flex-col border-l pt-5 lg:flex'>
-        <SidebarContent />
-      </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   );
 }

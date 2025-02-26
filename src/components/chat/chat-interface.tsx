@@ -91,6 +91,7 @@ export function ChatInterface({
 }: ChatInterfaceProps) {
   const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const latestMessageRef = useRef<HTMLDivElement>(null);
 
   // State
   const [inputValue, setInputValue] = useState('');
@@ -101,15 +102,17 @@ export function ChatInterface({
         : DEFAULT_SYSTEM_PROMPT)
   );
   const [activeSystemPrompt, setActiveSystemPrompt] = useState(systemPrompt);
-  const [conversationStarters, setConversationStarters] = useState<
-    ConversationStarter[]
-  >(
-    customStarters ||
-      (project ? WRITING_PROJECT_STARTERS : DEFAULT_CONVERSATION_STARTERS)
-  );
   const [aiLoading, setAiLoading] = useState(false);
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
   const [hasGeneratedQuestionsForCurrentConversation, setHasGeneratedQuestionsForCurrentConversation] = useState(false);
+
+  // Memoize conversation starters based on project and custom starters
+  const defaultStarters = useMemo(() => {
+    return customStarters ||
+      (project ? WRITING_PROJECT_STARTERS : DEFAULT_CONVERSATION_STARTERS);
+  }, [customStarters, project]);
+  
+  const [conversationStarters, setConversationStarters] = useState<ConversationStarter[]>(defaultStarters);
 
   // Use the conversations hook
   const {
@@ -194,12 +197,17 @@ export function ChatInterface({
     } finally {
       setIsGeneratingQuestions(false);
     }
-  }, [project, projectContent, isResearchGenre, isGeneratingQuestions, hasGeneratedQuestionsForCurrentConversation, setConversationStarters]);
+  }, [project, projectContent, isResearchGenre, isGeneratingQuestions, hasGeneratedQuestionsForCurrentConversation, customStarters]);
 
-  // Scroll to bottom when messages change
+  // Scroll to the latest message when messages change
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    console.log('messages changed', messages.length)
+    scrollToLatestMessage();
+  }, [messages.length]);
+
+  useEffect(() => {
+    console.log('mount')
+  }, []);
 
   // Update conversation starters when customStarters prop changes
   useEffect(() => {
@@ -223,14 +231,8 @@ export function ChatInterface({
     setHasGeneratedQuestionsForCurrentConversation(false);
     
     // Reset to default starters when switching conversations
-    if (customStarters) {
-      setConversationStarters(customStarters);
-    } else if (project) {
-      setConversationStarters(WRITING_PROJECT_STARTERS);
-    } else {
-      setConversationStarters(DEFAULT_CONVERSATION_STARTERS);
-    }
-  }, [currentConversationId, customStarters, project]);
+    setConversationStarters(defaultStarters);
+  }, [currentConversationId, defaultStarters]);
   
   // Reset the generated questions flag when the project or content changes
   useEffect(() => {
@@ -253,16 +255,14 @@ export function ChatInterface({
       !isGeneratingQuestions && 
       !hasGeneratedQuestionsForCurrentConversation
     ) {
-      generateResearchQuestionsForProject();
+      console.log(isFetchingConversations, currentConversationId, isGeneratingQuestions, hasGeneratedQuestionsForCurrentConversation)
+      // generateResearchQuestionsForProject();
     }
   }, [
     activeTab, 
     isResearchGenre, 
     currentConversationId, 
     isFetchingConversations,
-    isGeneratingQuestions, 
-    hasGeneratedQuestionsForCurrentConversation, 
-    generateResearchQuestionsForProject
   ]);
 
   // Truncate conversation title to 40 characters
@@ -274,6 +274,32 @@ export function ChatInterface({
       return conversation.title;
     });
   }, [conversations]);
+
+  // Prepare AI messages for completion
+  const prepareAIMessages = useCallback((userMessageContent: string, currentSystemPrompt: string) => {
+    const aiMessages = [
+      systemMessage(currentSystemPrompt),
+      ...messages.map((msg) =>
+        msg.role === 'user'
+          ? userMessage(msg.content)
+          : assistantMessage(msg.content)
+      ),
+      userMessage(userMessageContent),
+    ];
+
+    // If this is a project chat and we have project content, add it to the context
+    if (project && projectContent && messages.length === 0) {
+      aiMessages.splice(
+        1,
+        0,
+        systemMessage(
+          `Here is the user's current writing project content:\n\n${projectContent.substring(0, 8000)}\n\nProvide feedback and assistance based on this content.`
+        )
+      );
+    }
+
+    return aiMessages;
+  }, [messages, project, projectContent]);
 
   // Handle sending a message
   const handleSendMessage = async (
@@ -293,26 +319,7 @@ export function ChatInterface({
 
     try {
       // Prepare messages for AI completion
-      const aiMessages = [
-        systemMessage(currentSystemPrompt),
-        ...messages.map((msg) =>
-          msg.role === 'user'
-            ? userMessage(msg.content)
-            : assistantMessage(msg.content)
-        ),
-        userMessage(userMessageContent), // Add the current message that might not be in messages state yet
-      ];
-
-      // If this is a project chat and we have project content, add it to the context
-      if (project && projectContent && messages.length === 0) {
-        aiMessages.splice(
-          1,
-          0,
-          systemMessage(
-            `Here is the user's current writing project content:\n\n${projectContent.substring(0, 8000)}\n\nProvide feedback and assistance based on this content.`
-          )
-        );
-      }
+      const aiMessages = prepareAIMessages(userMessageContent, currentSystemPrompt);
 
       // Start both operations concurrently
       const sendMessagePromise = sendMessage(userMessageContent);
@@ -342,7 +349,7 @@ export function ChatInterface({
   };
 
   // Handle conversation starter click
-  const handleStarterClick = (starter: ConversationStarter) => {
+  const handleStarterClick = useCallback((starter: ConversationStarter) => {
     // Skip if the starter is still loading
     if (starter.isLoading) return;
     
@@ -353,28 +360,33 @@ export function ChatInterface({
 
     // Send the message immediately
     handleSendMessage(starter.prompt, starter.systemPrompt);
-  };
+  }, [handleSendMessage]);
 
   // Handle input submission
-  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleInputKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
-  };
+  }, [handleSendMessage]);
 
-  // Scroll to bottom of messages
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  // Scroll to the latest message
+  const scrollToLatestMessage = useCallback(() => {
+    if (messages.length > 0) {
+      latestMessageRef.current?.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      // If there are no messages, scroll to bottom as before
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages.length]);
 
   // Format date for display
-  const formatMessageDate = (date: Date) => {
+  const formatMessageDate = useCallback((date: Date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
+  }, []);
 
   // Handle creating a new conversation
-  const handleNewConversation = () => {
+  const handleNewConversation = useCallback(() => {
     createNewConversation();
     setInputValue('');
     // Reset active system prompt to the default
@@ -382,7 +394,7 @@ export function ChatInterface({
     
     // Reset the flag so we'll generate new questions for the new conversation
     setHasGeneratedQuestionsForCurrentConversation(false);
-  };
+  }, [createNewConversation, systemPrompt]);
 
   return (
     <div className='flex h-full flex-col'>
@@ -421,8 +433,12 @@ export function ChatInterface({
       <ScrollArea className='px-4'>
         {messages.length > 0 ? (
           <div className='space-y-3 py-2'>
-            {messages.map((message) => (
-              <div key={message.id} className='w-full'>
+            {messages.map((message, index) => (
+              <div 
+                key={message.id} 
+                className='w-full'
+                ref={index === messages.length - 1 ? latestMessageRef : undefined}
+              >
                 {/* Role indicator */}
                 <div className='mb-1 text-xs font-medium'>
                   {message.role === 'user' ? 'You' : 'AI'}
