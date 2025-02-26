@@ -358,9 +358,9 @@ export function LessonClient({ lesson, userId }: LessonClientProps) {
                     </p>
                     <Button
                       variant='outline'
-                      onClick={() => router.push('/map')}
+                      onClick={() => router.push('/skill-tree')}
                     >
-                      Return to Map
+                      Back
                     </Button>
                   </CardContent>
                 </Card>

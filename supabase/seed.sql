@@ -642,7 +642,7 @@ VALUES
            "Contrast"
          ],
          "correctIndex": 2,
-         "explanation": "\"Similarly\" indicates a comparison between the speaker's enjoyment of hiking and the brother's love of outdoor activities."
+         "explanation": "\"Similarly\" indicates a comparison between the speaker''s enjoyment of hiking and the brother''s love of outdoor activities."
        },
        {
          "id": 4,
@@ -812,7 +812,7 @@ Part 2: Write a short paragraph (5-7 sentences) about a hobby or interest of you
          "description": "Demonstrates awareness of how specific writing choices contribute to voice"
        }
      ],
-     "example_solution": "Part 1: The writer''s voice in this paragraph is distinctive in several ways. First, they use casual, conversational language with phrases like \"Listen\" and \"Trust me\" that directly address the reader. Second, they employ humor and self-deprecation throughout, especially when describing cooking failures. Third, they use varied sentence structures, including questions (\"How is that even possible?\") and exclamations (\"WATER!\") for emphasis. The voice also incorporates personal anecdotes with creative naming conventions (\"The Great Spaghetti Explosion of 2018\") that add personality and memorability.\n\nPart 2: I''ve always been drawn to photography, not the technical, equipment-obsessed variety, but the quiet, observational kind. My camera isn''t particularly fancy—it''s the seeing that matters to me, not the gear. I find myself pausing at moments others rush past: the way late afternoon light transforms ordinary objects into something almost sacred, how shadows create geometries that weren''t there before, the fleeting expressions that cross a face when someone thinks they''re unobserved. Sometimes I go weeks without taking a single photo, then capture fifty in a single hour when the world suddenly reveals itself in a new way. For me, photography isn''t about documenting reality; it's about discovering it."
+     "example_solution": "Part 1: The writer''s voice in this paragraph is distinctive in several ways. First, they use casual, conversational language with phrases like \"Listen\" and \"Trust me\" that directly address the reader. Second, they employ humor and self-deprecation throughout, especially when describing cooking failures. Third, they use varied sentence structures, including questions (\"How is that even possible?\") and exclamations (\"WATER!\") for emphasis. The voice also incorporates personal anecdotes with creative naming conventions (\"The Great Spaghetti Explosion of 2018\") that add personality and memorability.\n\nPart 2: I''ve always been drawn to photography, not the technical, equipment-obsessed variety, but the quiet, observational kind. My camera isn''t particularly fancy—it''s the seeing that matters to me, not the gear. I find myself pausing at moments others rush past: the way late afternoon light transforms ordinary objects into something almost sacred, how shadows create geometries that weren''t there before, the fleeting expressions that cross a face when someone thinks they''re unobserved. Sometimes I go weeks without taking a single photo, then capture fifty in a single hour when the world suddenly reveals itself in a new way. For me, photography isn''t about documenting reality; it''s about discovering it."
    }',
    1, 20);
 

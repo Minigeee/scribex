@@ -22,7 +22,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
   // If user is already logged in, redirect to callback URL or dashboard
   if (data?.user) {
-    const callbackUrl = searchParams?.callbackUrl || '/map';
+    const callbackUrl = searchParams?.callbackUrl || '/dashboard';
     redirect(callbackUrl);
   }
 
@@ -30,7 +30,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const defaultTab = searchParams?.tab === 'register' ? 'register' : 'login';
 
   // Get the callback URL from query params or default to dashboard
-  const callbackUrl = searchParams?.callbackUrl || '/map';
+  const callbackUrl = searchParams?.callbackUrl || '/dashboard';
 
   return (
     <>
