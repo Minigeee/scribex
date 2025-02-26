@@ -1,90 +1,99 @@
-# ScribexX High-Level Development Roadmap
+# ScribexX High-Level Development Roadmap (MVP Focus)
 
 ## Personal To Do List
 
 - [ ] Look into map / canvas solutions
+- [ ] Research peer review systems
+- [ ] Explore daily quest mechanics
 
-## Phase 1: Foundation (4-6 weeks)
+## Phase 1: Foundation (3-4 weeks)
 - [X] Define technical stack and architecture
 - [X] Establish core data models
 - [X] Set up development environment
 - [X] Create authentication system
 - [X] Design basic navigation flow
 
-## Phase 2: REDI System (4-5 weeks)
+## Phase 2: Core Writing Experience (4-5 weeks)
 - [X] Add seed data for lessons
 - [X] Plan REDI lesson framework
 - [ ] Design exercise templates
 - [X] Implement progress tracking
 - [X] Create scoring system (90% threshold)
-- [ ] Build basic AI evaluation for structured exercises
-
-## Phase 3: OWL System (4-5 weeks)
 - [X] Basic project text editor
-- [ ] Design open writing environment
-- [ ] Plan genre categorization system
-- [ ] Create project management for student writing
 - [X] Implement "Writer's Block" suggestion feature
-- [X] Build AI feedback system for free-form writing
+- [X] Build basic AI evaluation for structured exercises
 
-## Phase 4: Gamification System (3-4 weeks)
-- [ ] Design level map concept
-- [ ] Create progression system
-- [ ] Plan seasonal theme framework
-- [ ] Design achievement and reward system
-- [ ] Implement leaderboard functionality
-- [ ] Build classroom competition framework
-- [ ] Implement adaptive difficulty algorithm
+## Phase 3: RPG Framework (4-5 weeks)
+- [ ] Design skill tree visualization
+- [ ] Implement character profile system
+- [ ] Create basic inventory system
+- [ ] Design simple world map navigation
+- [ ] Build quest tracking system
+- [ ] Implement reward distribution mechanics
+- [ ] Create daily quest system
 
-## Phase 5: UI/UX Development (4-5 weeks)
-- [ ] Implement map UI with game-like navigation
-- [ ] Create Synthwave/Cyberpunk/Botanical visual style
-- [ ] Build distraction-free writing environment
-- [ ] Design feedback visualization
-- [ ] Implement gesture-based navigation
+## Phase 4: Social & Engagement Features (3-4 weeks)
+- [ ] Build basic faction system
+- [ ] Implement peer review functionality
+- [ ] Create streak and consistency tracking
+- [ ] Design simple leaderboards
+- [ ] Implement basic notification system
+- [ ] Build achievement tracking
 
-## Phase 6: AI Integration (4-6 weeks)
-- [ ] Implement NLP for writing assessment
+## Phase 5: Content & Progression (3-4 weeks)
+- [ ] Create initial REDI lesson content
+- [ ] Design starter OWL quests
+- [ ] Implement daily writing prompts
+- [ ] Build progression tracking
+- [ ] Create basic collectible system
+- [ ] Design simple personal space customization
+
+## Phase 6: AI & Feedback Systems (4-5 weeks)
+- [ ] Implement basic NLP for writing assessment
 - [ ] Create feedback generation system
-- [ ] Build content suggestion algorithms
-- [ ] Design adaptive difficulty system
-- [ ] Implement writing analytics
+- [ ] Build peer review distribution algorithm
+- [ ] Design writing analytics dashboard
+- [ ] Implement moderation tools for peer reviews
 
-## Phase 7: User Account Management (2-3 weeks)
-- [ ] Build student profiles with progress tracking
-- [ ] Create teacher dashboard
-- [ ] Implement classroom management features
-- [ ] Design parent access controls
-- [ ] Create content moderation tools
-
-## Phase 8: Integration and Testing (4-5 weeks)
-- [ ] Connect REDI and OWL systems to Three-Layer Model
-- [ ] Integrate gamification across all components
-- [ ] Perform user testing with target audience
-- [ ] Refine AI feedback based on testing
-- [ ] Optimize performance for mobile devices
+## Phase 7: Polish & Integration (3-4 weeks)
+- [ ] Refine UI/UX with basic themed elements
+- [ ] Optimize performance for target devices
+- [ ] Implement data synchronization
+- [ ] Create onboarding experience
+- [ ] Build basic teacher/parent dashboard
 - [ ] Fix critical bugs and issues
 
-## Technical Focus Areas
+## Phase 8: Testing & Launch Preparation (2-3 weeks)
+- [ ] Conduct user testing with target audience
+- [ ] Implement feedback from testing
+- [ ] Prepare launch materials
+- [ ] Finalize MVP feature set
+- [ ] Create post-launch roadmap
 
-### Core App Architecture
-- Mobile-first, cross-platform approach
-- Data synchronization for offline use
-- Scalable content management
+## MVP Core Features Focus
 
-### AI Implementation
-- Writing analysis engine
-- Feedback generation system
-- Content suggestion algorithms
-- Performance monitoring
+### Writing Experience
+- Basic REDI skill tree with fundamental lessons
+- Simple OWL world map with starter quests
+- Daily writing prompts system
+- Basic AI feedback on writing
+- Peer review functionality
 
-### Gamification Engine
-- Progress tracking across learning modes
-- Achievement and reward system
-- Competitive elements
-- Visual progression representation
+### RPG Elements
+- Character profiles with basic customization
+- Simple progression system
+- Basic inventory and collectibles
+- Faction system with minimal features
+- Achievement tracking
 
-### Educational Framework
-- Connecting gamification to learning objectives
-- Balancing structured learning with creative freedom
-- Progress metrics aligned with educational standards
+### Engagement Mechanics
+- Streak tracking and daily quests
+- Basic leaderboards
+- Simple notification system
+- Core social features
+
+### Technical Foundation
+- Cross-platform functionality
+- Secure user data management
+- Basic offline capabilities
+- Performance optimization for target devices
