@@ -1,238 +1,128 @@
 import { Button } from '@/components/ui/button';
 import {
   Card,
+  CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { ProjectDialogWrapper } from '@/components/writing/project-dialog-wrapper';
 import { Tables } from '@/lib/database.types';
 import { createClient } from '@/lib/supabase/server';
+import { formatDistanceToNow } from 'date-fns';
+import { PenSquareIcon, PlusIcon } from 'lucide-react';
 import Link from 'next/link';
 
-// Define types for our data structure
-type ContentLayer = Tables<'content_layers'>;
-type Lesson = Tables<'lessons'> & {
-  content_layer: ContentLayer | null;
+type ProjectWithGenre = Tables<'projects'> & {
+  genres: Tables<'genres'> | null;
 };
 
-type LessonWithProgress = Lesson & {
-  completed: boolean;
-  current: boolean;
-};
-
-// Helper function to determine category styling
-function getCategoryStyle(contentLayer: ContentLayer | null) {
-  if (!contentLayer) {
-    return {
-      bgColor: 'bg-gray-100',
-      textColor: 'text-gray-800',
-      label: 'Unknown',
-    };
-  }
-
-  const name = contentLayer.name;
-
-  if (name.includes('Mechanics')) {
-    return {
-      bgColor: 'bg-blue-100',
-      textColor: 'text-blue-800',
-      label: name.split(' ')[0],
-    };
-  } else if (name.includes('Sequencing')) {
-    return {
-      bgColor: 'bg-purple-100',
-      textColor: 'text-purple-800',
-      label: name.split(' ')[0],
-    };
-  } else {
-    return {
-      bgColor: 'bg-amber-100',
-      textColor: 'text-amber-800',
-      label: name.split(' ')[0],
-    };
-  }
-}
-
-export default async function MapPage() {
+export default async function WritingPage() {
   const supabase = await createClient();
 
-  // Get the current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // Fetch lessons with content layers
-  const { data: lessons, error } = await supabase
-    .from('lessons')
+  // Fetch user's projects with genre information
+  const { data: projects, error } = await supabase
+    .from('projects')
     .select(
       `
       *,
-      content_layer:content_layers(*)
+      genres:genre_id(*)
     `
     )
-    .eq('published', true)
-    .order('content_layer_id')
-    .order('order_index');
+    .order('updated_at', { ascending: false });
 
+  // Fetch all available genres for the create dialog
+  const { data: genres } = await supabase
+    .from('genres')
+    .select('*')
+    .order('name');
+
+  // Handle potential errors
   if (error) {
-    console.error('Error fetching lessons:', error);
+    console.error('Error fetching projects:', error);
   }
 
-  // Fetch user progress if user is logged in
-  let userProgress: Record<string, boolean> = {};
-
-  if (user) {
-    const { data: progress } = await supabase
-      .from('user_progress')
-      .select('lesson_id, completed')
-      .eq('user_id', user.id)
-      .eq('completed', true);
-
-    // Also check for completed article reads
-    const { data: articleReads } = await supabase
-      .from('lesson_article_reads')
-      .select('lesson_id, completed')
-      .eq('user_id', user.id)
-      .eq('completed', true);
-
-    // Combine progress data
-    if (progress) {
-      progress.forEach((item) => {
-        if (item.lesson_id) {
-          userProgress[item.lesson_id] = true;
-        }
-      });
-    }
-
-    if (articleReads) {
-      articleReads.forEach((item) => {
-        if (item.lesson_id) {
-          userProgress[item.lesson_id] = true;
-        }
-      });
-    }
-  }
-
-  // Process lessons to add progress information
-  const processedLessons: LessonWithProgress[] = [];
-  let foundCurrent = false;
-
-  lessons?.forEach((lesson, index) => {
-    const isCompleted = userProgress[lesson.id] || false;
-    let isCurrent = false;
-
-    // Mark the first uncompleted lesson as current
-    if (!isCompleted && !foundCurrent) {
-      isCurrent = true;
-      foundCurrent = true;
-    }
-
-    processedLessons.push({
-      ...lesson,
-      completed: isCompleted,
-      current: isCurrent,
-    });
-  });
-
-  // Function to get the appropriate lesson URL
-  const getLessonUrl = (lesson: LessonWithProgress) => {
-    // If user is not logged in, redirect to login with callback
-    if (!user) {
-      return `/login?callbackUrl=${encodeURIComponent(`/lessons/${lesson.slug}`)}`;
-    }
-
-    // Otherwise, go directly to the lesson
-    return `/lessons/${lesson.slug}`;
-  };
+  const userProjects = (projects as ProjectWithGenre[]) || [];
 
   return (
     <div className='container mx-auto space-y-8 px-5 py-6 md:py-8'>
       <div>
-        <h1 className='text-3xl font-bold tracking-tight'>Writing Journey</h1>
+        <h1 className='text-3xl font-bold tracking-tight'>
+          My Writing Projects
+        </h1>
         <p className='mt-2 text-muted-foreground'>
-          Complete levels to improve your writing skills
+          Open World Learning (OWL) - Create and manage your writing projects
         </p>
       </div>
 
-      {error && (
-        <div className='rounded-md border border-red-200 bg-red-50 p-4 text-red-800'>
-          <p>There was an error loading the lessons. Please try again later.</p>
-        </div>
-      )}
+      <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
+        {/* New Project Card */}
+        <Card className='border-dashed border-muted-foreground/50'>
+          <CardContent className='flex h-full flex-col items-center justify-center p-6'>
+            <div className='mb-4 rounded-full bg-primary/10 p-3'>
+              <PlusIcon className='h-6 w-6 text-primary' />
+            </div>
+            <h3 className='mb-2 text-lg font-medium'>Start a New Project</h3>
+            <p className='mb-6 text-center text-sm text-muted-foreground'>
+              Choose from various genres and get AI-assisted feedback
+            </p>
+            <ProjectDialogWrapper genres={genres || []} />
+          </CardContent>
+        </Card>
 
-      {!error && processedLessons.length === 0 && (
-        <div className='rounded-md border border-gray-200 bg-gray-50 p-4'>
-          <p>No lessons are available at the moment. Check back soon!</p>
-        </div>
-      )}
-
-      {!error && processedLessons.length > 0 && (
-        <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
-          {processedLessons.map((lesson) => {
-            const categoryStyle = getCategoryStyle(lesson.content_layer);
-            const lessonUrl = getLessonUrl(lesson);
-
-            return (
-              <Card
-                key={lesson.id}
-                className={`overflow-hidden transition-all ${lesson.completed ? 'border-green-500/50' : ''} ${lesson.current ? 'border-primary/50 shadow-md' : ''} ${!lesson.completed && !lesson.current ? 'opacity-70' : ''} `}
-              >
-                <CardHeader className='pb-3'>
-                  <div className='flex items-center justify-between'>
-                    <div
-                      className={`rounded-full px-2 py-1 text-xs font-medium ${categoryStyle.bgColor} ${categoryStyle.textColor}`}
-                    >
-                      {categoryStyle.label}
-                    </div>
-                    {lesson.completed && (
-                      <div className='rounded-full bg-green-100 p-1 text-green-800'>
-                        <svg
-                          xmlns='http://www.w3.org/2000/svg'
-                          width='16'
-                          height='16'
-                          viewBox='0 0 24 24'
-                          fill='none'
-                          stroke='currentColor'
-                          strokeWidth='2'
-                          strokeLinecap='round'
-                          strokeLinejoin='round'
-                        >
-                          <path d='M20 6L9 17l-5-5' />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                  <CardTitle className='mt-2'>{lesson.title}</CardTitle>
-                  <CardDescription>{lesson.description}</CardDescription>
-                </CardHeader>
-                <CardFooter className='pt-3'>
-                  <Button
-                    className='w-full'
-                    variant={
-                      lesson.current
-                        ? 'default'
-                        : lesson.completed
-                          ? 'outline'
-                          : 'secondary'
-                    }
-                    disabled={!lesson.completed && !lesson.current}
-                    asChild
-                  >
-                    <Link href={lessonUrl}>
-                      {lesson.completed
-                        ? 'Review'
-                        : lesson.current
-                          ? 'Start'
-                          : 'Locked'}
-                    </Link>
-                  </Button>
-                </CardFooter>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+        {/* Existing Projects */}
+        {userProjects.map((project) => (
+          <Card key={project.id} className='overflow-hidden'>
+            <CardHeader className='pb-3'>
+              <div className='mb-2 flex items-center justify-between'>
+                <div
+                  className={`rounded-full px-2 py-1 text-xs font-medium ${
+                    project.genres?.name === 'Narrative'
+                      ? 'bg-blue-100 text-blue-800'
+                      : project.genres?.name === 'Persuasive'
+                        ? 'bg-purple-100 text-purple-800'
+                        : project.genres?.name === 'Informative'
+                          ? 'bg-green-100 text-green-800'
+                          : project.genres?.name === 'Poetry'
+                            ? 'bg-pink-100 text-pink-800'
+                            : project.genres?.name === 'Journalism'
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-gray-100 text-gray-800'
+                  }`}
+                >
+                  {project.genres?.name || 'Uncategorized'}
+                </div>
+                <div className='text-xs text-muted-foreground'>
+                  {project.updated_at
+                    ? `Updated ${formatDistanceToNow(new Date(project.updated_at), { addSuffix: true })}`
+                    : 'Recently updated'}
+                </div>
+              </div>
+              <CardTitle>{project.title}</CardTitle>
+              <CardDescription>
+                {project.description || 'No description provided'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className='pb-3'>
+              <div className='text-xs text-muted-foreground'>
+                Status:{' '}
+                <span className='capitalize'>
+                  {project.status.replace('_', ' ')}
+                </span>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button asChild className='w-full'>
+                <Link href={`/writing/${project.id}`}>
+                  <PenSquareIcon className='mr-2 h-4 w-4' />
+                  Continue Writing
+                </Link>
+              </Button>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }

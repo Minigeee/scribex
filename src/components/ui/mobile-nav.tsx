@@ -2,9 +2,9 @@
 
 import { cn } from '@/lib/utils';
 import {
+  HomeIcon,
+  NetworkIcon,
   MapIcon,
-  PenSquareIcon,
-  SparklesIcon,
   TrophyIcon,
   UserIcon,
 } from 'lucide-react';
@@ -13,34 +13,34 @@ import { usePathname } from 'next/navigation';
 
 const navItems = [
   {
-    name: 'Map',
+    name: 'Home',
+    href: '/dashboard',
+    icon: HomeIcon,
+    description: 'Dashboard with streaks & notifications',
+  },
+  {
+    name: 'REDI',
+    href: '/skill-tree',
+    icon: NetworkIcon,
+    description: 'Skill tree progression',
+  },
+  {
+    name: 'OWL',
     href: '/map',
     icon: MapIcon,
-    description: 'Level progression',
+    description: 'Open world map & quests',
   },
   {
-    name: 'Writing',
-    href: '/writing',
-    icon: PenSquareIcon,
-    description: 'OWL projects',
-  },
-  {
-    name: 'Creative',
-    href: '/creative',
-    icon: SparklesIcon,
-    description: 'Inspiration & assistance',
-  },
-  {
-    name: 'Leaderboard',
-    href: '/leaderboard',
+    name: 'Social',
+    href: '/social',
     icon: TrophyIcon,
-    description: 'Competitive rankings',
+    description: 'Factions & leaderboards',
   },
   {
     name: 'Profile',
     href: '/profile',
     icon: UserIcon,
-    description: 'User settings',
+    description: 'Character profile & settings',
   },
 ];
 
@@ -65,6 +65,7 @@ export function MobileNav() {
               aria-label={item.name}
             >
               <item.icon className='h-5 w-5' />
+              <span className='text-xs'>{item.name}</span>
             </Link>
           );
         })}

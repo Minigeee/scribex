@@ -2,9 +2,9 @@
 
 import { cn } from '@/lib/utils';
 import {
+  HomeIcon,
+  NetworkIcon,
   MapIcon,
-  PenSquareIcon,
-  SparklesIcon,
   TrophyIcon,
   UserIcon,
 } from 'lucide-react';
@@ -20,34 +20,34 @@ import {
 
 const navItems = [
   {
-    name: 'Map',
+    name: 'Home',
+    href: '/dashboard',
+    icon: HomeIcon,
+    description: 'Dashboard with streaks & notifications',
+  },
+  {
+    name: 'REDI',
+    href: '/skill-tree',
+    icon: NetworkIcon,
+    description: 'Skill tree progression',
+  },
+  {
+    name: 'OWL',
     href: '/map',
     icon: MapIcon,
-    description: 'Level progression',
+    description: 'Open world map & quests',
   },
   {
-    name: 'Writing',
-    href: '/writing',
-    icon: PenSquareIcon,
-    description: 'OWL projects',
-  },
-  {
-    name: 'Creative',
-    href: '/creative',
-    icon: SparklesIcon,
-    description: 'Inspiration & assistance',
-  },
-  {
-    name: 'Leaderboard',
-    href: '/leaderboard',
+    name: 'Social',
+    href: '/social',
     icon: TrophyIcon,
-    description: 'Competitive rankings',
+    description: 'Factions & leaderboards',
   },
   {
     name: 'Profile',
     href: '/profile',
     icon: UserIcon,
-    description: 'User settings',
+    description: 'Character profile & settings',
   },
 ];
 
@@ -58,7 +58,7 @@ export function DesktopNav() {
     <TooltipProvider>
       <nav className='fixed left-0 top-0 z-30 hidden h-full w-16 flex-col border-r border-border/40 bg-background/80 backdrop-blur-md md:flex'>
         <div className='flex h-16 items-center justify-center border-b border-border/40'>
-          <Link href='/map' className='flex items-center justify-center'>
+          <Link href='/dashboard' className='flex items-center justify-center'>
             <span className='sr-only'>ScribexX</span>
             <div className='flex h-10 w-10 items-center justify-center rounded-md bg-primary text-primary-foreground'>
               <span className='text-lg font-bold'>S</span>
