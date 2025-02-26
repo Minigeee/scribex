@@ -98,12 +98,10 @@ export function ProjectActionsPanel({
   };
 
   return (
-    <Card className='h-full'>
-      <CardHeader className='pb-2'>
-        <CardTitle className='text-xl font-semibold'>Actions</CardTitle>
-      </CardHeader>
-      <CardContent className='space-y-4'>
-        <Button
+    <div className='flex flex-col gap-2'>
+      <h2 className='text-lg font-semibold'>Actions</h2>
+
+      <Button
           variant='default'
           className='w-full justify-start'
           onClick={onSave}
@@ -164,7 +162,6 @@ export function ProjectActionsPanel({
           <TrashIcon className='mr-2 h-4 w-4' />
           {isDeleting ? 'Deleting...' : 'Delete Project'}
         </Button>
-      </CardContent>
-    </Card>
+    </div>
   );
 }

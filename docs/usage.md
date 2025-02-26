@@ -103,6 +103,9 @@ We use Sonner for toast notifications. The Toaster component is already included
 // Direct usage with any provider (server side only)
 import { generateCompletion, systemMessage, userMessage } from '@/lib/utils/ai';
 
+// Use this if on client side
+// import { generateCompletion } from '@/app/actions/generate-completion';
+
 const response = await generateCompletion({
   messages: [
     systemMessage('You are a helpful assistant.'),

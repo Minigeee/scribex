@@ -71,6 +71,21 @@ Before responding to any request, follow these steps:
 - Configure `staleTimes` for client-side router cache
 - Monitor Core Web Vitals
 
+## Data Fetching
+
+### Data Fetching
+- Use Next.js Server Components for server-side data fetching when possible
+- Implement server actions for authenticated operations
+- Handle errors and loading states appropriately
+- Use streaming and Suspense for better user experience
+
+### Client-Side Data
+- Use TanStack Query for client-side data fetching
+- Structure query keys logically for cache management
+- Configure appropriate staleTime and cacheTime defaults
+- Implement optimistic updates for responsive interfaces
+- Create reusable query hooks for common patterns
+
 ## Testing and Validation
 
 ### Code Quality

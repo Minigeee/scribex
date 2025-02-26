@@ -3,7 +3,7 @@
 import { cn } from '@/lib/utils';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import { Button } from '@/components/ui/button';
 import { 
@@ -36,6 +36,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import sanitizeHtml from '@/lib/utils/sanitize-html';
 
 interface EditorProps {
   content: string;
@@ -112,6 +113,10 @@ function EditorToolbar({ editor, extras }: { editor: ReturnType<typeof useEditor
             <Quote className="h-4 w-4 mr-2" />
             <span>Blockquote</span>
           </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => editor.chain().focus().toggleCodeBlock().run()}>
+            <Code className="h-4 w-4 mr-2" />
+            <span>Code Block</span>
+          </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -181,6 +186,13 @@ function EditorToolbar({ editor, extras }: { editor: ReturnType<typeof useEditor
               icon={<Quote className="h-4 w-4" />}
               tooltip="Blockquote"
             />
+
+            <ToolbarButton
+              onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+              isActive={editor.isActive('codeBlock')}
+              icon={<Code className="h-4 w-4" />}
+              tooltip="Code Block"
+            />
           </>
         ) : mobileDropdownButtons}
         
@@ -213,18 +225,22 @@ export function Editor({
   editable = true,
   toolbarExtras,
 }: EditorProps) {
+  const initialContent = useMemo(() => {
+    return sanitizeHtml(content);
+  }, [content]);
+
   const editor = useEditor({
     editorProps: {
       attributes: {
         class: cn(
-          'prose prose-sm sm:prose-base lg:prose-lg dark:prose-invert max-w-none',
+          'prose prose-base lg:prose-lg dark:prose-invert max-w-none',
           'h-full min-h-screen w-full focus:outline-none',
-          'px-[max(calc(50%-40ch),1.5rem)] py-12'
+          'px-[max(calc(50%-40ch),1.5rem)] py-8 md:py-12'
         ),
       },
     },
     extensions: [StarterKit],
-    content: content ?? 'Hello World!',
+    content: initialContent,
     editable,
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
