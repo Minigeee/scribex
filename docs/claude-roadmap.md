@@ -7,23 +7,26 @@
 - [ ] Explore daily quest mechanics
 
 ## Phase 1: Foundation (3-4 weeks)
-- [X] Define technical stack and architecture
-- [X] Establish core data models
-- [X] Set up development environment
-- [X] Create authentication system
-- [X] Design basic navigation flow
+
+- [x] Define technical stack and architecture
+- [x] Establish core data models
+- [x] Set up development environment
+- [x] Create authentication system
+- [x] Design basic navigation flow
 
 ## Phase 2: Core Writing Experience (4-5 weeks)
-- [X] Add seed data for lessons
-- [X] Plan REDI lesson framework
+
+- [x] Add seed data for lessons
+- [x] Plan REDI lesson framework
 - [ ] Design exercise templates
-- [X] Implement progress tracking
-- [X] Create scoring system (90% threshold)
-- [X] Basic project text editor
-- [X] Implement "Writer's Block" suggestion feature
-- [X] Build basic AI evaluation for structured exercises
+- [x] Implement progress tracking
+- [x] Create scoring system (90% threshold)
+- [x] Basic project text editor
+- [x] Implement "Writer's Block" suggestion feature
+- [x] Build basic AI evaluation for structured exercises
 
 ## Phase 3: RPG Framework (4-5 weeks)
+
 - [ ] Design skill tree visualization
 - [ ] Implement character profile system
 - [ ] Create basic inventory system
@@ -33,6 +36,7 @@
 - [ ] Create daily quest system
 
 ## Phase 4: Social & Engagement Features (3-4 weeks)
+
 - [ ] Build basic faction system
 - [ ] Implement peer review functionality
 - [ ] Create streak and consistency tracking
@@ -41,6 +45,7 @@
 - [ ] Build achievement tracking
 
 ## Phase 5: Content & Progression (3-4 weeks)
+
 - [ ] Create initial REDI lesson content
 - [ ] Design starter OWL quests
 - [ ] Implement daily writing prompts
@@ -49,6 +54,7 @@
 - [ ] Design simple personal space customization
 
 ## Phase 6: AI & Feedback Systems (4-5 weeks)
+
 - [ ] Implement basic NLP for writing assessment
 - [ ] Create feedback generation system
 - [ ] Build peer review distribution algorithm
@@ -56,6 +62,7 @@
 - [ ] Implement moderation tools for peer reviews
 
 ## Phase 7: Polish & Integration (3-4 weeks)
+
 - [ ] Refine UI/UX with basic themed elements
 - [ ] Optimize performance for target devices
 - [ ] Implement data synchronization
@@ -64,6 +71,7 @@
 - [ ] Fix critical bugs and issues
 
 ## Phase 8: Testing & Launch Preparation (2-3 weeks)
+
 - [ ] Conduct user testing with target audience
 - [ ] Implement feedback from testing
 - [ ] Prepare launch materials
@@ -73,6 +81,7 @@
 ## MVP Core Features Focus
 
 ### Writing Experience
+
 - Basic REDI skill tree with fundamental lessons
 - Simple OWL world map with starter quests
 - Daily writing prompts system
@@ -80,6 +89,7 @@
 - Peer review functionality
 
 ### RPG Elements
+
 - Character profiles with basic customization
 - Simple progression system
 - Basic inventory and collectibles
@@ -87,12 +97,14 @@
 - Achievement tracking
 
 ### Engagement Mechanics
+
 - Streak tracking and daily quests
 - Basic leaderboards
 - Simple notification system
 - Core social features
 
 ### Technical Foundation
+
 - Cross-platform functionality
 - Secure user data management
 - Basic offline capabilities

@@ -106,13 +106,16 @@ import { generateCompletion, systemMessage, userMessage } from '@/lib/utils/ai';
 // Use this if on client side
 // import { generateCompletion } from '@/app/actions/generate-completion';
 
-const response = await generateCompletion({
-  messages: [
-    systemMessage('You are a helpful assistant.'),
-    userMessage('Tell me about React')
-  ]
-}, {
-  provider: 'google', // 'openai', 'anthropic', 'mistral', 'groq', 'custom'
-  modelName: 'gemini-2.0-flash'
-});
+const response = await generateCompletion(
+  {
+    messages: [
+      systemMessage('You are a helpful assistant.'),
+      userMessage('Tell me about React'),
+    ],
+  },
+  {
+    provider: 'google', // 'openai', 'anthropic', 'mistral', 'groq', 'custom'
+    modelName: 'gemini-2.0-flash',
+  }
+);
 ```

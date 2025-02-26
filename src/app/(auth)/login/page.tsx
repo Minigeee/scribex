@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 interface LoginPageProps {
-  searchParams?: { 
+  searchParams?: {
     tab?: string;
     callbackUrl?: string;
   };
@@ -28,20 +28,22 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
   // Determine which tab to show by default
   const defaultTab = searchParams?.tab === 'register' ? 'register' : 'login';
-  
+
   // Get the callback URL from query params or default to dashboard
   const callbackUrl = searchParams?.callbackUrl || '/map';
 
   return (
     <>
       <div className='flex flex-col space-y-2 text-center'>
-        <h1 className='text-2xl font-semibold tracking-tight'>Welcome to ScribeX</h1>
+        <h1 className='text-2xl font-semibold tracking-tight'>
+          Welcome to ScribeX
+        </h1>
         <p className='text-sm text-muted-foreground'>
           Sign in to your account or create a new one
         </p>
       </div>
-      <AuthForm 
-        defaultTab={defaultTab as 'login' | 'register'} 
+      <AuthForm
+        defaultTab={defaultTab as 'login' | 'register'}
         callbackUrl={callbackUrl}
       />
     </>

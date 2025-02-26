@@ -1,7 +1,6 @@
 'use server';
 
-import { generateCompletion } from '@/lib/utils/ai';
-import { systemMessage, userMessage } from '@/lib/utils/ai';
+import { generateCompletion, systemMessage, userMessage } from '@/lib/utils/ai';
 
 export type ConversationStarter = {
   title: string;
@@ -24,7 +23,9 @@ export async function generateConversationStarters(
           Return the results as a JSON array with 'title' and 'prompt' fields for each starter. 
           The title should be short (2-4 words) and the prompt should be a complete question or request.`
         ),
-        userMessage(`Generate ${count} diverse conversation starters for chatting with an AI assistant.`),
+        userMessage(
+          `Generate ${count} diverse conversation starters for chatting with an AI assistant.`
+        ),
       ],
     });
 
@@ -39,36 +40,38 @@ export async function generateConversationStarters(
 
     // Fallback starters if parsing fails
     return [
-      { 
-        title: "Explain a concept", 
-        prompt: "Can you explain how machine learning works in simple terms?" 
+      {
+        title: 'Explain a concept',
+        prompt: 'Can you explain how machine learning works in simple terms?',
       },
-      { 
-        title: "Creative writing", 
-        prompt: "Write a short story about a robot discovering emotions." 
+      {
+        title: 'Creative writing',
+        prompt: 'Write a short story about a robot discovering emotions.',
       },
-      { 
-        title: "Problem solving", 
-        prompt: "I'm trying to optimize my React application. What are some best practices?" 
+      {
+        title: 'Problem solving',
+        prompt:
+          "I'm trying to optimize my React application. What are some best practices?",
       },
     ];
   } catch (error) {
     console.error('Error generating conversation starters:', error);
-    
+
     // Return default starters if generation fails
     return [
-      { 
-        title: "Explain a concept", 
-        prompt: "Can you explain how machine learning works in simple terms?" 
+      {
+        title: 'Explain a concept',
+        prompt: 'Can you explain how machine learning works in simple terms?',
       },
-      { 
-        title: "Creative writing", 
-        prompt: "Write a short story about a robot discovering emotions." 
+      {
+        title: 'Creative writing',
+        prompt: 'Write a short story about a robot discovering emotions.',
       },
-      { 
-        title: "Problem solving", 
-        prompt: "I'm trying to optimize my React application. What are some best practices?" 
+      {
+        title: 'Problem solving',
+        prompt:
+          "I'm trying to optimize my React application. What are some best practices?",
       },
     ];
   }
-} 
+}

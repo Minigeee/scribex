@@ -1,7 +1,6 @@
 'use server';
 
-import { generateCompletion } from '@/lib/utils/ai';
-import { systemMessage, userMessage } from '@/lib/utils/ai';
+import { generateCompletion, systemMessage, userMessage } from '@/lib/utils/ai';
 import { ConversationStarter } from './generate-conversation-starters';
 
 /**
@@ -65,36 +64,42 @@ export async function generateResearchQuestions(
 
     // Fallback questions if parsing fails
     return [
-      { 
-        title: "Key statistics", 
-        prompt: "What are the most recent statistics or data points related to this topic?" 
+      {
+        title: 'Key statistics',
+        prompt:
+          'What are the most recent statistics or data points related to this topic?',
       },
-      { 
-        title: "Expert opinions", 
-        prompt: "What do experts in this field say about the main points in my writing?" 
+      {
+        title: 'Expert opinions',
+        prompt:
+          'What do experts in this field say about the main points in my writing?',
       },
-      { 
-        title: "Counter arguments", 
-        prompt: "What are the strongest counter-arguments to the position I've taken?" 
+      {
+        title: 'Counter arguments',
+        prompt:
+          "What are the strongest counter-arguments to the position I've taken?",
       },
     ];
   } catch (error) {
     console.error('Error generating research questions:', error);
-    
+
     // Return default questions if generation fails
     return [
-      { 
-        title: "Key statistics", 
-        prompt: "What are the most recent statistics or data points related to this topic?" 
+      {
+        title: 'Key statistics',
+        prompt:
+          'What are the most recent statistics or data points related to this topic?',
       },
-      { 
-        title: "Expert opinions", 
-        prompt: "What do experts in this field say about the main points in my writing?" 
+      {
+        title: 'Expert opinions',
+        prompt:
+          'What do experts in this field say about the main points in my writing?',
       },
-      { 
-        title: "Counter arguments", 
-        prompt: "What are the strongest counter-arguments to the position I've taken?" 
+      {
+        title: 'Counter arguments',
+        prompt:
+          "What are the strongest counter-arguments to the position I've taken?",
       },
     ];
   }
-} 
+}

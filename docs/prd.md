@@ -1,6 +1,7 @@
 # ScribexX - Writing App Specification Sheet
 
 ## Overview
+
 ScribexX is an RPG-style writing app designed for junior high students and surrounding grades. It balances
 direct instruction for excellence with creative freedom, empowering students to express
 their ideas and improve their writing skills. The app leverages gamification through RPG mechanics,
@@ -11,11 +12,12 @@ interactive learning, engaging aesthetics, intuitive UI, and AI-assisted feedbac
 ### 1. Two-Pronged Approach to Writing Instruction
 
 #### A. Reflective Exercise on Direct Instruction (REDI) - Skill Tree System
+
 - Functions as an RPG skill tree where each node represents a writing lesson or skill.
 - Focuses on the analytical side of writing.
 - Presents structured lessons and exercises organized in branching skill trees.
 - Lessons are categorized under three layers of writing instruction (Mechanics,
-Sequencing, and Voice).
+  Sequencing, and Voice).
 - Students complete exercises and must reach 90% accuracy to proceed.
 - Unlocking nodes rewards students with:
   - Stat points to enhance their character abilities
@@ -25,12 +27,13 @@ Sequencing, and Voice).
 - AI-generated levels ensure a vast pool of content.
 
 #### B. Open World Learning (OWL) - Explorable World Map
+
 - Presented as an actual open world map with a traversable graph of nodes.
 - Each node represents a writing quest with specific rewards and challenges.
 - Students unlock nodes sequentially, representing exploration of the writing world.
 - Inspired by sandbox-style games and Codecademy's self-driven learning.
 - Encourages real-world writing applications (e.g., journalism, persuasive essays,
-screenplays, product descriptions, etc.).
+  screenplays, product descriptions, etc.).
 - AI reviews writing in real-time, giving structured feedback.
 - Students choose topics of interest while maintaining assigned genre variety.
 - A "Writer's Block" button suggests new ideas when students are stuck.
@@ -47,16 +50,18 @@ screenplays, product descriptions, etc.).
   - Accessible even with limited time availability
 
 ### 2. Three-Layer Writing Instruction Model
+
 1. Mechanics & Grammar: Covers spelling, sentence structure, and syntax to build
-automaticity.
+   automaticity.
 2. Sequencing & Logic: Focuses on argument structure, logical flow, and content
-generation.
+   generation.
 3. Voice & Rhetoric: Covers audience awareness, word choice, rhythm, and persuasive
-techniques.
+   techniques.
 
 ### 3. UI/UX and RPG Gamification
 
 #### A. Home Screen & Navigation
+
 - The home screen functions as a dashboard displaying:
   - Recent notifications and achievements
   - Daily/weekly streaks and goals
@@ -72,6 +77,7 @@ techniques.
 - Navigation is enabled via swipe gestures and button selection.
 
 #### B. RPG Learning Experience
+
 - Character Development:
   - Students create and customize their own avatar
   - Multiple character classes with different writing specialties (e.g., Poet, Journalist, Novelist)
@@ -93,6 +99,7 @@ techniques.
   - Faction headquarters that can be collectively decorated and upgraded
 
 #### C. Collection and Base Building Systems
+
 - Personal Writer's Haven:
   - Each student has a customizable personal space/home
   - Completing writing tasks earns decorative items and furniture
@@ -112,6 +119,7 @@ techniques.
   - Special limited-time collectibles from world events
 
 #### D. World Events and Competitions
+
 - Periodic global writing challenges that appear on the map as special events
 - All participants receive the same writing prompt related to the event theme
 - Individual and faction contributions are scored based on writing quality
@@ -121,6 +129,7 @@ techniques.
 - Results visibly impact the game world, reinforcing that writing shapes reality
 
 #### E. Crowd-Sourced Peer Review System
+
 - Students can evaluate 3-5 writing pieces daily from peers outside their classroom
 - Participation rewards students with special currency or items
 - Multiple reviewers evaluate each submission for balanced feedback
@@ -130,19 +139,20 @@ techniques.
 - Quality of reviews is tracked to ensure constructive feedback
 
 ### 4. AI Integration
+
 - AI provides immediate and objective feedback for both REDI (skill tree) and OWL (quest-based writing).
 - AI assists with real-time feedback on structure, grammar, and clarity.
 - No AI-generated content for writing; only feedback-based AI to ensure students
-genuinely develop their skills.
+  genuinely develop their skills.
 - A "Writer's Block" button suggests prompts for students who need inspiration.
 - AI-powered NPCs that guide students through the world and provide contextual assistance.
 - AI evaluates writing submissions for world events and competitions.
 - AI works alongside the crowd-sourced peer review system to provide comprehensive feedback.
 
-
 ## Design & Aesthetic Guidelines
 
 ### 1. Theme & Mood
+
 - Synthwave + Cyberpunk + Botanical Futurism
 - Bright neon colors combined with metallic grays and sleek whites.
 - A balance between visually engaging design and a distraction-free writing space.
@@ -151,6 +161,7 @@ genuinely develop their skills.
 - Personal and faction spaces can be customized with different aesthetic themes.
 
 ### 2. Inspiration & Conceptual Approach
+
 - Language is as powerful as coding, and the app should convey this visually.
 - Writing is about creating the future, not just following rules.
 - The interface should communicate a sense of limitless potential and mastery.
@@ -160,11 +171,13 @@ genuinely develop their skills.
 ## Technical Requirements
 
 ### 1. Platform & Compatibility
+
 - Mobile-first design (iOS & Android compatibility required).
 - Cloud-based storage for user progress, character data, and writing projects.
 - Offline mode for writing practice with auto-sync upon reconnection.
 
 ### 2. AI & Backend
+
 - Natural Language Processing (NLP) for AI feedback on writing quality.
 - Progress tracking: Adaptive learning based on student performance.
 - Secure student data storage, compliant with COPPA and FERPA regulations.
@@ -175,6 +188,7 @@ genuinely develop their skills.
 - Peer review distribution and evaluation algorithms.
 
 ### 3. User Profiles & Permissions
+
 - Student accounts with character profiles and progress tracking.
 - Teacher/parent accounts with classroom management features.
 - Customizable controls for difficulty, AI interaction, and content selection.
@@ -183,6 +197,7 @@ genuinely develop their skills.
 - Peer review participation and quality metrics.
 
 ## Gender Inclusivity Strategy
+
 - Multiple character archetypes that break traditional gender stereotypes.
 - Diverse narrative themes that appeal to various interests (adventure, relationship-building, problem-solving, creative expression).
 - Customization options that allow for personal expression beyond binary gender choices.
@@ -197,6 +212,7 @@ genuinely develop their skills.
   - Creative expression through world-building
 
 ## Next Steps
+
 1. Wireframe UI/UX design for core app screens including RPG elements.
 2. Develop character progression system and faction mechanics.
 3. Design skill tree structure and open world map.

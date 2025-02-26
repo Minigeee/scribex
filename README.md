@@ -11,12 +11,14 @@ ScribexX transforms writing education by balancing direct instruction with creat
 ### Two-Pronged Learning Approach
 
 #### REDI (Reflective Exercise on Direct Instruction)
+
 - RPG-style skill tree for writing lessons
 - Three-layer instruction model (Mechanics, Sequencing, Voice)
 - Structured exercises with 90% mastery requirement
 - Rewards include stat points, currency, and special abilities
 
 #### OWL (Open World Learning)
+
 - Explorable world map with writing quests
 - Real-world writing applications across diverse genres
 - Location-specific writing prompts
@@ -43,6 +45,7 @@ ScribexX transforms writing education by balancing direct instruction with creat
 ## 🎨 Design Aesthetic
 
 ScribexX features a unique blend of:
+
 - Synthwave + Cyberpunk + Botanical Futurism
 - Bright neon colors with metallic grays and sleek whites
 - Minimalist, smooth, and glassy UI with organic elements

@@ -1,4 +1,4 @@
-import { Card, CardContent, CardTitle, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
@@ -66,7 +66,12 @@ export function ArticleContent({ content, className }: ArticleContentProps) {
   }
 
   return (
-    <div className={cn('article-content prose space-y-6 dark:prose-invert', className)}>
+    <div
+      className={cn(
+        'article-content prose space-y-6 dark:prose-invert',
+        className
+      )}
+    >
       <ReactMarkdown
         remarkPlugins={[
           remarkGfm,

@@ -1,17 +1,14 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { createClient } from '@/lib/supabase/client';
 import {
-  ArrowLeftIcon,
   CheckCircleIcon,
   DownloadIcon,
   SaveIcon,
   Share2Icon,
   TrashIcon,
 } from 'lucide-react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -102,66 +99,66 @@ export function ProjectActionsPanel({
       <h2 className='text-lg font-semibold'>Actions</h2>
 
       <Button
-          variant='default'
-          className='w-full justify-start'
-          onClick={onSave}
-          disabled={isSaving}
-        >
-          <SaveIcon className='mr-2 h-4 w-4' />
-          {isSaving ? 'Saving...' : 'Save Changes'}
-        </Button>
+        variant='default'
+        className='w-full justify-start'
+        onClick={onSave}
+        disabled={isSaving}
+      >
+        <SaveIcon className='mr-2 h-4 w-4' />
+        {isSaving ? 'Saving...' : 'Save Changes'}
+      </Button>
 
-        {status !== 'completed' && (
-          <Button
-            variant='outline'
-            className='w-full justify-start'
-            onClick={() => handleStatusChange('completed')}
-            disabled={isChangingStatus}
-          >
-            <CheckCircleIcon className='mr-2 h-4 w-4' />
-            Mark as Completed
-          </Button>
-        )}
-
-        {status === 'completed' && (
-          <Button
-            variant='outline'
-            className='w-full justify-start'
-            onClick={() => handleStatusChange('in_progress')}
-            disabled={isChangingStatus}
-          >
-            <CheckCircleIcon className='mr-2 h-4 w-4' />
-            Mark as In Progress
-          </Button>
-        )}
-
+      {status !== 'completed' && (
         <Button
           variant='outline'
           className='w-full justify-start'
-          onClick={handleExport}
+          onClick={() => handleStatusChange('completed')}
+          disabled={isChangingStatus}
         >
-          <DownloadIcon className='mr-2 h-4 w-4' />
-          Export
+          <CheckCircleIcon className='mr-2 h-4 w-4' />
+          Mark as Completed
         </Button>
+      )}
 
+      {status === 'completed' && (
         <Button
           variant='outline'
           className='w-full justify-start'
-          onClick={handleShare}
+          onClick={() => handleStatusChange('in_progress')}
+          disabled={isChangingStatus}
         >
-          <Share2Icon className='mr-2 h-4 w-4' />
-          Share
+          <CheckCircleIcon className='mr-2 h-4 w-4' />
+          Mark as In Progress
         </Button>
+      )}
 
-        <Button
-          variant='destructive'
-          className='w-full justify-start'
-          onClick={handleDelete}
-          disabled={isDeleting}
-        >
-          <TrashIcon className='mr-2 h-4 w-4' />
-          {isDeleting ? 'Deleting...' : 'Delete Project'}
-        </Button>
+      <Button
+        variant='outline'
+        className='w-full justify-start'
+        onClick={handleExport}
+      >
+        <DownloadIcon className='mr-2 h-4 w-4' />
+        Export
+      </Button>
+
+      <Button
+        variant='outline'
+        className='w-full justify-start'
+        onClick={handleShare}
+      >
+        <Share2Icon className='mr-2 h-4 w-4' />
+        Share
+      </Button>
+
+      <Button
+        variant='destructive'
+        className='w-full justify-start'
+        onClick={handleDelete}
+        disabled={isDeleting}
+      >
+        <TrashIcon className='mr-2 h-4 w-4' />
+        {isDeleting ? 'Deleting...' : 'Delete Project'}
+      </Button>
     </div>
   );
 }

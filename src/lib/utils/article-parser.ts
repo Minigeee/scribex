@@ -33,7 +33,7 @@ export function parseArticleContent(content: string): ParsedArticle {
     if (line.startsWith('```') && !inCodeBlock) {
       inCodeBlock = true;
       const blockInfo = line.slice(3).trim();
-      
+
       if (blockInfo.startsWith('example')) {
         codeBlockType = 'example';
         codeBlockCaption = blockInfo.slice(7).trim();
@@ -46,7 +46,7 @@ export function parseArticleContent(content: string): ParsedArticle {
           type: 'code',
           content: '',
           language,
-          caption: codeBlockCaption || undefined
+          caption: codeBlockCaption || undefined,
         };
       }
       codeContent = '';
@@ -59,7 +59,7 @@ export function parseArticleContent(content: string): ParsedArticle {
         sections.push({
           type: 'example',
           content: codeContent,
-          caption: codeBlockCaption || undefined
+          caption: codeBlockCaption || undefined,
         });
       } else if (codeBlockType === 'code' && currentSection) {
         currentSection.content = codeContent;
@@ -80,7 +80,7 @@ export function parseArticleContent(content: string): ParsedArticle {
       sections.push({
         type: 'heading',
         content: line.slice(2),
-        level: 1
+        level: 1,
       });
       continue;
     }
@@ -89,7 +89,7 @@ export function parseArticleContent(content: string): ParsedArticle {
       sections.push({
         type: 'heading',
         content: line.slice(3),
-        level: 2
+        level: 2,
       });
       continue;
     }
@@ -98,7 +98,7 @@ export function parseArticleContent(content: string): ParsedArticle {
       sections.push({
         type: 'heading',
         content: line.slice(4),
-        level: 3
+        level: 3,
       });
       continue;
     }
@@ -108,24 +108,28 @@ export function parseArticleContent(content: string): ParsedArticle {
       const captionEnd = line.indexOf('](');
       const caption = line.slice(2, captionEnd);
       const url = line.slice(captionEnd + 2, line.length - 1);
-      
+
       sections.push({
         type: 'image',
         content: url,
-        caption
+        caption,
       });
       continue;
     }
 
     // Handle paragraphs (including empty lines)
-    if (line.trim() === '' && sections.length > 0 && sections[sections.length - 1].type === 'paragraph') {
+    if (
+      line.trim() === '' &&
+      sections.length > 0 &&
+      sections[sections.length - 1].type === 'paragraph'
+    ) {
       // Add a line break to the existing paragraph
       sections[sections.length - 1].content += '\n\n';
     } else if (line.trim() !== '') {
       // If the previous section was a paragraph and didn't end with a double newline, append to it
       if (
-        sections.length > 0 && 
-        sections[sections.length - 1].type === 'paragraph' && 
+        sections.length > 0 &&
+        sections[sections.length - 1].type === 'paragraph' &&
         !sections[sections.length - 1].content.endsWith('\n\n')
       ) {
         sections[sections.length - 1].content += ' ' + line;
@@ -133,11 +137,11 @@ export function parseArticleContent(content: string): ParsedArticle {
         // Otherwise create a new paragraph
         sections.push({
           type: 'paragraph',
-          content: line
+          content: line,
         });
       }
     }
   }
 
   return { sections };
-} 
+}

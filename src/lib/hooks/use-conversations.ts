@@ -1,7 +1,7 @@
 import type { Tables } from '@/lib/database.types';
 import { createClient } from '@/lib/supabase/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 export type Conversation = Tables<'conversations'> & {
   messages: Tables<'messages'>[];
@@ -53,13 +53,13 @@ export function useConversations(userId: string | undefined) {
   // Get current conversation messages
   const messages = useMemo(() => {
     if (!currentConversationId) return [];
-    
+
     const currentConversation = conversations.find(
       (conv) => conv.id === currentConversationId
     );
-    
+
     if (!currentConversation) return [];
-    
+
     return currentConversation.messages
       .sort(
         (a, b) =>
@@ -75,11 +75,7 @@ export function useConversations(userId: string | undefined) {
 
   // Set initial conversation if none selected
   useMemo(() => {
-    if (
-      conversations.length > 0 && 
-      !currentConversationId && 
-      !isLoading
-    ) {
+    if (conversations.length > 0 && !currentConversationId && !isLoading) {
       setCurrentConversationId(conversations[0].id);
     }
   }, [conversations, currentConversationId, isLoading]);
@@ -96,7 +92,9 @@ export function useConversations(userId: string | undefined) {
 
   // Mutation for sending a message
   const sendMessageMutation = useMutation({
-    mutationFn: async (content: string): Promise<{ messageId: string; conversationId: string } | undefined> => {
+    mutationFn: async (
+      content: string
+    ): Promise<{ messageId: string; conversationId: string } | undefined> => {
       if (!content.trim() || !userId) return;
 
       try {
@@ -119,9 +117,11 @@ export function useConversations(userId: string | undefined) {
 
           conversationId = newConversation.id;
           setCurrentConversationId(conversationId);
-          
+
           // Invalidate conversations query to refresh the list
-          queryClient.invalidateQueries({ queryKey: ['conversations', userId] });
+          queryClient.invalidateQueries({
+            queryKey: ['conversations', userId],
+          });
         } else {
           // Update last_message_at for existing conversation
           await supabase
@@ -154,7 +154,7 @@ export function useConversations(userId: string | undefined) {
     },
     onMutate: async (content) => {
       setIsLoading(true);
-      
+
       // Optimistically update UI
       if (currentConversationId) {
         // For existing conversation, add message optimistically
@@ -164,20 +164,23 @@ export function useConversations(userId: string | undefined) {
           content: content.trim(),
           created_at: new Date().toISOString(),
         };
-        
-        queryClient.setQueryData(['conversations', userId], (old: Conversation[] | undefined) => {
-          if (!old) return [];
-          
-          return old.map(conv => {
-            if (conv.id === currentConversationId) {
-              return {
-                ...conv,
-                messages: [...conv.messages, tempMessage]
-              };
-            }
-            return conv;
-          });
-        });
+
+        queryClient.setQueryData(
+          ['conversations', userId],
+          (old: Conversation[] | undefined) => {
+            if (!old) return [];
+
+            return old.map((conv) => {
+              if (conv.id === currentConversationId) {
+                return {
+                  ...conv,
+                  messages: [...conv.messages, tempMessage],
+                };
+              }
+              return conv;
+            });
+          }
+        );
       }
     },
     onSettled: () => {
@@ -187,8 +190,15 @@ export function useConversations(userId: string | undefined) {
 
   // Mutation for adding an AI message
   const addAIMessageMutation = useMutation({
-    mutationFn: async ({ content, conversationId }: { content: string; conversationId?: string }) => {
-      const targetConversationId = conversationId ?? currentConversationId ?? undefined;
+    mutationFn: async ({
+      content,
+      conversationId,
+    }: {
+      content: string;
+      conversationId?: string;
+    }) => {
+      const targetConversationId =
+        conversationId ?? currentConversationId ?? undefined;
       if (!targetConversationId || !content.trim()) return;
 
       // Save AI response to database
@@ -210,7 +220,7 @@ export function useConversations(userId: string | undefined) {
     onMutate: async ({ content, conversationId }) => {
       const targetConversationId = conversationId ?? currentConversationId;
       if (!targetConversationId) return;
-      
+
       // Optimistically update UI
       const tempMessage = {
         id: `temp-${Date.now()}`,
@@ -218,20 +228,23 @@ export function useConversations(userId: string | undefined) {
         content,
         created_at: new Date().toISOString(),
       };
-      
-      queryClient.setQueryData(['conversations', userId], (old: Conversation[] | undefined) => {
-        if (!old) return [];
-        
-        return old.map(conv => {
-          if (conv.id === targetConversationId) {
-            return {
-              ...conv,
-              messages: [...conv.messages, tempMessage]
-            };
-          }
-          return conv;
-        });
-      });
+
+      queryClient.setQueryData(
+        ['conversations', userId],
+        (old: Conversation[] | undefined) => {
+          if (!old) return [];
+
+          return old.map((conv) => {
+            if (conv.id === targetConversationId) {
+              return {
+                ...conv,
+                messages: [...conv.messages, tempMessage],
+              };
+            }
+            return conv;
+          });
+        }
+      );
     },
     onSuccess: () => {
       // Invalidate and refetch conversations

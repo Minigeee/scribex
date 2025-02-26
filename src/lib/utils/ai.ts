@@ -3,7 +3,13 @@ import { z } from 'zod';
 /**
  * Configuration for AI model providers
  */
-export type AIModelProvider = 'openai' | 'anthropic' | 'mistral' | 'google' | 'groq' | 'custom';
+export type AIModelProvider =
+  | 'openai'
+  | 'anthropic'
+  | 'mistral'
+  | 'google'
+  | 'groq'
+  | 'custom';
 
 /**
  * Base configuration for AI models
@@ -68,7 +74,13 @@ export interface CustomConfig extends AIModelConfig {
 /**
  * Union type of all model configurations
  */
-export type ModelConfig = OpenAIConfig | AnthropicConfig | MistralConfig | GoogleConfig | GroqConfig | CustomConfig;
+export type ModelConfig =
+  | OpenAIConfig
+  | AnthropicConfig
+  | MistralConfig
+  | GoogleConfig
+  | GroqConfig
+  | CustomConfig;
 
 /**
  * Message role types
@@ -118,14 +130,19 @@ export const envSchema = z.object({
   MISTRAL_API_KEY: z.string().optional(),
   GOOGLE_API_KEY: z.string().optional(),
   GROQ_API_KEY: z.string().optional(),
-  DEFAULT_AI_PROVIDER: z.enum(['openai', 'anthropic', 'mistral', 'google', 'groq', 'custom']).default('openai'),
+  DEFAULT_AI_PROVIDER: z
+    .enum(['openai', 'anthropic', 'mistral', 'google', 'groq', 'custom'])
+    .default('openai'),
   DEFAULT_AI_MODEL: z.string().default('gpt-3.5-turbo'),
 });
 
 /**
  * Default configurations for different providers
  */
-export const defaultConfigs: Record<AIModelProvider, Omit<AIModelConfig, 'apiKey'>> = {
+export const defaultConfigs: Record<
+  AIModelProvider,
+  Omit<AIModelConfig, 'apiKey'>
+> = {
   openai: {
     provider: 'openai',
     baseUrl: 'https://api.openai.com/v1',
@@ -233,7 +250,7 @@ function createCompletionPayload(
  */
 function getEndpointUrl(config: ModelConfig): string {
   const { provider, baseUrl } = config;
-  
+
   if (!baseUrl) {
     switch (provider) {
       case 'openai':
@@ -273,7 +290,7 @@ function getEndpointUrl(config: ModelConfig): string {
  */
 function getHeaders(config: ModelConfig): Record<string, string> {
   const { provider, apiKey } = config;
-  
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
@@ -319,11 +336,13 @@ function parseCompletionResponse(
         id: data.id,
         text: data.choices[0].message.content,
         model: modelName,
-        usage: data.usage ? {
-          promptTokens: data.usage.prompt_tokens,
-          completionTokens: data.usage.completion_tokens,
-          totalTokens: data.usage.total_tokens,
-        } : undefined,
+        usage: data.usage
+          ? {
+              promptTokens: data.usage.prompt_tokens,
+              completionTokens: data.usage.completion_tokens,
+              totalTokens: data.usage.total_tokens,
+            }
+          : undefined,
       };
     case 'anthropic':
       return {
@@ -393,7 +412,8 @@ export function createModelConfig(
   }
 
   // Determine provider
-  const finalProvider = provider || (env.DEFAULT_AI_PROVIDER as AIModelProvider);
+  const finalProvider =
+    provider || (env.DEFAULT_AI_PROVIDER as AIModelProvider);
 
   // Get default config for the provider
   const defaultConfig = defaultConfigs[finalProvider];
@@ -508,4 +528,4 @@ export function assistantMessage(content: string): Message {
  */
 export function functionMessage(content: string, name: string): Message {
   return { role: 'function', content, name };
-} 
+}

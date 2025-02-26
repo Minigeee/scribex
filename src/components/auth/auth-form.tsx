@@ -23,11 +23,11 @@ interface AuthFormProps extends React.HTMLAttributes<HTMLDivElement> {
   callbackUrl?: string;
 }
 
-export function AuthForm({ 
-  className, 
-  defaultTab = 'login', 
+export function AuthForm({
+  className,
+  defaultTab = 'login',
   callbackUrl = '/dashboard',
-  ...props 
+  ...props
 }: AuthFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -113,15 +113,13 @@ export function AuthForm({
 
       // Create a profile for the new user
       if (authData?.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: authData.user.id,
-            username: registerData.email.split('@')[0], // Default username from email
-            display_name: null,
-            user_type: 'student', // Default user type
-            avatar_url: null,
-          });
+        const { error: profileError } = await supabase.from('profiles').insert({
+          id: authData.user.id,
+          username: registerData.email.split('@')[0], // Default username from email
+          display_name: null,
+          user_type: 'student', // Default user type
+          avatar_url: null,
+        });
 
         if (profileError) {
           console.error('Error creating profile:', profileError);
@@ -140,57 +138,57 @@ export function AuthForm({
 
   return (
     <div className={cn('grid gap-6', className)} {...props}>
-      <Tabs defaultValue={defaultTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="login">Sign In</TabsTrigger>
-          <TabsTrigger value="register">Sign Up</TabsTrigger>
+      <Tabs defaultValue={defaultTab} className='w-full'>
+        <TabsList className='grid w-full grid-cols-2'>
+          <TabsTrigger value='login'>Sign In</TabsTrigger>
+          <TabsTrigger value='register'>Sign Up</TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="login">
+
+        <TabsContent value='login'>
           <Card>
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+            <CardHeader className='space-y-1'>
+              <CardTitle className='text-2xl font-bold'>Sign in</CardTitle>
               <CardDescription>
                 Enter your email and password to sign in to your account
               </CardDescription>
             </CardHeader>
             <form onSubmit={handleLoginSubmit}>
-              <CardContent className="grid gap-4">
+              <CardContent className='grid gap-4'>
                 {error && (
                   <div className='rounded-md bg-red-500 p-3 text-sm text-white'>
                     {error}
                   </div>
                 )}
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
+                <div className='grid gap-2'>
+                  <Label htmlFor='email'>Email</Label>
                   <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="name@example.com"
-                    autoComplete="email"
+                    id='email'
+                    name='email'
+                    type='email'
+                    placeholder='name@example.com'
+                    autoComplete='email'
                     disabled={isLoading}
                     value={loginData.email}
                     onChange={handleLoginChange}
                     required
                   />
                 </div>
-                <div className="grid gap-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Password</Label>
+                <div className='grid gap-2'>
+                  <div className='flex items-center justify-between'>
+                    <Label htmlFor='password'>Password</Label>
                     <Link
-                      href="/forgot-password"
-                      className="text-sm text-primary underline-offset-4 hover:underline"
+                      href='/forgot-password'
+                      className='text-sm text-primary underline-offset-4 hover:underline'
                     >
                       Forgot password?
                     </Link>
                   </div>
                   <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    placeholder="••••••••"
-                    autoComplete="current-password"
+                    id='password'
+                    name='password'
+                    type='password'
+                    placeholder='••••••••'
+                    autoComplete='current-password'
                     disabled={isLoading}
                     value={loginData.password}
                     onChange={handleLoginChange}
@@ -199,65 +197,69 @@ export function AuthForm({
                 </div>
               </CardContent>
               <CardFooter>
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button type='submit' className='w-full' disabled={isLoading}>
                   {isLoading ? 'Signing in...' : 'Sign in'}
                 </Button>
               </CardFooter>
             </form>
           </Card>
         </TabsContent>
-        
-        <TabsContent value="register">
+
+        <TabsContent value='register'>
           <Card>
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
+            <CardHeader className='space-y-1'>
+              <CardTitle className='text-2xl font-bold'>
+                Create an account
+              </CardTitle>
               <CardDescription>
                 Enter your email and create a password to sign up
               </CardDescription>
             </CardHeader>
             <form onSubmit={handleRegisterSubmit}>
-              <CardContent className="grid gap-4">
+              <CardContent className='grid gap-4'>
                 {error && (
                   <div className='rounded-md bg-red-500 p-3 text-sm text-white'>
                     {error}
                   </div>
                 )}
-                <div className="grid gap-2">
-                  <Label htmlFor="register-email">Email</Label>
+                <div className='grid gap-2'>
+                  <Label htmlFor='register-email'>Email</Label>
                   <Input
-                    id="register-email"
-                    name="email"
-                    type="email"
-                    placeholder="name@example.com"
-                    autoComplete="email"
+                    id='register-email'
+                    name='email'
+                    type='email'
+                    placeholder='name@example.com'
+                    autoComplete='email'
                     disabled={isLoading}
                     value={registerData.email}
                     onChange={handleRegisterChange}
                     required
                   />
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="register-password">Password</Label>
+                <div className='grid gap-2'>
+                  <Label htmlFor='register-password'>Password</Label>
                   <Input
-                    id="register-password"
-                    name="password"
-                    type="password"
-                    placeholder="••••••••"
-                    autoComplete="new-password"
+                    id='register-password'
+                    name='password'
+                    type='password'
+                    placeholder='••••••••'
+                    autoComplete='new-password'
                     disabled={isLoading}
                     value={registerData.password}
                     onChange={handleRegisterChange}
                     required
                   />
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="register-confirm-password">Confirm Password</Label>
+                <div className='grid gap-2'>
+                  <Label htmlFor='register-confirm-password'>
+                    Confirm Password
+                  </Label>
                   <Input
-                    id="register-confirm-password"
-                    name="confirmPassword"
-                    type="password"
-                    placeholder="••••••••"
-                    autoComplete="new-password"
+                    id='register-confirm-password'
+                    name='confirmPassword'
+                    type='password'
+                    placeholder='••••••••'
+                    autoComplete='new-password'
                     disabled={isLoading}
                     value={registerData.confirmPassword}
                     onChange={handleRegisterChange}
@@ -266,7 +268,7 @@ export function AuthForm({
                 </div>
               </CardContent>
               <CardFooter>
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button type='submit' className='w-full' disabled={isLoading}>
                   {isLoading ? 'Creating account...' : 'Create account'}
                 </Button>
               </CardFooter>
@@ -274,7 +276,7 @@ export function AuthForm({
           </Card>
         </TabsContent>
       </Tabs>
-      
+
       <p className='px-8 text-center text-sm text-muted-foreground'>
         By clicking continue, you agree to our{' '}
         <Link
@@ -294,4 +296,4 @@ export function AuthForm({
       </p>
     </div>
   );
-} 
+}

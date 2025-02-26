@@ -1,13 +1,7 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { Tables, TablesInsert } from "@/lib/database.types";
-import { z } from "zod";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { toast } from "sonner";
+import { generatePromptForGenre } from '@/app/actions/generate-prompt';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -16,29 +10,32 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  RadioGroup,
-  RadioGroupItem,
-} from "@/components/ui/radio-group";
-import { PlusIcon, RefreshCwIcon } from "lucide-react";
-import { generatePromptForGenre } from "@/app/actions/generate-prompt";
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Textarea } from '@/components/ui/textarea';
+import { Tables, TablesInsert } from '@/lib/database.types';
+import { createClient } from '@/lib/supabase/client';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { PlusIcon, RefreshCwIcon } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import { toast } from 'sonner';
+import { z } from 'zod';
 
 // Form schema for project creation
 const projectSchema = z.object({
-  title: z.string().min(1, "Title is required").max(100, "Title is too long"),
-  description: z.string().max(500, "Description is too long").optional(),
-  genre_id: z.coerce.number().min(1, "Please select a genre"),
-  prompt: z.string().max(1000, "Prompt is too long").optional(),
+  title: z.string().min(1, 'Title is required').max(100, 'Title is too long'),
+  description: z.string().max(500, 'Description is too long').optional(),
+  genre_id: z.coerce.number().min(1, 'Please select a genre'),
+  prompt: z.string().max(1000, 'Prompt is too long').optional(),
 });
 
 type ProjectFormValues = z.infer<typeof projectSchema>;
 
-type Genre = Tables<"genres">;
+type Genre = Tables<'genres'>;
 
 interface CreateProjectDialogProps {
   genres: Genre[];
@@ -63,20 +60,20 @@ export function CreateProjectDialog({ genres }: CreateProjectDialogProps) {
   } = useForm<ProjectFormValues>({
     resolver: zodResolver(projectSchema),
     defaultValues: {
-      title: "",
-      description: "",
-      prompt: "",
+      title: '',
+      description: '',
+      prompt: '',
     },
   });
 
-  const genreId = watch("genre_id");
+  const genreId = watch('genre_id');
 
   // Update selected genre when genre_id changes
   useEffect(() => {
     if (genreId) {
-      const genre = genres.find(g => g.id === Number(genreId));
+      const genre = genres.find((g) => g.id === Number(genreId));
       setSelectedGenre(genre || null);
-      
+
       // Generate a prompt when genre is selected
       if (genre) {
         generatePrompt(genre.id);
@@ -89,15 +86,15 @@ export function CreateProjectDialog({ genres }: CreateProjectDialogProps) {
   // Function to generate a prompt using server action
   const generatePrompt = async (genreId: number) => {
     setIsGeneratingPrompt(true);
-    
+
     try {
       // Call the server action to generate a prompt
       const promptText = await generatePromptForGenre(genreId);
-      setValue("prompt", promptText);
+      setValue('prompt', promptText);
     } catch (error) {
-      console.error("Error generating prompt:", error);
-      toast.error("Failed to generate prompt", {
-        description: "Please try again or enter your own prompt.",
+      console.error('Error generating prompt:', error);
+      toast.error('Failed to generate prompt', {
+        description: 'Please try again or enter your own prompt.',
       });
     } finally {
       setIsGeneratingPrompt(false);
@@ -113,31 +110,33 @@ export function CreateProjectDialog({ genres }: CreateProjectDialogProps) {
 
   const onSubmit = async (data: ProjectFormValues) => {
     setIsSubmitting(true);
-    
+
     // Show loading toast
-    const toastId = toast.loading("Creating your project...");
-    
+    const toastId = toast.loading('Creating your project...');
+
     try {
       // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) {
-        throw new Error("User not authenticated");
+        throw new Error('User not authenticated');
       }
 
       // Create new project
-      const newProject: TablesInsert<"projects"> = {
+      const newProject: TablesInsert<'projects'> = {
         title: data.title,
         description: data.description || null,
         genre_id: data.genre_id,
         user_id: user.id,
-        status: "draft",
-        content: "",
+        status: 'draft',
+        content: '',
         prompt: data.prompt || null,
       };
 
       const { data: project, error } = await supabase
-        .from("projects")
+        .from('projects')
         .insert(newProject)
         .select()
         .single();
@@ -149,23 +148,23 @@ export function CreateProjectDialog({ genres }: CreateProjectDialogProps) {
       // Close dialog and reset form
       setOpen(false);
       reset();
-      
+
       // Show success toast
-      toast.success("Project created successfully!", {
+      toast.success('Project created successfully!', {
         id: toastId,
         description: `Your project "${data.title}" is ready for writing.`,
       });
-      
+
       // Navigate to the new project
       router.push(`/writing/${project.id}`);
       router.refresh();
     } catch (error) {
-      console.error("Error creating project:", error);
-      
+      console.error('Error creating project:', error);
+
       // Show error toast
-      toast.error("Failed to create project", {
+      toast.error('Failed to create project', {
         id: toastId,
-        description: "Please try again later.",
+        description: 'Please try again later.',
       });
     } finally {
       setIsSubmitting(false);
@@ -176,61 +175,67 @@ export function CreateProjectDialog({ genres }: CreateProjectDialogProps) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
-          <PlusIcon className="mr-2 h-4 w-4" />
+          <PlusIcon className='mr-2 h-4 w-4' />
           Create Project
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className='sm:max-w-[500px]'>
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader>
             <DialogTitle>Create New Writing Project</DialogTitle>
             <DialogDescription>
-              Start a new writing project. Choose a genre and give your project a title.
+              Start a new writing project. Choose a genre and give your project
+              a title.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="title">Project Title</Label>
+          <div className='grid gap-4 py-4'>
+            <div className='grid gap-2'>
+              <Label htmlFor='title'>Project Title</Label>
               <Input
-                id="title"
-                placeholder="Enter project title"
-                {...register("title")}
+                id='title'
+                placeholder='Enter project title'
+                {...register('title')}
               />
               {errors.title && (
-                <p className="text-sm text-red-500">{errors.title.message}</p>
+                <p className='text-sm text-red-500'>{errors.title.message}</p>
               )}
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="description">Description (Optional)</Label>
+            <div className='grid gap-2'>
+              <Label htmlFor='description'>Description (Optional)</Label>
               <Textarea
-                id="description"
-                placeholder="Briefly describe your project"
-                {...register("description")}
+                id='description'
+                placeholder='Briefly describe your project'
+                {...register('description')}
               />
               {errors.description && (
-                <p className="text-sm text-red-500">{errors.description.message}</p>
+                <p className='text-sm text-red-500'>
+                  {errors.description.message}
+                </p>
               )}
             </div>
-            <div className="grid gap-2">
+            <div className='grid gap-2'>
               <Label>Genre</Label>
               <Controller
-                name="genre_id"
+                name='genre_id'
                 control={control}
                 render={({ field }) => (
                   <RadioGroup
-                    className="grid grid-cols-2 gap-2"
+                    className='grid grid-cols-2 gap-2'
                     onValueChange={field.onChange}
                     value={field.value?.toString()}
                   >
                     {genres.map((genre) => (
-                      <div key={genre.id} className="flex items-center space-x-2">
-                        <RadioGroupItem 
-                          value={genre.id.toString()} 
-                          id={`genre-${genre.id}`} 
+                      <div
+                        key={genre.id}
+                        className='flex items-center space-x-2'
+                      >
+                        <RadioGroupItem
+                          value={genre.id.toString()}
+                          id={`genre-${genre.id}`}
                         />
-                        <Label 
+                        <Label
                           htmlFor={`genre-${genre.id}`}
-                          className="cursor-pointer"
+                          className='cursor-pointer'
                         >
                           {genre.name}
                         </Label>
@@ -240,57 +245,68 @@ export function CreateProjectDialog({ genres }: CreateProjectDialogProps) {
                 )}
               />
               {errors.genre_id && (
-                <p className="text-sm text-red-500">{errors.genre_id.message}</p>
+                <p className='text-sm text-red-500'>
+                  {errors.genre_id.message}
+                </p>
               )}
             </div>
-            
+
             {selectedGenre && (
-              <div className="grid gap-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="prompt">Writing Prompt</Label>
+              <div className='grid gap-2'>
+                <div className='flex items-center justify-between'>
+                  <Label htmlFor='prompt'>Writing Prompt</Label>
                   <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
+                    type='button'
+                    variant='outline'
+                    size='sm'
                     onClick={handleRegeneratePrompt}
                     disabled={isGeneratingPrompt}
-                    className="h-8"
+                    className='h-8'
                   >
-                    <RefreshCwIcon className={`h-3.5 w-3.5 mr-1.5 ${isGeneratingPrompt ? 'animate-spin' : ''}`} />
-                    {isGeneratingPrompt ? "Generating..." : "Regenerate"}
+                    <RefreshCwIcon
+                      className={`mr-1.5 h-3.5 w-3.5 ${isGeneratingPrompt ? 'animate-spin' : ''}`}
+                    />
+                    {isGeneratingPrompt ? 'Generating...' : 'Regenerate'}
                   </Button>
                 </div>
                 <Textarea
-                  id="prompt"
-                  placeholder={isGeneratingPrompt ? "Generating prompt..." : "Enter a writing prompt"}
-                  {...register("prompt")}
+                  id='prompt'
+                  placeholder={
+                    isGeneratingPrompt
+                      ? 'Generating prompt...'
+                      : 'Enter a writing prompt'
+                  }
+                  {...register('prompt')}
                   disabled={isGeneratingPrompt}
-                  className="min-h-[100px]"
+                  className='min-h-[100px]'
                 />
                 {errors.prompt && (
-                  <p className="text-sm text-red-500">{errors.prompt.message}</p>
+                  <p className='text-sm text-red-500'>
+                    {errors.prompt.message}
+                  </p>
                 )}
-                <p className="text-sm text-muted-foreground">
-                  This prompt will guide your writing. Feel free to edit it or generate a new one.
+                <p className='text-sm text-muted-foreground'>
+                  This prompt will guide your writing. Feel free to edit it or
+                  generate a new one.
                 </p>
               </div>
             )}
           </div>
           <DialogFooter>
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type='button'
+              variant='outline'
               onClick={() => setOpen(false)}
               disabled={isSubmitting}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || isGeneratingPrompt}>
-              {isSubmitting ? "Creating..." : "Create Project"}
+            <Button type='submit' disabled={isSubmitting || isGeneratingPrompt}>
+              {isSubmitting ? 'Creating...' : 'Create Project'}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
   );
-} 
+}

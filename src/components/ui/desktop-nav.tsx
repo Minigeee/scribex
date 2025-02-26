@@ -10,13 +10,13 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { ThemeToggle } from './theme-toggle';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from './tooltip';
-import { ThemeToggle } from './theme-toggle';
 
 const navItems = [
   {

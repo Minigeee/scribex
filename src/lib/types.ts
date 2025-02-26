@@ -1,4 +1,4 @@
-import type { Tables, Json } from './database.types';
+import type { Tables } from './database.types';
 
 // Simplified content layer type for API responses
 export type ContentLayerBasic = {
@@ -30,4 +30,4 @@ export type ArticleSection = {
 // Parsed article with sections
 export type ParsedArticle = {
   sections: ArticleSection[];
-}; 
+};

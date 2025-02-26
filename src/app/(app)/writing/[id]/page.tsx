@@ -1,10 +1,10 @@
-import { createClient } from "@/lib/supabase/server";
-import { notFound } from "next/navigation";
-import { Tables } from "@/lib/database.types";
-import { ProjectContent } from "@/components/writing/project-content";
+import { ProjectContent } from '@/components/writing/project-content';
+import { Tables } from '@/lib/database.types';
+import { createClient } from '@/lib/supabase/server';
+import { notFound } from 'next/navigation';
 
-type ProjectWithGenre = Tables<"projects"> & {
-  genres: Tables<"genres"> | null;
+type ProjectWithGenre = Tables<'projects'> & {
+  genres: Tables<'genres'> | null;
 };
 
 interface ProjectPageProps {
@@ -15,22 +15,24 @@ interface ProjectPageProps {
 
 export default async function ProjectPage({ params }: ProjectPageProps) {
   const supabase = await createClient();
-  
+
   // Fetch the project with genre information
   const { data: project, error } = await supabase
-    .from("projects")
-    .select(`
+    .from('projects')
+    .select(
+      `
       *,
       genres:genre_id(*)
-    `)
-    .eq("id", params.id)
+    `
+    )
+    .eq('id', params.id)
     .single();
 
   // Handle errors or not found
   if (error || !project) {
-    console.error("Error fetching project:", error);
+    console.error('Error fetching project:', error);
     notFound();
   }
 
   return <ProjectContent project={project as ProjectWithGenre} />;
-} 
+}

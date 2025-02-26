@@ -104,15 +104,21 @@ export function ChatInterface({
   const [activeSystemPrompt, setActiveSystemPrompt] = useState(systemPrompt);
   const [aiLoading, setAiLoading] = useState(false);
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
-  const [hasGeneratedQuestionsForCurrentConversation, setHasGeneratedQuestionsForCurrentConversation] = useState(false);
+  const [
+    hasGeneratedQuestionsForCurrentConversation,
+    setHasGeneratedQuestionsForCurrentConversation,
+  ] = useState(false);
 
   // Memoize conversation starters based on project and custom starters
   const defaultStarters = useMemo(() => {
-    return customStarters ||
-      (project ? WRITING_PROJECT_STARTERS : DEFAULT_CONVERSATION_STARTERS);
+    return (
+      customStarters ||
+      (project ? WRITING_PROJECT_STARTERS : DEFAULT_CONVERSATION_STARTERS)
+    );
   }, [customStarters, project]);
-  
-  const [conversationStarters, setConversationStarters] = useState<ConversationStarter[]>(defaultStarters);
+
+  const [conversationStarters, setConversationStarters] =
+    useState<ConversationStarter[]>(defaultStarters);
 
   // Use the conversations hook
   const {
@@ -137,7 +143,13 @@ export function ChatInterface({
 
   // Generate research questions when needed
   const generateResearchQuestionsForProject = useCallback(async () => {
-    if (!project || !projectContent || !isResearchGenre || isGeneratingQuestions || hasGeneratedQuestionsForCurrentConversation) {
+    if (
+      !project ||
+      !projectContent ||
+      !isResearchGenre ||
+      isGeneratingQuestions ||
+      hasGeneratedQuestionsForCurrentConversation
+    ) {
       // Log why we're not generating questions for debugging
       if (isResearchGenre && !isGeneratingQuestions) {
         console.log('Skipping research questions generation:', {
@@ -145,15 +157,15 @@ export function ChatInterface({
           hasContent: !!projectContent,
           isResearchGenre,
           isGeneratingQuestions,
-          hasGeneratedQuestionsForCurrentConversation
+          hasGeneratedQuestionsForCurrentConversation,
         });
       }
       return;
     }
-    
+
     console.log('Generating research questions for project:', project.title);
     setIsGeneratingQuestions(true);
-    
+
     // Create placeholder starters with loading state
     const placeholderStarters: ConversationStarter[] = Array(3)
       .fill(null)
@@ -162,7 +174,7 @@ export function ChatInterface({
         prompt: 'Generating research question...',
         isLoading: true,
       }));
-    
+
     // Update starters with placeholders
     setConversationStarters((current) => {
       // Keep any custom starters that aren't research questions
@@ -171,7 +183,7 @@ export function ChatInterface({
       );
       return [...nonResearchStarters, ...placeholderStarters];
     });
-    
+
     try {
       // Generate research questions
       const researchQuestions = await generateResearchQuestions(
@@ -180,16 +192,19 @@ export function ChatInterface({
         projectContent,
         project.genres?.name || null
       );
-      
+
       // Update starters with generated questions
       setConversationStarters((current) => {
         // Keep any custom starters that aren't research questions
         const nonResearchStarters = current.filter(
           (starter) => !starter.title.includes('Research question')
         );
-        return [...(customStarters ?? nonResearchStarters), ...researchQuestions];
+        return [
+          ...(customStarters ?? nonResearchStarters),
+          ...researchQuestions,
+        ];
       });
-      
+
       // Mark that we've generated questions for this conversation
       setHasGeneratedQuestionsForCurrentConversation(true);
     } catch (error) {
@@ -197,16 +212,23 @@ export function ChatInterface({
     } finally {
       setIsGeneratingQuestions(false);
     }
-  }, [project, projectContent, isResearchGenre, isGeneratingQuestions, hasGeneratedQuestionsForCurrentConversation, customStarters]);
+  }, [
+    project,
+    projectContent,
+    isResearchGenre,
+    isGeneratingQuestions,
+    hasGeneratedQuestionsForCurrentConversation,
+    customStarters,
+  ]);
 
   // Scroll to the latest message when messages change
   useEffect(() => {
-    console.log('messages changed', messages.length)
+    console.log('messages changed', messages.length);
     scrollToLatestMessage();
   }, [messages.length]);
 
   useEffect(() => {
-    console.log('mount')
+    console.log('mount');
   }, []);
 
   // Update conversation starters when customStarters prop changes
@@ -229,39 +251,47 @@ export function ChatInterface({
   // Reset the generated questions flag when the conversation changes
   useEffect(() => {
     setHasGeneratedQuestionsForCurrentConversation(false);
-    
+
     // Reset to default starters when switching conversations
     setConversationStarters(defaultStarters);
   }, [currentConversationId, defaultStarters]);
-  
+
   // Reset the generated questions flag when the project or content changes
   useEffect(() => {
     setHasGeneratedQuestionsForCurrentConversation(false);
   }, [project?.id, projectContent]);
-  
+
   // Handle conversation selection changes
-  const handleConversationChange = useCallback((conversationId: string) => {
-    handleConversationSelect(conversationId);
-    setHasGeneratedQuestionsForCurrentConversation(false);
-  }, [handleConversationSelect]);
-  
+  const handleConversationChange = useCallback(
+    (conversationId: string) => {
+      handleConversationSelect(conversationId);
+      setHasGeneratedQuestionsForCurrentConversation(false);
+    },
+    [handleConversationSelect]
+  );
+
   // Handle tab changes to regenerate questions when switching to chat tab
   useEffect(() => {
     if (
-      activeTab === 'chat' && 
-      isResearchGenre && 
-      !isFetchingConversations && 
-      !currentConversationId && 
-      !isGeneratingQuestions && 
+      activeTab === 'chat' &&
+      isResearchGenre &&
+      !isFetchingConversations &&
+      !currentConversationId &&
+      !isGeneratingQuestions &&
       !hasGeneratedQuestionsForCurrentConversation
     ) {
-      console.log(isFetchingConversations, currentConversationId, isGeneratingQuestions, hasGeneratedQuestionsForCurrentConversation)
+      console.log(
+        isFetchingConversations,
+        currentConversationId,
+        isGeneratingQuestions,
+        hasGeneratedQuestionsForCurrentConversation
+      );
       // generateResearchQuestionsForProject();
     }
   }, [
-    activeTab, 
-    isResearchGenre, 
-    currentConversationId, 
+    activeTab,
+    isResearchGenre,
+    currentConversationId,
     isFetchingConversations,
   ]);
 
@@ -276,30 +306,33 @@ export function ChatInterface({
   }, [conversations]);
 
   // Prepare AI messages for completion
-  const prepareAIMessages = useCallback((userMessageContent: string, currentSystemPrompt: string) => {
-    const aiMessages = [
-      systemMessage(currentSystemPrompt),
-      ...messages.map((msg) =>
-        msg.role === 'user'
-          ? userMessage(msg.content)
-          : assistantMessage(msg.content)
-      ),
-      userMessage(userMessageContent),
-    ];
+  const prepareAIMessages = useCallback(
+    (userMessageContent: string, currentSystemPrompt: string) => {
+      const aiMessages = [
+        systemMessage(currentSystemPrompt),
+        ...messages.map((msg) =>
+          msg.role === 'user'
+            ? userMessage(msg.content)
+            : assistantMessage(msg.content)
+        ),
+        userMessage(userMessageContent),
+      ];
 
-    // If this is a project chat and we have project content, add it to the context
-    if (project && projectContent && messages.length === 0) {
-      aiMessages.splice(
-        1,
-        0,
-        systemMessage(
-          `Here is the user's current writing project content:\n\n${projectContent.substring(0, 8000)}\n\nProvide feedback and assistance based on this content.`
-        )
-      );
-    }
+      // If this is a project chat and we have project content, add it to the context
+      if (project && projectContent && messages.length === 0) {
+        aiMessages.splice(
+          1,
+          0,
+          systemMessage(
+            `Here is the user's current writing project content:\n\n${projectContent.substring(0, 8000)}\n\nProvide feedback and assistance based on this content.`
+          )
+        );
+      }
 
-    return aiMessages;
-  }, [messages, project, projectContent]);
+      return aiMessages;
+    },
+    [messages, project, projectContent]
+  );
 
   // Handle sending a message
   const handleSendMessage = async (
@@ -319,7 +352,10 @@ export function ChatInterface({
 
     try {
       // Prepare messages for AI completion
-      const aiMessages = prepareAIMessages(userMessageContent, currentSystemPrompt);
+      const aiMessages = prepareAIMessages(
+        userMessageContent,
+        currentSystemPrompt
+      );
 
       // Start both operations concurrently
       const sendMessagePromise = sendMessage(userMessageContent);
@@ -349,26 +385,32 @@ export function ChatInterface({
   };
 
   // Handle conversation starter click
-  const handleStarterClick = useCallback((starter: ConversationStarter) => {
-    // Skip if the starter is still loading
-    if (starter.isLoading) return;
-    
-    // If the starter has a system prompt, use it for this message
-    if (starter.systemPrompt) {
-      setActiveSystemPrompt(starter.systemPrompt);
-    }
+  const handleStarterClick = useCallback(
+    (starter: ConversationStarter) => {
+      // Skip if the starter is still loading
+      if (starter.isLoading) return;
 
-    // Send the message immediately
-    handleSendMessage(starter.prompt, starter.systemPrompt);
-  }, [handleSendMessage]);
+      // If the starter has a system prompt, use it for this message
+      if (starter.systemPrompt) {
+        setActiveSystemPrompt(starter.systemPrompt);
+      }
+
+      // Send the message immediately
+      handleSendMessage(starter.prompt, starter.systemPrompt);
+    },
+    [handleSendMessage]
+  );
 
   // Handle input submission
-  const handleInputKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  }, [handleSendMessage]);
+  const handleInputKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSendMessage();
+      }
+    },
+    [handleSendMessage]
+  );
 
   // Scroll to the latest message
   const scrollToLatestMessage = useCallback(() => {
@@ -391,7 +433,7 @@ export function ChatInterface({
     setInputValue('');
     // Reset active system prompt to the default
     setActiveSystemPrompt(systemPrompt);
-    
+
     // Reset the flag so we'll generate new questions for the new conversation
     setHasGeneratedQuestionsForCurrentConversation(false);
   }, [createNewConversation, systemPrompt]);
@@ -434,10 +476,12 @@ export function ChatInterface({
         {messages.length > 0 ? (
           <div className='space-y-3 py-2'>
             {messages.map((message, index) => (
-              <div 
-                key={message.id} 
+              <div
+                key={message.id}
                 className='w-full'
-                ref={index === messages.length - 1 ? latestMessageRef : undefined}
+                ref={
+                  index === messages.length - 1 ? latestMessageRef : undefined
+                }
               >
                 {/* Role indicator */}
                 <div className='mb-1 text-xs font-medium'>
