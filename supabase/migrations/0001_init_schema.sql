@@ -107,9 +107,11 @@ CREATE TABLE projects (
     title TEXT NOT NULL,
     description TEXT,
     genre_id INTEGER REFERENCES genres(id) ON DELETE SET NULL,
+    prompt TEXT,
     content TEXT,
     status TEXT NOT NULL CHECK (status IN ('draft', 'in_progress', 'completed', 'submitted')),
     classroom_id UUID REFERENCES classrooms(id) ON DELETE SET NULL,
+    metadata JSONB,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
 );

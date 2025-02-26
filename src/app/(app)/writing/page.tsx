@@ -1,39 +1,43 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { PenSquareIcon, PlusIcon } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { formatDistanceToNow } from "date-fns";
+import Link from "next/link";
+import { Tables } from "@/lib/database.types";
+import { ProjectDialogWrapper } from "@/components/writing/project-dialog-wrapper";
 
-export default function WritingPage() {
-  // This is a placeholder for the actual writing projects
-  // In a real app, this would be fetched from a database
-  const projects = [
-    {
-      id: 1,
-      title: "My Summer Adventure",
-      description: "A personal narrative about my summer vacation",
-      genre: "narrative",
-      lastEdited: "2 days ago",
-      progress: 75,
-    },
-    {
-      id: 2,
-      title: "The Case for Renewable Energy",
-      description: "A persuasive essay on the importance of renewable energy",
-      genre: "persuasive",
-      lastEdited: "1 week ago",
-      progress: 40,
-    },
-    {
-      id: 3,
-      title: "The Mystery of the Missing Cat",
-      description: "A short story about a detective solving a neighborhood mystery",
-      genre: "creative",
-      lastEdited: "3 days ago",
-      progress: 90,
-    },
-  ];
+type ProjectWithGenre = Tables<"projects"> & {
+  genres: Tables<"genres"> | null;
+};
+
+export default async function WritingPage() {
+  const supabase = await createClient();
+  
+  // Fetch user's projects with genre information
+  const { data: projects, error } = await supabase
+    .from("projects")
+    .select(`
+      *,
+      genres:genre_id(*)
+    `)
+    .order("updated_at", { ascending: false });
+
+  // Fetch all available genres for the create dialog
+  const { data: genres } = await supabase
+    .from("genres")
+    .select("*")
+    .order("name");
+
+  // Handle potential errors
+  if (error) {
+    console.error("Error fetching projects:", error);
+  }
+
+  const userProjects = projects as ProjectWithGenre[] || [];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 container mx-auto px-5 py-6 md:py-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">My Writing Projects</h1>
         <p className="mt-2 text-muted-foreground">
@@ -52,46 +56,45 @@ export default function WritingPage() {
             <p className="mb-6 text-center text-sm text-muted-foreground">
               Choose from various genres and get AI-assisted feedback
             </p>
-            <Button>Create Project</Button>
+            <ProjectDialogWrapper genres={genres || []} />
           </CardContent>
         </Card>
 
         {/* Existing Projects */}
-        {projects.map((project) => (
+        {userProjects.map((project) => (
           <Card key={project.id} className="overflow-hidden">
             <CardHeader className="pb-3">
               <div className="mb-2 flex items-center justify-between">
                 <div className={`rounded-full px-2 py-1 text-xs font-medium ${
-                  project.genre === "narrative" ? "bg-blue-100 text-blue-800" :
-                  project.genre === "persuasive" ? "bg-purple-100 text-purple-800" :
-                  "bg-amber-100 text-amber-800"
+                  project.genres?.name === "Narrative" ? "bg-blue-100 text-blue-800" :
+                  project.genres?.name === "Persuasive" ? "bg-purple-100 text-purple-800" :
+                  project.genres?.name === "Informative" ? "bg-green-100 text-green-800" :
+                  project.genres?.name === "Poetry" ? "bg-pink-100 text-pink-800" :
+                  project.genres?.name === "Journalism" ? "bg-amber-100 text-amber-800" :
+                  "bg-gray-100 text-gray-800"
                 }`}>
-                  {project.genre.charAt(0).toUpperCase() + project.genre.slice(1)}
+                  {project.genres?.name || "Uncategorized"}
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Last edited {project.lastEdited}
+                  {project.updated_at ? 
+                    `Updated ${formatDistanceToNow(new Date(project.updated_at), { addSuffix: true })}` : 
+                    "Recently updated"}
                 </div>
               </div>
               <CardTitle>{project.title}</CardTitle>
-              <CardDescription>{project.description}</CardDescription>
+              <CardDescription>{project.description || "No description provided"}</CardDescription>
             </CardHeader>
             <CardContent className="pb-3">
-              <div className="space-y-2">
-                <div className="text-xs text-muted-foreground">
-                  Progress: {project.progress}%
-                </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
-                  <div 
-                    className="h-full bg-primary" 
-                    style={{ width: `${project.progress}%` }}
-                  />
-                </div>
+              <div className="text-xs text-muted-foreground">
+                Status: <span className="capitalize">{project.status.replace("_", " ")}</span>
               </div>
             </CardContent>
             <CardFooter>
-              <Button className="w-full">
-                <PenSquareIcon className="mr-2 h-4 w-4" />
-                Continue Writing
+              <Button asChild className="w-full">
+                <Link href={`/writing/${project.id}`}>
+                  <PenSquareIcon className="mr-2 h-4 w-4" />
+                  Continue Writing
+                </Link>
               </Button>
             </CardFooter>
           </Card>

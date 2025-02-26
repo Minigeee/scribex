@@ -495,6 +495,8 @@ export type Database = {
           description: string | null
           genre_id: number | null
           id: string
+          metadata: Json | null
+          prompt: string | null
           status: string
           title: string
           updated_at: string
@@ -507,6 +509,8 @@ export type Database = {
           description?: string | null
           genre_id?: number | null
           id?: string
+          metadata?: Json | null
+          prompt?: string | null
           status: string
           title: string
           updated_at?: string
@@ -519,6 +523,8 @@ export type Database = {
           description?: string | null
           genre_id?: number | null
           id?: string
+          metadata?: Json | null
+          prompt?: string | null
           status?: string
           title?: string
           updated_at?: string

@@ -92,3 +92,24 @@ function AuthenticatedComponent() {
   );
 }
 ```
+
+## Toast Notifications
+
+We use Sonner for toast notifications. The Toaster component is already included in the app's providers.
+
+## AI Utilities
+
+```tsx
+// Direct usage with any provider (server side only)
+import { generateCompletion, systemMessage, userMessage } from '@/lib/utils/ai';
+
+const response = await generateCompletion({
+  messages: [
+    systemMessage('You are a helpful assistant.'),
+    userMessage('Tell me about React')
+  ]
+}, {
+  provider: 'google', // 'openai', 'anthropic', 'mistral', 'groq', 'custom'
+  modelName: 'gemini-2.0-flash'
+});
+```

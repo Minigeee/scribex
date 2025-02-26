@@ -203,7 +203,7 @@ export function LessonClient({ lesson, userId }: LessonClientProps) {
   };
 
   return (
-    <div className='container mx-auto max-w-4xl py-8'>
+    <div className='container mx-auto max-w-4xl py-8 px-5'>
       <div className='mb-8'>
         <Button
           variant='ghost'

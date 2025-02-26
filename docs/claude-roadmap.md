@@ -11,8 +11,8 @@
 - [X] Add seed data for lessons
 - [X] Plan REDI lesson framework
 - [ ] Design exercise templates
-- [ ] Implement progress tracking
-- [ ] Create scoring system (90% threshold)
+- [X] Implement progress tracking
+- [X] Create scoring system (90% threshold)
 - [ ] Build basic AI evaluation for structured exercises
 
 ## Phase 3: OWL System (4-5 weeks)

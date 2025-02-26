@@ -31,7 +31,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
     }
     
     return (
-      <div className="container max-w-4xl py-8 mx-auto">
+      <div className="container max-w-4xl py-8 px-5 mx-auto">
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-4">
             <Button 

@@ -18,7 +18,7 @@ export default function CreativePage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 container mx-auto px-5 py-6 md:py-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Creative Tools</h1>
         <p className="mt-2 text-muted-foreground">
