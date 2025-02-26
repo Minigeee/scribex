@@ -9,6 +9,7 @@ import { ConversationStarter } from './generate-conversation-starters';
  */
 export async function generateResearchQuestions(
   projectTitle: string,
+  projectPrompt: string,
   projectContent: string,
   genre: string | null,
   count: number = 3
@@ -20,8 +21,9 @@ export async function generateResearchQuestions(
     const response = await generateCompletion({
       messages: [
         systemMessage(
-          `You are a research assistant helping a user with their ${genre || ''} writing project titled "${projectTitle}".
-          Based on the content of their writing and the genre, generate ${count} specific research questions that would help them 
+          `You are a research assistant helping a user with their ${genre || ''} writing project titled "${projectTitle}". This is the prompt for the project: ${projectPrompt}
+
+          Based on the content of their writing, the genre, and the prompt, generate ${count} specific research questions that would help them 
           improve their work with factual information, evidence, or deeper understanding of their topic.
           
           Each question should be directly relevant to their content and help them research important aspects of their topic.
@@ -29,7 +31,18 @@ export async function generateResearchQuestions(
           
           Return the results as a JSON array with 'title' and 'prompt' fields for each question.
           The title should be short (2-4 words) and describe the research area.
-          The prompt should be a complete, specific question that the user could ask an AI to research.`
+          The prompt should be a complete, specific question that the user could ask an AI to research.
+          
+          For example:
+          [
+            {
+              "title": "Carbon Emissions",
+              "prompt": "What are the latest statistics on global carbon emissions and their impact on climate change?"
+            },
+            ...
+          ]
+          
+          Output only the JSON array without code block formatting, nothing else.`
         ),
         userMessage(`Here is my ${genre || ''} writing project titled "${projectTitle}":
         
@@ -41,6 +54,7 @@ export async function generateResearchQuestions(
     });
 
     try {
+      console.log(response.text);
       const parsedQuestions = JSON.parse(response.text);
       if (Array.isArray(parsedQuestions) && parsedQuestions.length > 0) {
         return parsedQuestions;

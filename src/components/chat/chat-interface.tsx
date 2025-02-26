@@ -173,6 +173,7 @@ export function ChatInterface({
       // Generate research questions
       const researchQuestions = await generateResearchQuestions(
         project.title,
+        project.prompt || 'None',
         projectContent,
         project.genres?.name || null
       );

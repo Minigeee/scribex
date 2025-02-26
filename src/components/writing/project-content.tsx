@@ -174,7 +174,7 @@ export function ProjectContent({
   ];
 
   // Define the default system prompt for the writing project
-  const projectSystemPrompt = `You are a helpful writing assistant for ${project.genres?.name || 'creative'} writing. You're helping the user with their project titled "${project.title}". 
+  const projectSystemPrompt = `You are a helpful writing assistant for ${project.genres?.name || 'creative'} writing. You're helping the user with their project titled "${project.title}". The prompt for the project is: ${project.prompt}
   
 Your role is to provide constructive feedback, creative ideas, and technical suggestions to improve their writing. 
   

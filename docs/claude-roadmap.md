@@ -1,5 +1,9 @@
 # ScribexX High-Level Development Roadmap
 
+## Personal To Do List
+
+- [ ] Look into map / canvas solutions
+
 ## Phase 1: Foundation (4-6 weeks)
 - [X] Define technical stack and architecture
 - [X] Establish core data models
@@ -20,8 +24,8 @@
 - [ ] Design open writing environment
 - [ ] Plan genre categorization system
 - [ ] Create project management for student writing
-- [ ] Implement "Writer's Block" suggestion feature
-- [ ] Build AI feedback system for free-form writing
+- [X] Implement "Writer's Block" suggestion feature
+- [X] Build AI feedback system for free-form writing
 
 ## Phase 4: Gamification System (3-4 weeks)
 - [ ] Design level map concept
