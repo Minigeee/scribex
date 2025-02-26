@@ -590,6 +590,7 @@ export type Database = {
           last_attempt_at: string | null
           lesson_id: string | null
           score: number | null
+          user_answers: Json | null
           user_id: string | null
         }
         Insert: {
@@ -600,6 +601,7 @@ export type Database = {
           last_attempt_at?: string | null
           lesson_id?: string | null
           score?: number | null
+          user_answers?: Json | null
           user_id?: string | null
         }
         Update: {
@@ -610,6 +612,7 @@ export type Database = {
           last_attempt_at?: string | null
           lesson_id?: string | null
           score?: number | null
+          user_answers?: Json | null
           user_id?: string | null
         }
         Relationships: [

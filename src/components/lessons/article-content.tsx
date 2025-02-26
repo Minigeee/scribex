@@ -138,7 +138,7 @@ export function ArticleContent({ content, className }: ArticleContentProps) {
                   <CardContent
                     className='prose prose-sm max-w-none p-4 dark:prose-invert'
                     {...props}
-                  ></CardContent>
+                  />
                 </Card>
               );
             }

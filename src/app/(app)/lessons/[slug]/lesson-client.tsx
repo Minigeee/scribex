@@ -13,10 +13,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { createClient } from '@/lib/supabase/client';
 import type { ExerciseWithProgress, LessonWithContent } from '@/lib/types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Check, CheckCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 
 interface LessonClientProps {
   lesson: LessonWithContent;
@@ -30,8 +30,16 @@ export function LessonClient({ lesson, userId }: LessonClientProps) {
     lesson.exercises
   );
   const [activeTab, setActiveTab] = useState<string>('article');
-  // TODO: Replace with actual implementation that checks if all exercises are completed
-  const [areExercisesCompleted, setAreExercisesCompleted] = useState(false);
+  // Initialize areExercisesCompleted based on the initial exercises state
+  const [areExercisesCompleted, setAreExercisesCompleted] = useState(() => {
+    // Only consider completed if there are exercises and all of them are completed
+    return (
+      lesson.exercises.length > 0 &&
+      lesson.exercises.every(
+        (ex: ExerciseWithProgress) => ex.user_progress?.completed === true
+      )
+    );
+  });
 
   // Initialize Supabase client
   const supabase = createClient();
@@ -46,6 +54,16 @@ export function LessonClient({ lesson, userId }: LessonClientProps) {
       ? Math.round((completedExercises / totalExercises) * 100)
       : 0;
 
+  // Update areExercisesCompleted whenever exercises state changes
+  useEffect(() => {
+    if (totalExercises > 0) {
+      const allCompleted = exercises.every(
+        (ex) => ex.user_progress?.completed === true
+      );
+      setAreExercisesCompleted(allCompleted);
+    }
+  }, [exercises, totalExercises]);
+
   // Query to check if article is read
   const { data: articleReadData, isLoading: isLoadingArticleRead } = useQuery({
     queryKey: ['articleRead', lesson.id, userId],
@@ -56,7 +74,7 @@ export function LessonClient({ lesson, userId }: LessonClientProps) {
         .eq('lesson_id', lesson.id)
         .eq('user_id', userId)
         .single();
-      
+
       return data;
     },
   });
@@ -75,7 +93,9 @@ export function LessonClient({ lesson, userId }: LessonClientProps) {
     },
     onSuccess: () => {
       // Invalidate the article read query to refetch the data
-      queryClient.invalidateQueries({ queryKey: ['articleRead', lesson.id, userId] });
+      queryClient.invalidateQueries({
+        queryKey: ['articleRead', lesson.id, userId],
+      });
       // Automatically switch to exercises tab after marking article as read
       setActiveTab('exercises');
     },
@@ -84,9 +104,15 @@ export function LessonClient({ lesson, userId }: LessonClientProps) {
     },
   });
 
-  const handleExerciseComplete = async (exerciseId: string, score: number) => {
+  const handleExerciseComplete = async (
+    exerciseId: string,
+    score: number,
+    userAnswers: Record<string, any>
+  ) => {
     try {
+      console.log('Exercise completed:', exerciseId, score);
       const now = new Date().toISOString();
+      // An exercise is considered completed if the score is 90 or higher
       const completed = score >= 90;
 
       // Check if progress record exists
@@ -97,6 +123,7 @@ export function LessonClient({ lesson, userId }: LessonClientProps) {
         .eq('user_id', userId)
         .single();
 
+      // Database update
       if (existingProgress) {
         // Update existing progress
         await supabase
@@ -106,6 +133,7 @@ export function LessonClient({ lesson, userId }: LessonClientProps) {
             completed,
             attempts: (existingProgress.attempts || 0) + 1,
             last_attempt_at: now,
+            user_answers: userAnswers,
           })
           .eq('id', existingProgress.id);
       } else {
@@ -117,41 +145,49 @@ export function LessonClient({ lesson, userId }: LessonClientProps) {
           completed,
           attempts: 1,
           last_attempt_at: now,
+          user_answers: userAnswers,
         });
       }
 
       // Update the local state to reflect the change
-      setExercises((prev) =>
-        prev.map((ex) => {
-          if (ex.id === exerciseId) {
-            return {
-              ...ex,
-              user_progress: {
-                id: existingProgress?.id || '',
-                exercise_id: exerciseId,
-                user_id: userId,
-                score,
-                completed,
-                attempts: (ex.user_progress?.attempts || 0) + 1,
-                last_attempt_at: now,
-                lesson_id: null,
-              },
-            };
-          }
-          return ex;
-        })
-      );
+      const updatedExercises = exercises.map((ex) => {
+        if (ex.id === exerciseId) {
+          return {
+            ...ex,
+            user_progress: {
+              id: existingProgress?.id || '',
+              exercise_id: exerciseId,
+              user_id: userId,
+              score,
+              completed,
+              attempts: (ex.user_progress?.attempts || 0) + 1,
+              last_attempt_at: now,
+              lesson_id: null,
+              user_answers: userAnswers,
+            },
+          };
+        }
+        return ex;
+      });
 
-      // Refresh the page data
-      router.refresh();
+      // Update exercises state with the new data
+      setExercises(updatedExercises);
 
       // Check if all exercises are completed after this update
-      const updatedCompletedCount = exercises.filter((ex) =>
-        ex.id === exerciseId ? completed : ex.user_progress?.completed
-      ).length;
+      const allCompleted = updatedExercises.every(
+        (ex) => ex.user_progress?.completed === true
+      );
+      setAreExercisesCompleted(allCompleted);
 
-      if (updatedCompletedCount === totalExercises && totalExercises > 0) {
-        setAreExercisesCompleted(true);
+      // Refresh the page data to ensure server state is updated
+      router.refresh();
+
+      // If all exercises are now completed, we could add additional logic here
+      // such as showing a congratulatory message or unlocking the next lesson
+      if (allCompleted && !areExercisesCompleted) {
+        console.log('All exercises completed for lesson:', lesson.id);
+        // Optional: You could add a call here to mark the entire lesson as completed
+        // if you have that functionality in your backend
       }
     } catch (error) {
       console.error('Error updating exercise progress:', error);
@@ -220,7 +256,7 @@ export function LessonClient({ lesson, userId }: LessonClientProps) {
           >
             Exercises
             {completedExercises > 0 && (
-              <span className='ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground'>
+              <span className='ml-1 inline-flex h-5 items-center justify-center rounded-full bg-primary px-2 text-xs font-medium text-primary-foreground'>
                 {completedExercises}/{totalExercises}
               </span>
             )}
@@ -248,10 +284,10 @@ export function LessonClient({ lesson, userId }: LessonClientProps) {
                 disabled={isArticleRead || markArticleReadMutation.isPending}
               >
                 {isArticleRead && <Check className='h-4 w-4' />}
-                {markArticleReadMutation.isPending 
-                  ? 'Marking...' 
-                  : isArticleRead 
-                    ? 'Marked as Read' 
+                {markArticleReadMutation.isPending
+                  ? 'Marking...'
+                  : isArticleRead
+                    ? 'Marked as Read'
                     : 'Mark as Read'}
               </Button>
             </CardHeader>
@@ -286,6 +322,24 @@ export function LessonClient({ lesson, userId }: LessonClientProps) {
                 </Button>
               )}
             </div>
+
+            {areExercisesCompleted && (
+              <Card className='mb-6 border-green-200 bg-green-50'>
+                <CardContent className='flex items-center gap-3 pt-6'>
+                  <div className='rounded-full bg-green-100 p-2'>
+                    <CheckCircle className='h-6 w-6 text-green-600' />
+                  </div>
+                  <div>
+                    <h3 className='font-medium text-green-800'>
+                      All exercises completed!
+                    </h3>
+                    <p className='text-sm text-green-700'>
+                      Great job! You've completed all exercises in this lesson.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             <div className='space-y-6'>
               {exercises.length > 0 ? (

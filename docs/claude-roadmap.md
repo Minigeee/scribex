@@ -9,7 +9,7 @@
 
 ## Phase 2: REDI System (4-5 weeks)
 - [X] Add seed data for lessons
-- [ ] Plan REDI lesson framework
+- [X] Plan REDI lesson framework
 - [ ] Design exercise templates
 - [ ] Implement progress tracking
 - [ ] Create scoring system (90% threshold)
