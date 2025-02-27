@@ -1042,8 +1042,6 @@ export type Database = {
           id: string
           lesson_id: string | null
           node_type: string
-          position_x: number
-          position_y: number
           prerequisite_nodes: string[] | null
           rewards: Json | null
           title: string
@@ -1057,8 +1055,6 @@ export type Database = {
           id?: string
           lesson_id?: string | null
           node_type: string
-          position_x: number
-          position_y: number
           prerequisite_nodes?: string[] | null
           rewards?: Json | null
           title: string
@@ -1072,8 +1068,6 @@ export type Database = {
           id?: string
           lesson_id?: string | null
           node_type?: string
-          position_x?: number
-          position_y?: number
           prerequisite_nodes?: string[] | null
           rewards?: Json | null
           title?: string

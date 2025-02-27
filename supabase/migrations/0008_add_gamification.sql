@@ -55,8 +55,6 @@ CREATE TABLE IF NOT EXISTS public.skill_tree_nodes (
     prerequisite_nodes UUID[] DEFAULT '{}',
     rewards JSONB DEFAULT '[]'::jsonb, -- Direct JSON array of rewards
     icon_url TEXT,
-    position_x INTEGER NOT NULL,
-    position_y INTEGER NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
 );

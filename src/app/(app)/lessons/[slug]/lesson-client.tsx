@@ -203,7 +203,7 @@ export function LessonClient({ lesson, userId }: LessonClientProps) {
   };
 
   return (
-    <div className='container mx-auto max-w-4xl px-5 py-8'>
+    <div className='container mx-auto max-w-4xl px-5 pt-8 pb-20'>
       <div className='mb-8'>
         <Button
           variant='ghost'
@@ -212,7 +212,7 @@ export function LessonClient({ lesson, userId }: LessonClientProps) {
           className='mb-4 md:mb-6'
         >
           <ArrowLeft className='mr-2 h-5 w-5' />
-          Back to map
+          Back to skill tree
         </Button>
         <div className='mb-4 flex items-center gap-2'>
           <h1 className='text-4xl font-bold tracking-tight'>{lesson.title}</h1>

@@ -818,3 +818,616 @@ Part 2: Write a short paragraph (5-7 sentences) about a hobby or interest of you
 
 -- Seed exercises for other lessons (abbreviated for brevity)
 -- You would continue with similar patterns for the remaining lessons
+
+
+-- Skill Tree
+
+-- Seed file for Sequencing & Logic skill tree
+-- This adds lessons and skill tree nodes for the Sequencing & Logic layer
+
+-- First, ensure we have the Sequencing & Logic content layer
+INSERT INTO content_layers (id, name, description, order_index)
+VALUES 
+  (2, 'Sequencing & Logic', 'Organization, structure, and logical flow of writing', 2)
+ON CONFLICT (id) DO NOTHING;
+
+-- Basic Paragraph Structure branch
+INSERT INTO lessons (id, slug, title, description, difficulty, content_layer_id, article, has_rich_content, published, order_index)
+VALUES
+  ('10000000-0000-0000-0000-000000000001', 'basic-paragraph-structure', 'Basic Paragraph Structure', 'Learn the fundamental components of a well-structured paragraph', 1, 2, 
+   '# Basic Paragraph Structure
+
+A paragraph is a group of related sentences that develop a single main idea. Understanding the basic structure of a paragraph is essential for effective writing.
+
+## Components of a Paragraph
+
+### Topic Sentence
+The topic sentence introduces the main idea of the paragraph. It tells the reader what the paragraph will be about.
+
+```example
+The beach is my favorite place to relax and recharge.
+```
+
+### Supporting Details
+Supporting details develop the main idea through examples, facts, explanations, or descriptions.
+
+```example
+The sound of waves crashing against the shore helps me clear my mind. The warm sand between my toes connects me to nature. The vast horizon reminds me that my problems are small in the grand scheme of things.
+```
+
+### Concluding Sentence
+The concluding sentence wraps up the paragraph by restating the main idea or providing a final thought.
+
+```example
+These sensory experiences make the beach the perfect escape from my busy life.
+```
+
+## Paragraph Unity
+Every sentence in a paragraph should relate to the main idea. If you find yourself drifting to a different topic, you probably need to start a new paragraph.
+
+## Practice
+In the exercises that follow, you''ll practice identifying and creating well-structured paragraphs with clear organization.',
+   true, true, 1),
+
+  ('10000000-0000-0000-0000-000000000002', 'topic-sentences', 'Topic Sentences', 'Craft effective opening sentences that establish the main idea of a paragraph', 1, 2, 
+   '# Topic Sentences
+
+A topic sentence is the most important sentence in a paragraph. It states the main idea and sets the direction for the entire paragraph.
+
+## Characteristics of Effective Topic Sentences
+
+### Clear and Focused
+A good topic sentence clearly states what the paragraph will discuss.
+
+```example
+Poor: There are many things to consider about exercise.
+Better: Regular exercise offers numerous health benefits.
+```
+
+### Neither Too Broad nor Too Narrow
+The topic sentence should be specific enough to be covered in one paragraph, but not so narrow that there''s nothing to develop.
+
+```example
+Too Broad: Technology has changed the world.
+Too Narrow: My new smartphone has 128GB of storage.
+Just Right: Modern smartphones have revolutionized how we communicate.
+```
+
+### Engaging
+When possible, make your topic sentence interesting to capture the reader''s attention.
+
+```example
+Bland: Dogs make good pets.
+Engaging: The loyalty and affection of dogs make them incomparable companions.
+```
+
+## Placement
+While topic sentences typically appear at the beginning of a paragraph, they can sometimes be placed in the middle or end for variety or emphasis.
+
+## Practice
+The exercises that follow will help you identify and create effective topic sentences for various types of paragraphs.',
+   true, true, 2),
+
+  ('10000000-0000-0000-0000-000000000003', 'supporting-details', 'Supporting Details', 'Select and organize relevant details that support the main idea', 1, 2, 
+   '# Supporting Details
+
+Supporting details develop the main idea stated in the topic sentence. They provide evidence, examples, facts, and explanations that help readers understand and accept your point.
+
+## Types of Supporting Details
+
+### Examples
+Specific instances that illustrate your point.
+
+```example
+Topic: Coffee shops are ideal for studying.
+Supporting Example: Last week, I completed an entire research paper at JavaHouse while enjoying the ambient background noise and unlimited refills.
+```
+
+### Facts and Statistics
+Verifiable information that adds credibility.
+
+```example
+Topic: Exercise improves mental health.
+Supporting Fact: According to a 2018 study in The Lancet, people who exercise regularly report 43% fewer days of poor mental health.
+```
+
+### Explanations
+Clarifications that help readers understand complex ideas.
+
+```example
+Topic: Photosynthesis is essential for life on Earth.
+Supporting Explanation: During photosynthesis, plants convert carbon dioxide into oxygen, which animals need to breathe, creating a vital cycle that sustains all life.
+```
+
+### Descriptions
+Sensory details that help readers visualize or experience what you''re discussing.
+
+```example
+Topic: The Grand Canyon is an awe-inspiring natural wonder.
+Supporting Description: Standing at the rim, visitors can see layers of red and orange rock stretching for miles, with the Colorado River appearing as a thin blue ribbon a mile below.
+```
+
+## Relevance and Organization
+All supporting details should clearly relate to the main idea. Organize them logically—chronologically, by importance, or by category—depending on your purpose.
+
+## Practice
+The exercises that follow will help you identify, select, and organize effective supporting details for various types of paragraphs.',
+   true, true, 3),
+
+  ('10000000-0000-0000-0000-000000000004', 'concluding-sentences', 'Concluding Sentences', 'Create effective paragraph closures that reinforce the main idea', 1, 2, 
+   '# Concluding Sentences
+
+A concluding sentence brings closure to a paragraph by summarizing the main idea, offering a final thought, or transitioning to the next paragraph.
+
+## Functions of Concluding Sentences
+
+### Summarize the Main Idea
+Restate the main point of the paragraph in different words.
+
+```example
+Topic Sentence: Regular exercise offers numerous health benefits.
+Concluding Sentence: With so many positive effects on physical and mental wellbeing, maintaining an active lifestyle is clearly worthwhile.
+```
+
+### Provide a Final Thought
+Offer an insight, implication, or call to action related to your main idea.
+
+```example
+Topic Sentence: Plastic pollution threatens marine ecosystems worldwide.
+Concluding Sentence: Unless we dramatically reduce our plastic consumption, future generations may inherit oceans with more plastic than fish.
+```
+
+### Transition to the Next Paragraph
+Signal a shift to a related topic in the next paragraph.
+
+```example
+Topic Sentence: Social media has transformed how teenagers communicate.
+Concluding Sentence: While these communication changes are significant, the impact of social media on teenagers'' mental health is even more profound.
+```
+
+## What to Avoid
+- Introducing completely new ideas
+- Simply repeating the topic sentence word for word
+- Ending abruptly without any sense of closure
+
+## Practice
+The exercises that follow will help you create effective concluding sentences for various types of paragraphs.',
+   true, true, 4),
+
+-- Mid-level skills
+  ('10000000-0000-0000-0000-000000000005', 'thesis-statements', 'Thesis Statements', 'Develop clear, focused thesis statements that guide entire essays', 2, 2, 
+   '# Thesis Statements
+
+A thesis statement is the central claim or argument of an essay. It tells readers what your paper is about and what position you''ll take on the topic.
+
+## Characteristics of Effective Thesis Statements
+
+### Clear and Specific
+A good thesis makes a clear, specific claim that can be supported with evidence.
+
+```example
+Vague: Social media is bad for society.
+Specific: The dopamine-driven feedback loops in social media platforms contribute to increased anxiety and decreased attention spans among teenagers.
+```
+
+### Debatable
+Your thesis should present a claim that someone could reasonably disagree with.
+
+```example
+Not Debatable: World War II ended in 1945.
+Debatable: The dropping of atomic bombs on Japan was not militarily necessary to end World War II.
+```
+
+### Focused
+Your thesis should be narrow enough to cover thoroughly in your essay.
+
+```example
+Too Broad: Technology has changed education.
+Focused: One-to-one laptop programs in high schools improve student engagement and academic performance in STEM subjects.
+```
+
+## Types of Thesis Statements
+
+### Analytical
+Breaks down an issue or idea into components and evaluates it.
+
+```example
+In "The Great Gatsby," Fitzgerald uses the character of Jay Gatsby to critique the hollowness of the American Dream in the 1920s.
+```
+
+### Argumentative
+Takes a position on a debatable issue and explains why readers should accept your position.
+
+```example
+Because of its environmental impact, economic inefficiency, and ethical concerns, factory farming should be phased out in favor of more sustainable agricultural practices.
+```
+
+### Expository
+Explains a topic or process to the reader.
+
+```example
+The process of photosynthesis involves three main stages: light absorption, ATP production, and carbon fixation.
+```
+
+## Placement
+In most academic writing, the thesis appears at the end of the introduction, but it can sometimes be effective to place it elsewhere for rhetorical effect.
+
+## Practice
+The exercises that follow will help you develop effective thesis statements for various types of essays.',
+   true, true, 5),
+
+  ('10000000-0000-0000-0000-000000000006', 'argumentative-structure', 'Argumentative Structure', 'Organize claims, evidence, and reasoning in logical sequences', 3, 2, 
+   '# Argumentative Structure
+
+Effective argumentation requires a logical structure that guides readers through your claims, evidence, and reasoning.
+
+## The Toulmin Model of Argument
+
+### Claim
+The main point or position you''re arguing for.
+
+```example
+Claim: Public transportation should be free in major cities.
+```
+
+### Evidence
+Facts, statistics, examples, or expert opinions that support your claim.
+
+```example
+Evidence: Studies show that cities with free public transit have seen a 30% reduction in traffic congestion and a 25% decrease in carbon emissions.
+```
+
+### Warrant
+The logical connection between your evidence and claim—often implicit.
+
+```example
+Warrant: Reducing traffic congestion and carbon emissions are desirable outcomes that justify making public transportation free.
+```
+
+### Backing
+Additional support for your warrant.
+
+```example
+Backing: Traffic congestion costs the average commuter 54 hours and $1,080 annually in wasted time and fuel.
+```
+
+### Qualifiers
+Limitations on your claim.
+
+```example
+Qualifier: While free public transportation may not be feasible in all cities, those with populations over 500,000 should implement it.
+```
+
+### Counterarguments and Rebuttals
+Acknowledging opposing viewpoints and responding to them.
+
+```example
+Counterargument: Free public transportation would be too expensive for cities to maintain.
+Rebuttal: The costs would be offset by reduced road maintenance, decreased healthcare expenses from improved air quality, and economic benefits from increased mobility.
+```
+
+## Common Argument Structures
+
+### Classical (Aristotelian)
+Introduction → Background → Claims → Counterargument → Refutation → Conclusion
+
+### Rogerian
+Introduction → Summary of Opposing Views → Statement of Understanding → Your Position → Benefits to Opponents → Conclusion
+
+### Problem-Solution
+Introduction → Problem Description → Solution Proposal → Solution Benefits → Addressing Potential Objections → Conclusion
+
+## Practice
+The exercises that follow will help you structure effective arguments using these models.',
+   true, true, 6),
+
+  ('10000000-0000-0000-0000-000000000007', 'logical-fallacies', 'Logical Fallacies', 'Identify and avoid common reasoning errors in argumentation', 3, 2, 
+   '# Logical Fallacies
+
+Logical fallacies are errors in reasoning that weaken arguments. Recognizing and avoiding these fallacies strengthens your writing and critical thinking.
+
+## Common Logical Fallacies
+
+### Ad Hominem
+Attacking the person instead of addressing their argument.
+
+```example
+"You can''t trust Dr. Smith''s research on climate change because she drives an SUV."
+```
+
+### Straw Man
+Misrepresenting someone''s argument to make it easier to attack.
+
+```example
+Person A: "We should invest more in public education."
+Person B: "So you think throwing money at schools will solve all problems? That''s naive."
+```
+
+### False Dichotomy
+Presenting only two options when more exist.
+
+```example
+"Either we cut environmental regulations, or we lose jobs. There''s no other way."
+```
+
+### Slippery Slope
+Arguing that one small step will inevitably lead to extreme consequences.
+
+```example
+"If we ban assault weapons, soon all guns will be illegal, and then the government will take away all our rights."
+```
+
+### Appeal to Authority
+Using an authority figure''s opinion as evidence, especially in areas outside their expertise.
+
+```example
+"This celebrity doctor says this supplement cures cancer, so it must work."
+```
+
+### Post Hoc Ergo Propter Hoc
+Assuming that because one event followed another, the first caused the second.
+
+```example
+"I wore my lucky socks and we won the game, so my socks caused our victory."
+```
+
+### Hasty Generalization
+Drawing a broad conclusion from insufficient evidence.
+
+```example
+"My neighbor''s electric car had battery problems, so all electric cars are unreliable."
+```
+
+## Avoiding Fallacies in Your Writing
+
+1. Research thoroughly to ensure you have sufficient evidence
+2. Consider alternative explanations and perspectives
+3. Question your own assumptions and biases
+4. Focus on the argument, not the person making it
+5. Avoid oversimplifying complex issues
+
+## Practice
+The exercises that follow will help you identify and avoid logical fallacies in various contexts.',
+   true, true, 7),
+
+  ('10000000-0000-0000-0000-000000000008', 'research-synthesis', 'Research Synthesis', 'Integrate diverse sources into a cohesive, original analysis', 4, 2, 
+   '# Research Synthesis
+
+Research synthesis is the process of combining information from multiple sources into a coherent whole that offers new insights or perspectives.
+
+## The Synthesis Process
+
+### Identify Patterns and Relationships
+Look for connections, contradictions, and trends across your sources.
+
+```example
+Source A emphasizes economic factors in climate change solutions.
+Source B focuses on technological innovations.
+Source C discusses policy approaches.
+Synthesis: Effective climate change solutions require coordinated efforts across economic incentives, technological development, and policy frameworks.
+```
+
+### Move Beyond Summary
+Don''t just report what each source says—analyze how they relate to each other and contribute to your argument.
+
+```example
+Weak (Summary): Smith argues X. Jones argues Y. Brown argues Z.
+Strong (Synthesis): While Smith and Jones both emphasize individual factors, Brown''s societal perspective complements their work by showing how individual choices operate within larger systems.
+```
+
+### Create a Dialogue Among Sources
+Show how sources respond to, build upon, or challenge each other.
+
+```example
+"Garcia''s findings on urban education challenges extend Williams'' earlier research, while offering a counterpoint to Lopez''s more optimistic assessment."
+```
+
+## Synthesis Techniques
+
+### Thematic Organization
+Group sources by themes or subtopics rather than discussing each source separately.
+
+### Comparative Framework
+Analyze how different sources approach the same question or problem.
+
+### Chronological Development
+Show how understanding of a topic has evolved over time through different research contributions.
+
+### Methodological Analysis
+Compare the different research methods used across sources and how they affect conclusions.
+
+## Common Synthesis Challenges
+
+### Source Overload
+Solution: Create a synthesis matrix to organize key points from each source by themes.
+
+### Losing Your Voice
+Solution: Clearly distinguish between source ideas and your own analysis and insights.
+
+### Forced Connections
+Solution: Be honest about genuine disagreements between sources rather than trying to reconcile incompatible viewpoints.
+
+## Practice
+The exercises that follow will help you synthesize information from multiple sources effectively.',
+   true, true, 8);
+
+-- Now create the skill tree nodes that connect these lessons
+INSERT INTO skill_tree_nodes (id, title, description, node_type, content_layer_id, lesson_id, prerequisite_nodes, rewards, icon_url)
+VALUES
+  -- Foundation level
+  ('20000000-0000-0000-0000-000000000001', 'Basic Paragraph Structure', 'Learn the fundamental components of a well-structured paragraph', 'lesson', 2, '10000000-0000-0000-0000-000000000001', '{}', 
+   '[
+     {"type": "experience", "value": 50},
+     {"type": "currency", "value": 25},
+     {"type": "stat", "key": "clarity", "value": 1}
+   ]', 
+   '/icons/skills/paragraph.svg'),
+   
+  ('20000000-0000-0000-0000-000000000002', 'Topic Sentences', 'Craft effective opening sentences that establish the main idea of a paragraph', 'lesson', 2, '10000000-0000-0000-0000-000000000002', 
+   '{"20000000-0000-0000-0000-000000000001"}', 
+   '[
+     {"type": "experience", "value": 75},
+     {"type": "currency", "value": 30},
+     {"type": "stat", "key": "clarity", "value": 1}
+   ]', 
+   '/icons/skills/topic.svg'),
+   
+  ('20000000-0000-0000-0000-000000000003', 'Supporting Details', 'Select and organize relevant details that support the main idea', 'lesson', 2, '10000000-0000-0000-0000-000000000003', 
+   '{"20000000-0000-0000-0000-000000000001"}', 
+   '[
+     {"type": "experience", "value": 75},
+     {"type": "currency", "value": 30},
+     {"type": "stat", "key": "persuasion", "value": 1}
+   ]', 
+   '/icons/skills/details.svg'),
+   
+  ('20000000-0000-0000-0000-000000000004', 'Concluding Sentences', 'Create effective paragraph closures that reinforce the main idea', 'lesson', 2, '10000000-0000-0000-0000-000000000004', 
+   '{"20000000-0000-0000-0000-000000000001"}', 
+   '[
+     {"type": "experience", "value": 75},
+     {"type": "currency", "value": 30},
+     {"type": "stat", "key": "clarity", "value": 1}
+   ]', 
+   '/icons/skills/conclusion.svg'),
+   
+  -- Intermediate level
+  ('20000000-0000-0000-0000-000000000005', 'Thesis Statements', 'Develop clear, focused thesis statements that guide entire essays', 'lesson', 2, '10000000-0000-0000-0000-000000000005', 
+   '{"20000000-0000-0000-0000-000000000002"}', 
+   '[
+     {"type": "experience", "value": 100},
+     {"type": "currency", "value": 50},
+     {"type": "stat", "key": "clarity", "value": 2},
+     {"type": "item", "key": "00000000-0000-0000-0000-000000000101", "value": 1}
+   ]', 
+   '/icons/skills/thesis.svg'),
+   
+  -- Advanced level
+  ('20000000-0000-0000-0000-000000000006', 'Argumentative Structure', 'Organize claims, evidence, and reasoning in logical sequences', 'lesson', 2, '10000000-0000-0000-0000-000000000006', 
+   '{"20000000-0000-0000-0000-000000000005", "20000000-0000-0000-0000-000000000003"}', 
+   '[
+     {"type": "experience", "value": 150},
+     {"type": "currency", "value": 75},
+     {"type": "stat", "key": "persuasion", "value": 2},
+     {"type": "stat", "key": "clarity", "value": 1}
+   ]', 
+   '/icons/skills/argument.svg'),
+   
+  ('20000000-0000-0000-0000-000000000007', 'Logical Fallacies', 'Identify and avoid common reasoning errors in argumentation', 'lesson', 2, '10000000-0000-0000-0000-000000000007', 
+   '{"20000000-0000-0000-0000-000000000006"}', 
+   '[
+     {"type": "experience", "value": 200},
+     {"type": "currency", "value": 100},
+     {"type": "stat", "key": "persuasion", "value": 2},
+     {"type": "item", "key": "00000000-0000-0000-0000-000000000102", "value": 1}
+   ]', 
+   '/icons/skills/fallacies.svg'),
+   
+  -- Mastery level
+  ('20000000-0000-0000-0000-000000000008', 'Research Synthesis', 'Integrate diverse sources into a cohesive, original analysis', 'lesson', 2, '10000000-0000-0000-0000-000000000008', 
+   '{"20000000-0000-0000-0000-000000000007"}', 
+   '[
+     {"type": "experience", "value": 300},
+     {"type": "currency", "value": 150},
+     {"type": "stat", "key": "clarity", "value": 2},
+     {"type": "stat", "key": "persuasion", "value": 2},
+     {"type": "stat", "key": "vocabulary", "value": 1},
+     {"type": "item", "key": "00000000-0000-0000-0000-000000000103", "value": 1}
+   ]', 
+   '/icons/skills/synthesis.svg');
+
+-- Add some item templates for the rewards
+INSERT INTO item_templates (id, name, description, item_type, rarity, stat_bonuses, icon_url)
+VALUES
+  ('00000000-0000-0000-0000-000000000101', 'Thesis Compass', 'A magical compass that always points toward your strongest argument', 'tool', 'uncommon', 
+   '{"clarity": 1}', '/icons/items/compass.svg'),
+   
+  ('00000000-0000-0000-0000-000000000102', 'Fallacy Detector', 'A device that beeps when logical fallacies are nearby', 'tool', 'rare', 
+   '{"persuasion": 2}', '/icons/items/detector.svg'),
+   
+  ('00000000-0000-0000-0000-000000000103', 'Synthesis Crystal', 'A powerful artifact that helps combine disparate ideas into coherent wholes', 'artifact', 'epic', 
+   '{"clarity": 2, "persuasion": 2}', '/icons/items/crystal.svg');
+
+-- Add some exercises for the first lesson
+INSERT INTO exercises (id, lesson_id, title, description, exercise_type, content, solution, order_index, points)
+VALUES
+  ('30000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'Identify Paragraph Components', 'Practice identifying the parts of a well-structured paragraph', 'multiple_choice',
+   'Read the following paragraph and identify its components:
+
+"The local farmers'' market offers numerous benefits to the community. Every Saturday, residents can purchase fresh, locally grown produce that is often harvested just hours before the market opens. The market also provides a venue for small business owners to sell handmade goods like soaps, candles, and crafts. Additionally, it creates a social gathering space where neighbors can connect and build relationships. With its combination of fresh food, unique products, and community building, the farmers'' market has become an essential part of our town."
+
+1. Which sentence is the topic sentence?
+2. Which of the following is NOT a supporting detail in this paragraph?
+3. Which sentence is the concluding sentence?',
+   '{
+     "questions": [
+       {
+         "id": 1,
+         "options": [
+           "The local farmers'' market offers numerous benefits to the community.",
+           "Every Saturday, residents can purchase fresh, locally grown produce that is often harvested just hours before the market opens.",
+           "The market also provides a venue for small business owners to sell handmade goods like soaps, candles, and crafts.",
+           "With its combination of fresh food, unique products, and community building, the farmers'' market has become an essential part of our town."
+         ],
+         "correctIndex": 0,
+         "explanation": "The topic sentence states the main idea of the paragraph, which is that the farmers'' market benefits the community."
+       },
+       {
+         "id": 2,
+         "options": [
+           "Residents can purchase fresh, locally grown produce.",
+           "The market provides a venue for small business owners.",
+           "The market creates a social gathering space.",
+           "The market is only open during summer months."
+         ],
+         "correctIndex": 3,
+         "explanation": "The paragraph does not mention anything about the market only being open during summer months."
+       },
+       {
+         "id": 3,
+         "options": [
+           "The local farmers'' market offers numerous benefits to the community.",
+           "Additionally, it creates a social gathering space where neighbors can connect and build relationships.",
+           "With its combination of fresh food, unique products, and community building, the farmers'' market has become an essential part of our town.",
+           "None of the above"
+         ],
+         "correctIndex": 2,
+         "explanation": "The concluding sentence summarizes the main points and reinforces the importance of the farmers'' market to the town."
+       }
+     ]
+   }',
+   1, 10),
+   
+  ('30000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000001', 'Create a Structured Paragraph', 'Practice writing a well-organized paragraph', 'free_response',
+   'Write a well-structured paragraph about a place you enjoy visiting. Include:
+   
+1. A clear topic sentence that states your main idea
+2. At least three supporting details (examples, facts, or explanations)
+3. A concluding sentence that wraps up your thoughts
+
+Your paragraph should be 5-7 sentences long.',
+   '{
+     "evaluation_criteria": [
+       {
+         "criterion": "Topic Sentence",
+         "weight": 25,
+         "description": "Includes a clear topic sentence that states the main idea"
+       },
+       {
+         "criterion": "Supporting Details",
+         "weight": 40,
+         "description": "Provides at least three relevant supporting details that develop the main idea"
+       },
+       {
+         "criterion": "Concluding Sentence",
+         "weight": 25,
+         "description": "Includes an effective concluding sentence that summarizes or reinforces the main idea"
+       },
+       {
+         "criterion": "Unity and Coherence",
+         "weight": 10,
+         "description": "All sentences relate to the main idea and flow logically from one to the next"
+       }
+     ],
+     "example_solution": "The local library is my favorite place to spend quiet afternoons. The tall bookshelves filled with countless stories create a sense of possibility and adventure. Comfortable reading nooks with plush chairs invite visitors to sit and lose themselves in a good book for hours. The library also offers free Wi-Fi and computer access, making it a practical resource for research and work. The helpful librarians are always ready to recommend new titles or help locate hard-to-find information. With its perfect combination of resources, comfort, and assistance, the library provides an ideal environment for both learning and relaxation."
+   }',
+   2, 15);

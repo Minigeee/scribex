@@ -97,6 +97,61 @@ function AuthenticatedComponent() {
 
 We use Sonner for toast notifications. The Toaster component is already included in the app's providers.
 
+## React Flow
+
+```tsx
+import React from 'react';
+import { ReactFlow } from '@xyflow/react';
+ 
+import '@xyflow/react/dist/style.css';
+ 
+const initialNodes = [
+  { id: '1', position: { x: 0, y: 0 }, data: { label: '1' } },
+  { id: '2', position: { x: 0, y: 100 }, data: { label: '2' } },
+];
+const initialEdges = [{ id: 'e1-2', source: '1', target: '2' }];
+ 
+export default function App() {
+  return (
+    <div style={{ width: '100vw', height: '100vh' }}>
+      <ReactFlow nodes={initialNodes} edges={initialEdges} />
+    </div>
+  );
+}
+```
+
+### Custom Nodes
+
+```tsx
+import { useCallback } from 'react';
+import { Handle, Position } from '@xyflow/react';
+ 
+const handleStyle = { left: 10 };
+ 
+function TextUpdaterNode({ data }) {
+  const onChange = useCallback((evt) => {
+    console.log(evt.target.value);
+  }, []);
+ 
+  return (
+    <>
+      <Handle type="target" position={Position.Top} />
+      <div>
+        <label htmlFor="text">Text:</label>
+        <input id="text" name="text" onChange={onChange} className="nodrag" />
+      </div>
+      <Handle type="source" position={Position.Bottom} id="a" />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="b"
+        style={handleStyle}
+      />
+    </>
+  );
+}
+```
+
 ## AI Utilities
 
 ```tsx

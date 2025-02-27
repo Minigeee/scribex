@@ -1,60 +1,31 @@
-import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { Tables } from '@/lib/database.types';
 import { createClient } from '@/lib/supabase/server';
-import Link from 'next/link';
+import { ReactFlowProvider } from '@xyflow/react';
+import assert from 'assert';
+import { FileText, HelpCircle, Layers, Timer } from 'lucide-react';
+import { SkillTreeFlow } from './skill-tree-flow';
 
 // Define types for our data structure
 type ContentLayer = Tables<'content_layers'>;
-type Lesson = Tables<'lessons'> & {
+type SkillTreeNode = Tables<'skill_tree_nodes'> & {
+  lesson: Tables<'lessons'> | null;
   content_layer: ContentLayer | null;
 };
 
-type LessonWithProgress = Lesson & {
+type SkillTreeNodeWithProgress = SkillTreeNode & {
   completed: boolean;
   current: boolean;
 };
 
-// Helper function to determine category styling
-function getCategoryStyle(contentLayer: ContentLayer | null) {
-  if (!contentLayer) {
-    return {
-      bgColor: 'bg-gray-100',
-      textColor: 'text-gray-800',
-      label: 'Unknown',
-    };
-  }
+// Category icons for different content layers
+const CATEGORY_ICONS = {
+  unknown: <HelpCircle size={16} />,
+  mechanics: <Timer size={16} />,
+  sequencing: <Layers size={16} />,
+  default: <FileText size={16} />,
+};
 
-  const name = contentLayer.name;
-
-  if (name.includes('Mechanics')) {
-    return {
-      bgColor: 'bg-blue-100',
-      textColor: 'text-blue-800',
-      label: name.split(' ')[0],
-    };
-  } else if (name.includes('Sequencing')) {
-    return {
-      bgColor: 'bg-purple-100',
-      textColor: 'text-purple-800',
-      label: name.split(' ')[0],
-    };
-  } else {
-    return {
-      bgColor: 'bg-amber-100',
-      textColor: 'text-amber-800',
-      label: name.split(' ')[0],
-    };
-  }
-}
-
-export default async function MapPage() {
+export default async function SkillTreePage() {
   const supabase = await createClient();
 
   // Get the current user
@@ -62,22 +33,23 @@ export default async function MapPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Fetch lessons with content layers
-  const { data: lessons, error } = await supabase
-    .from('lessons')
+  // Fetch content layers
+  const { data: contentLayers, error: contentLayersError } = await supabase
+    .from('content_layers')
+    .select('*')
+    .order('order_index');
+
+  // Fetch skill tree nodes with lessons and content layers
+  const { data: skillTreeNodes, error: skillTreeNodesError } = await supabase
+    .from('skill_tree_nodes')
     .select(
       `
       *,
+      lesson:lessons(*),
       content_layer:content_layers(*)
     `
     )
-    .eq('published', true)
-    .order('content_layer_id')
-    .order('order_index');
-
-  if (error) {
-    console.error('Error fetching lessons:', error);
-  }
+    .order('content_layer_id');
 
   // Fetch user progress if user is logged in
   let userProgress: Record<string, boolean> = {};
@@ -114,123 +86,230 @@ export default async function MapPage() {
     }
   }
 
-  // Process lessons to add progress information
-  const processedLessons: LessonWithProgress[] = [];
+  // Process skill tree nodes to add progress information
+  const processedNodes: SkillTreeNodeWithProgress[] = [];
   let foundCurrent = false;
 
-  lessons?.forEach((lesson, index) => {
-    const isCompleted = userProgress[lesson.id] || false;
+  skillTreeNodes?.forEach((node) => {
+    const isCompleted = node.lesson
+      ? userProgress[node.lesson.id] || false
+      : false;
     let isCurrent = false;
 
-    // Mark the first uncompleted lesson as current
+    // Mark the first uncompleted node as current
     if (!isCompleted && !foundCurrent) {
       isCurrent = true;
       foundCurrent = true;
     }
 
-    processedLessons.push({
-      ...lesson,
+    processedNodes.push({
+      ...node,
       completed: isCompleted,
       current: isCurrent,
     });
   });
 
-  // Function to get the appropriate lesson URL
-  const getLessonUrl = (lesson: LessonWithProgress) => {
-    // If user is not logged in, redirect to login with callback
-    if (!user) {
-      return `/login?callbackUrl=${encodeURIComponent(`/lessons/${lesson.slug}`)}`;
-    }
+  // Group nodes by content layer
+  const nodesByLayer: Record<number, SkillTreeNodeWithProgress[]> = {};
 
-    // Otherwise, go directly to the lesson
-    return `/lessons/${lesson.slug}`;
-  };
+  processedNodes.forEach((node) => {
+    if (node.content_layer_id) {
+      if (!nodesByLayer[node.content_layer_id]) {
+        nodesByLayer[node.content_layer_id] = [];
+      }
+      nodesByLayer[node.content_layer_id].push(node);
+    }
+  });
+
+  // Create edges based on prerequisite relationships
+  const edgesByLayer: Record<
+    number,
+    { id: string; source: string; target: string }[]
+  > = {};
+
+  processedNodes.forEach((node) => {
+    if (
+      node.prerequisite_nodes &&
+      node.prerequisite_nodes.length > 0 &&
+      node.content_layer_id
+    ) {
+      if (!edgesByLayer[node.content_layer_id]) {
+        edgesByLayer[node.content_layer_id] = [];
+      }
+
+      node.prerequisite_nodes.forEach((prereqId) => {
+        assert(node.content_layer_id, 'node.content_layer_id is required');
+        edgesByLayer[node.content_layer_id].push({
+          id: `e-${prereqId}-${node.id}`,
+          source: prereqId,
+          target: node.id,
+        });
+      });
+    }
+  });
+
+  // Pre-calculate progress stats for each layer
+  const progressByLayer: Record<
+    number,
+    { total: number; completed: number; percentage: number }
+  > = {};
+
+  // Calculate overall progress
+  let totalNodes = 0;
+  let completedNodes = 0;
+
+  // Process each layer
+  if (contentLayers) {
+    contentLayers.forEach((layer) => {
+      const nodes = nodesByLayer[layer.id] || [];
+      const completed = nodes.filter((node) => node.completed).length;
+      const total = nodes.length;
+      const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+      progressByLayer[layer.id] = { total, completed, percentage };
+
+      // Add to overall totals
+      totalNodes += total;
+      completedNodes += completed;
+    });
+  }
+
+  // Calculate overall percentage
+  const overallPercentage =
+    totalNodes > 0 ? Math.round((completedNodes / totalNodes) * 100) : 0;
+
+  // Prepare category styles for each content layer
+  const categoryStyles =
+    contentLayers?.map((layer) => {
+      const name = layer.name || '';
+      let style = {
+        id: layer.id,
+        bgColor: 'bg-gray-100',
+        textColor: 'text-gray-800',
+        borderColor: 'border-gray-300',
+        label: 'Unknown',
+        iconKey: 'unknown' as keyof typeof CATEGORY_ICONS,
+      };
+
+      if (name.includes('Mechanics')) {
+        style = {
+          id: layer.id,
+          bgColor: 'bg-blue-100',
+          textColor: 'text-blue-800',
+          borderColor: 'border-blue-300',
+          label: name.split(' ')[0],
+          iconKey: 'mechanics',
+        };
+      } else if (name.includes('Sequencing')) {
+        style = {
+          id: layer.id,
+          bgColor: 'bg-purple-100',
+          textColor: 'text-purple-800',
+          borderColor: 'border-purple-300',
+          label: name.split(' ')[0],
+          iconKey: 'sequencing',
+        };
+      } else {
+        style = {
+          id: layer.id,
+          bgColor: 'bg-amber-100',
+          textColor: 'text-amber-800',
+          borderColor: 'border-amber-300',
+          label: name.split(' ')[0],
+          iconKey: 'default',
+        };
+      }
+
+      return style;
+    }) || [];
+
+  const error = contentLayersError || skillTreeNodesError;
 
   return (
-    <div className='container mx-auto space-y-8 px-5 py-6 md:py-8'>
-      <div>
-        <h1 className='text-3xl font-bold tracking-tight'>Writing Journey</h1>
-        <p className='mt-2 text-muted-foreground'>
-          Complete levels to improve your writing skills
-        </p>
+    <div className='flex h-[calc(100vh-4rem)] md:h-screen flex-col bg-gradient-to-b from-background to-background/80 p-0'>
+      <div className='px-5 py-5 md:px-6 md:py-8 border-b'>
+        <div className='flex flex-col gap-2 md:gap-4 md:flex-row md:items-center md:justify-between'>
+          <div>
+            <h1 className='bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-xl md:text-3xl font-bold tracking-tight text-transparent'>
+              Writing Skill Tree
+            </h1>
+            <p className='mt-2 text-muted-foreground hidden md:block'>
+              Complete skill nodes to improve your writing abilities
+            </p>
+          </div>
+
+          {/* Progress indicator */}
+          <div className='flex items-center gap-3 rounded-lg border bg-card p-3 shadow-sm'>
+            <div className='relative flex h-12 w-12 items-center justify-center'>
+              <svg className='h-12 w-12 -rotate-90 transform'>
+                <circle
+                  cx='24'
+                  cy='24'
+                  r='20'
+                  fill='none'
+                  strokeWidth='4'
+                  stroke='hsl(var(--muted))'
+                  className='opacity-25'
+                />
+                <circle
+                  cx='24'
+                  cy='24'
+                  r='20'
+                  fill='none'
+                  strokeWidth='4'
+                  stroke='hsl(var(--primary))'
+                  strokeDasharray={`${overallPercentage * 1.26} 126`}
+                  className='transition-all duration-1000 ease-out'
+                />
+              </svg>
+              <span className='absolute text-sm font-medium'>
+                {overallPercentage}%
+              </span>
+            </div>
+            <div>
+              <p className='text-sm font-medium'>Overall Progress</p>
+              <p className='text-xs text-muted-foreground'>
+                {completedNodes} of {totalNodes} skills completed
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {error && (
-        <div className='rounded-md border border-red-200 bg-red-50 p-4 text-red-800'>
-          <p>There was an error loading the lessons. Please try again later.</p>
+        <div className='mx-5 rounded-md border border-red-200 bg-red-50 p-4 text-red-800 md:mx-6'>
+          <p>
+            There was an error loading the skill tree. Please try again later.
+          </p>
         </div>
       )}
 
-      {!error && processedLessons.length === 0 && (
-        <div className='rounded-md border border-gray-200 bg-gray-50 p-4'>
-          <p>No lessons are available at the moment. Check back soon!</p>
+      {!error && contentLayers && contentLayers.length > 0 && (
+        <div className='relative flex-1'>
+          <ReactFlowProvider>
+            <SkillTreeFlow
+              contentLayers={contentLayers}
+              nodesByLayer={nodesByLayer}
+              edgesByLayer={edgesByLayer}
+              user={user}
+              progressByLayer={progressByLayer}
+              categoryStyles={categoryStyles}
+              categoryIcons={CATEGORY_ICONS}
+              overallProgress={{
+                total: totalNodes,
+                completed: completedNodes,
+                percentage: overallPercentage,
+              }}
+            />
+          </ReactFlowProvider>
         </div>
       )}
 
-      {!error && processedLessons.length > 0 && (
-        <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
-          {processedLessons.map((lesson) => {
-            const categoryStyle = getCategoryStyle(lesson.content_layer);
-            const lessonUrl = getLessonUrl(lesson);
-
-            return (
-              <Card
-                key={lesson.id}
-                className={`overflow-hidden transition-all ${lesson.completed ? 'border-green-500/50' : ''} ${lesson.current ? 'border-primary/50 shadow-md' : ''} ${!lesson.completed && !lesson.current ? 'opacity-70' : ''} `}
-              >
-                <CardHeader className='pb-3'>
-                  <div className='flex items-center justify-between'>
-                    <div
-                      className={`rounded-full px-2 py-1 text-xs font-medium ${categoryStyle.bgColor} ${categoryStyle.textColor}`}
-                    >
-                      {categoryStyle.label}
-                    </div>
-                    {lesson.completed && (
-                      <div className='rounded-full bg-green-100 p-1 text-green-800'>
-                        <svg
-                          xmlns='http://www.w3.org/2000/svg'
-                          width='16'
-                          height='16'
-                          viewBox='0 0 24 24'
-                          fill='none'
-                          stroke='currentColor'
-                          strokeWidth='2'
-                          strokeLinecap='round'
-                          strokeLinejoin='round'
-                        >
-                          <path d='M20 6L9 17l-5-5' />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                  <CardTitle className='mt-2'>{lesson.title}</CardTitle>
-                  <CardDescription>{lesson.description}</CardDescription>
-                </CardHeader>
-                <CardFooter className='pt-3'>
-                  <Button
-                    className='w-full'
-                    variant={
-                      lesson.current
-                        ? 'default'
-                        : lesson.completed
-                          ? 'outline'
-                          : 'secondary'
-                    }
-                    disabled={!lesson.completed && !lesson.current}
-                    asChild
-                  >
-                    <Link href={lessonUrl}>
-                      {lesson.completed
-                        ? 'Review'
-                        : lesson.current
-                          ? 'Start'
-                          : 'Locked'}
-                    </Link>
-                  </Button>
-                </CardFooter>
-              </Card>
-            );
-          })}
+      {!error && (!contentLayers || contentLayers.length === 0) && (
+        <div className='mx-5 rounded-md border border-gray-200 bg-gray-50 p-4 md:mx-6'>
+          <p>
+            No skill tree content is available at the moment. Check back soon!
+          </p>
         </div>
       )}
     </div>
