@@ -27,8 +27,12 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { ItemIcon } from '@/components/ui/item-icon';
 import { getLayoutedElements } from '@/lib/utils/node-layout';
 import '@xyflow/react/dist/style.css';
+import { CoinsIcon, TrophyIcon } from 'lucide-react';
+import { useItem, useItems } from '@/lib/hooks/use-item';
+import { ItemReward } from '@/components/ui/item-reward';
 
 type ContentLayer = Tables<'content_layers'>;
 type SkillTreeNode = Tables<'skill_tree_nodes'> & {
@@ -70,11 +74,113 @@ interface SkillTreeFlowProps {
   overallProgress: ProgressData;
 }
 
+// Define reward types
+type RewardType = 'experience' | 'currency' | 'stat' | 'item';
+
+interface Reward {
+  type: RewardType;
+  value: number;
+  key?: string;
+}
+
+// Hook to fetch all item rewards for a node
+function useNodeRewards(rewards: Reward[] | undefined) {
+  // Extract item IDs from rewards
+  const itemIds = useMemo(() => {
+    if (!rewards) return [];
+    return rewards
+      .filter((reward) => reward.type === 'item' && reward.key)
+      .map((reward) => reward.key as string);
+  }, [rewards]);
+
+  // Fetch all items at once
+  const { items, isLoading } = useItems(itemIds.length > 0 ? itemIds : undefined);
+
+  // Create a map of item ID to item data for easy lookup
+  const itemsMap = useMemo(() => {
+    if (!items) return {};
+    return items.reduce((acc, item) => {
+      acc[item.id] = item;
+      return acc;
+    }, {} as Record<string, Tables<'item_templates'>>);
+  }, [items]);
+
+  return {
+    itemsMap,
+    isLoading,
+  };
+}
+
+// Component to display a single reward
+function RewardDisplay({ reward }: { reward: Reward & { itemName?: string } }) {
+  const baseClasses =
+    'flex items-center gap-1 rounded-md px-1.5 py-0.5 text-2xs font-medium';
+  
+  // Use the useItem hook to fetch item information when reward type is 'item' and we don't have the name yet
+  const { item, isLoading: isLoadingItem } = useItem(
+    reward.type === 'item' && !reward.itemName ? reward.key : undefined
+  );
+
+  switch (reward.type) {
+    case 'experience':
+      return (
+        <div className={`${baseClasses} bg-amber-50 text-amber-700`}>
+          <TrophyIcon className='h-3 w-3 flex-shrink-0' />
+          <span className='truncate'>+{reward.value} XP</span>
+        </div>
+      );
+    case 'currency':
+      return (
+        <div className={`${baseClasses} bg-yellow-50 text-yellow-700`}>
+          <CoinsIcon className='h-3 w-3 flex-shrink-0' />
+          <span className='truncate'>+{reward.value} Coins</span>
+        </div>
+      );
+    case 'stat':
+      return (
+        <div className={`${baseClasses} bg-blue-50 text-blue-700`}>
+          <svg
+            xmlns='http://www.w3.org/2000/svg'
+            width='10'
+            height='10'
+            viewBox='0 0 24 24'
+            fill='none'
+            stroke='currentColor'
+            strokeWidth='2'
+            strokeLinecap='round'
+            strokeLinejoin='round'
+            className='flex-shrink-0'
+          >
+            <path d='M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z' />
+            <polyline points='14 2 14 8 20 8' />
+            <path d='M16 13H8' />
+            <path d='M16 17H8' />
+            <path d='M10 9H8' />
+          </svg>
+          <span className='truncate'>
+            +{reward.value} {reward.key || `Stat Point${reward.value > 1 ? 's' : ''}`}
+          </span>
+        </div>
+      );
+    case 'item':
+      if (!reward.key) return null;
+      
+      // Use the new ItemReward component
+      return <ItemReward itemId={reward.key} quantity={reward.value} className='pointer-events-auto' />;
+    default:
+      return null;
+  }
+}
+
 // Custom node component for skill tree nodes
 function SkillTreeNodeComponent({ data }: { data: any }) {
   const node = data.node as SkillTreeNodeWithProgress;
   const categoryStyle = data.getCategoryStyle(node);
   const lessonUrl = getLessonUrl(node, data.user);
+  const rewards = (node.rewards as unknown as Reward[]) || [];
+  
+  // Use the useNodeRewards hook to fetch all item rewards for this node
+  const { itemsMap } = useNodeRewards(rewards.length > 0 ? rewards : undefined);
 
   // Animation variants for the card
   const cardVariants = {
@@ -118,15 +224,16 @@ function SkillTreeNodeComponent({ data }: { data: any }) {
         animate='animate'
         whileHover={node.completed || node.current ? 'hover' : 'animate'}
         variants={cardVariants}
+        className='flex h-full'
       >
         <Card
-          className={`w-[220px] overflow-hidden transition-all sm:w-[250px] ${
+          className={`flex h-full w-[220px] flex-col overflow-hidden transition-all sm:w-[250px] ${
             node.completed ? 'border-green-500/50 bg-green-50/30' : ''
           } ${node.current ? 'border-primary/50 bg-card shadow-md' : ''} ${
             !node.completed && !node.current ? 'opacity-70 saturate-50' : ''
           }`}
         >
-          <CardHeader className='pb-2 pt-3'>
+          <CardHeader className='flex-grow pb-2 pt-3'>
             <div className='flex items-center justify-between'>
               <div
                 className={`rounded-full px-2 py-1 text-xs font-medium ${categoryStyle.bgColor} ${categoryStyle.textColor}`}
@@ -157,10 +264,33 @@ function SkillTreeNodeComponent({ data }: { data: any }) {
             <CardDescription className='line-clamp-2 text-xs sm:text-sm'>
               {node.description}
             </CardDescription>
+
+            {/* Rewards section */}
+            {rewards && rewards.length > 0 && (
+              <div className='mt-2 border-t border-dashed border-gray-200 pt-1.5'>
+                <div className='mb-1 text-2xs font-medium text-gray-500'>
+                  Rewards:
+                </div>
+                <div className='grid grid-cols-1 gap-1 sm:grid-cols-2'>
+                  {rewards.map((reward, index) => (
+                    <RewardDisplay 
+                      key={`${reward.type}-${index}`} 
+                      reward={{
+                        ...reward,
+                        // If it's an item reward and we have the item data, use the item name
+                        ...(reward.type === 'item' && reward.key && itemsMap[reward.key] && {
+                          itemName: itemsMap[reward.key].name
+                        })
+                      }} 
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </CardHeader>
           <CardFooter className='pb-3 pt-2'>
             <Button
-              className='w-full text-sm pointer-events-auto'
+              className='pointer-events-auto w-full text-sm'
               variant={
                 node.current
                   ? 'default'
@@ -303,7 +433,7 @@ export function SkillTreeFlow({
   }, [activeEdges]);
 
   const initialData = useMemo(() => {
-    return getLayoutedElements(flowNodes, flowEdges);
+    return getLayoutedElements(flowNodes, flowEdges, 240);
   }, [flowNodes, flowEdges]);
 
   const [n, setNodes, onNodesChange] = useNodesState(initialData.nodes);

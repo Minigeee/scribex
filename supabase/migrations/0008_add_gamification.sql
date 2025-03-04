@@ -23,12 +23,7 @@ CREATE TABLE IF NOT EXISTS public.character_profiles (
     current_streak INTEGER NOT NULL DEFAULT 0,
     longest_streak INTEGER NOT NULL DEFAULT 0,
     last_activity_date DATE,
-    stats JSONB NOT NULL DEFAULT '{
-        "clarity": 1,
-        "creativity": 1,
-        "persuasion": 1,
-        "vocabulary": 1
-    }'::jsonb, -- Character stats stored as JSON
+    stats JSONB NOT NULL DEFAULT '{}'::jsonb, -- Character stats stored as JSON
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
 );
@@ -61,13 +56,12 @@ CREATE TABLE IF NOT EXISTS public.skill_tree_nodes (
 
 -- Inventory items (templates)
 CREATE TABLE IF NOT EXISTS public.item_templates (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id VARCHAR(50) PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     description TEXT,
     item_type VARCHAR(50) NOT NULL,
     rarity VARCHAR(20) NOT NULL DEFAULT 'common',
     stat_bonuses JSONB DEFAULT '{}',
-    icon_url TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
 );
@@ -76,7 +70,7 @@ CREATE TABLE IF NOT EXISTS public.item_templates (
 CREATE TABLE IF NOT EXISTS public.character_inventory (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     character_id UUID NOT NULL REFERENCES public.character_profiles(id) ON DELETE CASCADE,
-    item_template_id UUID NOT NULL REFERENCES public.item_templates(id) ON DELETE CASCADE,
+    item_template_id VARCHAR(50) NOT NULL REFERENCES public.item_templates(id) ON DELETE CASCADE,
     quantity INTEGER NOT NULL DEFAULT 1,
     equipped BOOLEAN NOT NULL DEFAULT FALSE,
     acquired_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
@@ -142,9 +136,24 @@ CREATE TABLE IF NOT EXISTS public.character_quests (
     status VARCHAR(20) NOT NULL DEFAULT 'not_started',
     started_at TIMESTAMP WITH TIME ZONE,
     completed_at TIMESTAMP WITH TIME ZONE,
+    rewards_claimed BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
     UNIQUE(character_id, quest_id)
+);
+
+-- Character skill tree node progress
+CREATE TABLE IF NOT EXISTS public.character_skill_nodes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    character_id UUID NOT NULL REFERENCES public.character_profiles(id) ON DELETE CASCADE,
+    node_id UUID NOT NULL REFERENCES public.skill_tree_nodes(id) ON DELETE CASCADE,
+    status VARCHAR(20) NOT NULL DEFAULT 'locked',
+    unlocked_at TIMESTAMP WITH TIME ZONE,
+    completed_at TIMESTAMP WITH TIME ZONE,
+    rewards_claimed BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+    UNIQUE(character_id, node_id)
 );
 
 -- Factions
@@ -236,6 +245,7 @@ DECLARE
     v_stats JSONB;
     v_stat_name TEXT;
     v_stat_value INTEGER;
+    v_rewards_already_claimed BOOLEAN := FALSE;
 BEGIN
     -- Check if character exists
     IF NOT EXISTS (SELECT 1 FROM public.character_profiles WHERE id = p_character_id) THEN
@@ -255,12 +265,14 @@ BEGIN
         RAISE EXCEPTION 'Project does not exist or does not belong to character';
     END IF;
     
-    -- Check if already completed
+    -- Check if already completed and rewards claimed
     IF EXISTS (SELECT 1 FROM public.character_quests 
                WHERE character_id = p_character_id 
                AND quest_id = p_quest_id
-               AND status = 'completed') THEN
-        RETURN TRUE;
+               AND status = 'completed'
+               AND rewards_claimed = TRUE) THEN
+        RAISE EXCEPTION 'Quest already completed and rewards claimed';
+        RETURN FALSE;
     END IF;
     
     -- Get quest rewards and info
@@ -282,7 +294,8 @@ BEGIN
         project_id,
         status,
         started_at,
-        completed_at
+        completed_at,
+        rewards_claimed
     ) VALUES (
         p_character_id,
         p_quest_id,
@@ -290,13 +303,15 @@ BEGIN
         'completed',
         COALESCE((SELECT started_at FROM public.character_quests 
                  WHERE character_id = p_character_id AND quest_id = p_quest_id), now()),
-        now()
+        now(),
+        TRUE
     )
     ON CONFLICT (character_id, quest_id) 
     DO UPDATE SET
         project_id = p_project_id,
         status = 'completed',
         completed_at = now(),
+        rewards_claimed = TRUE,
         updated_at = now();
     
     -- Get current character stats
@@ -351,7 +366,7 @@ BEGIN
                             quantity
                         ) VALUES (
                             p_character_id,
-                            (v_reward->>'key')::UUID,
+                            (v_reward->>'key')::VARCHAR,
                             (v_reward->>'value')::INTEGER
                         )
                         ON CONFLICT (character_id, item_template_id) 
@@ -721,4 +736,9 @@ BEGIN
     
     RETURN TRUE;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER; 
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Add trigger for character_skill_nodes
+CREATE TRIGGER update_character_skill_nodes_updated_at
+BEFORE UPDATE ON public.character_skill_nodes
+FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column(); 

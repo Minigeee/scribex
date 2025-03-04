@@ -1,12 +1,12 @@
 import { Edge, Node } from '@xyflow/react';
 
 // Custom game skill tree layout algorithm with better vertical organization
-export const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
+export const getLayoutedElements = (nodes: Node[], edges: Edge[], nodeHeight?: number) => {
   if (nodes.length === 0) return { nodes, edges };
 
   // Layout configuration
   const nodeWidth = 250;
-  const nodeHeight = 180;
+  nodeHeight = nodeHeight || 180;
   const horizontalSpacing = nodeWidth * 1.5;
   const verticalSpacing = nodeHeight * 1.5;
 

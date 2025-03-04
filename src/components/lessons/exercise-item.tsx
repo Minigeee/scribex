@@ -113,7 +113,7 @@ export function ExerciseItem({ exercise, onComplete }: ExerciseItemProps) {
     const content = exercise.content;
 
     // Split the content into introduction and questions
-    const lines = content.split('\n');
+    const lines = content.split('\n').map((line) => line.trim());
     let introduction = '';
     const questions: ParsedQuestion[] = [];
 
@@ -126,7 +126,7 @@ export function ExerciseItem({ exercise, onComplete }: ExerciseItemProps) {
       const line = lines[i];
 
       // Check if this line starts a new question (numbered format)
-      const questionMatch = line.match(/^\s*(\d+)\.\s+(.+)$/);
+      const questionMatch = line.match(/^\s*(\d+)[\.\)]\s+(.+)$/);
 
       if (questionMatch) {
         foundFirstQuestion = true;
@@ -150,6 +150,7 @@ export function ExerciseItem({ exercise, onComplete }: ExerciseItemProps) {
         introduction += line + '\n';
       }
     }
+    console.log(lines, questions);
 
     // Add the last question if there is one
     if (currentQuestionId > 0) {

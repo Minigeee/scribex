@@ -1259,7 +1259,7 @@ VALUES
    '[
      {"type": "experience", "value": 50},
      {"type": "currency", "value": 25},
-     {"type": "stat", "key": "clarity", "value": 1}
+     {"type": "stat", "value": 1}
    ]', 
    '/icons/skills/paragraph.svg'),
    
@@ -1268,7 +1268,7 @@ VALUES
    '[
      {"type": "experience", "value": 75},
      {"type": "currency", "value": 30},
-     {"type": "stat", "key": "clarity", "value": 1}
+     {"type": "stat", "value": 1}
    ]', 
    '/icons/skills/topic.svg'),
    
@@ -1277,7 +1277,7 @@ VALUES
    '[
      {"type": "experience", "value": 75},
      {"type": "currency", "value": 30},
-     {"type": "stat", "key": "persuasion", "value": 1}
+     {"type": "stat", "value": 1}
    ]', 
    '/icons/skills/details.svg'),
    
@@ -1286,7 +1286,7 @@ VALUES
    '[
      {"type": "experience", "value": 75},
      {"type": "currency", "value": 30},
-     {"type": "stat", "key": "clarity", "value": 1}
+     {"type": "stat", "value": 1}
    ]', 
    '/icons/skills/conclusion.svg'),
    
@@ -1296,8 +1296,8 @@ VALUES
    '[
      {"type": "experience", "value": 100},
      {"type": "currency", "value": 50},
-     {"type": "stat", "key": "clarity", "value": 2},
-     {"type": "item", "key": "00000000-0000-0000-0000-000000000101", "value": 1}
+     {"type": "stat", "value": 2},
+     {"type": "item", "key": "tied_scroll", "value": 1}
    ]', 
    '/icons/skills/thesis.svg'),
    
@@ -1307,8 +1307,7 @@ VALUES
    '[
      {"type": "experience", "value": 150},
      {"type": "currency", "value": 75},
-     {"type": "stat", "key": "persuasion", "value": 2},
-     {"type": "stat", "key": "clarity", "value": 1}
+     {"type": "stat", "value": 3}
    ]', 
    '/icons/skills/argument.svg'),
    
@@ -1317,8 +1316,8 @@ VALUES
    '[
      {"type": "experience", "value": 200},
      {"type": "currency", "value": 100},
-     {"type": "stat", "key": "persuasion", "value": 2},
-     {"type": "item", "key": "00000000-0000-0000-0000-000000000102", "value": 1}
+     {"type": "stat", "value": 2},
+     {"type": "item", "key": "tied_scroll", "value": 1}
    ]', 
    '/icons/skills/fallacies.svg'),
    
@@ -1328,24 +1327,10 @@ VALUES
    '[
      {"type": "experience", "value": 300},
      {"type": "currency", "value": 150},
-     {"type": "stat", "key": "clarity", "value": 2},
-     {"type": "stat", "key": "persuasion", "value": 2},
-     {"type": "stat", "key": "vocabulary", "value": 1},
-     {"type": "item", "key": "00000000-0000-0000-0000-000000000103", "value": 1}
+     {"type": "stat", "value": 5},
+     {"type": "item", "key": "orb_1", "value": 1}
    ]', 
    '/icons/skills/synthesis.svg');
-
--- Add some item templates for the rewards
-INSERT INTO item_templates (id, name, description, item_type, rarity, stat_bonuses, icon_url)
-VALUES
-  ('00000000-0000-0000-0000-000000000101', 'Thesis Compass', 'A magical compass that always points toward your strongest argument', 'tool', 'uncommon', 
-   '{"clarity": 1}', '/icons/items/compass.svg'),
-   
-  ('00000000-0000-0000-0000-000000000102', 'Fallacy Detector', 'A device that beeps when logical fallacies are nearby', 'tool', 'rare', 
-   '{"persuasion": 2}', '/icons/items/detector.svg'),
-   
-  ('00000000-0000-0000-0000-000000000103', 'Synthesis Crystal', 'A powerful artifact that helps combine disparate ideas into coherent wholes', 'artifact', 'epic', 
-   '{"clarity": 2, "persuasion": 2}', '/icons/items/crystal.svg');
 
 -- Add some exercises for the first lesson
 INSERT INTO exercises (id, lesson_id, title, description, exercise_type, content, solution, order_index, points)

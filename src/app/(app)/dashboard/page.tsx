@@ -25,6 +25,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import Image from 'next/image';
+import { ItemIcon } from '@/components/ui/item-icon';
 
 export const metadata: Metadata = {
   title: 'Dashboard | ScribexX',
@@ -245,6 +247,8 @@ export default async function DashboardPage() {
             </CardFooter>
           </Card>
         </div>
+
+        <ItemIcon itemId='tied_scroll' />
       </div>
     </div>
   );

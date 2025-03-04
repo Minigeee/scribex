@@ -93,6 +93,51 @@ function AuthenticatedComponent() {
 }
 ```
 
+## Gamification Functions
+
+### Process Node Completion
+
+When a user completes all exercises in a lesson, call the `processNodeCompletion` function to award rewards. The database function has built-in security checks to prevent unauthorized access.
+
+```tsx
+import { processNodeCompletion } from '@/app/actions/process-node-completion';
+import { toast } from 'sonner';
+
+// Example in a client component
+const handleLessonComplete = async () => {
+  // Call the server action to process node completion
+  // The database function will verify completion status before awarding rewards
+  const result = await processNodeCompletion(userId, lessonId);
+  
+  if (result.success) {
+    toast.success('Lesson completed! Rewards have been granted.');
+  } else {
+    console.error('Error processing node completion:', result.message);
+    // Only show error toast if there's a skill tree node for this lesson
+    if (result.message !== 'No skill tree node found for this lesson') {
+      toast.error('Error processing completion rewards');
+    }
+  }
+};
+```
+
+#### Security Implementation
+
+The database function has multiple layers of security:
+
+1. **SECURITY DEFINER**: The function runs with the privileges of its owner, not the caller
+2. **Permission Checks**: 
+   - Users can only process node completion for their own character
+   - Admins and service roles can process for any character
+3. **Completion Verification**:
+   - Automatically verifies that all exercises for the lesson are completed
+   - Prevents users from gaining rewards without completing the required work
+4. **Permission Control**:
+   - Execute permission is revoked from PUBLIC
+   - Only authenticated users can call the function
+
+This multi-layered approach ensures that the reward system cannot be exploited, even if users attempt to call the database function directly.
+
 ## Toast Notifications
 
 We use Sonner for toast notifications. The Toaster component is already included in the app's providers.

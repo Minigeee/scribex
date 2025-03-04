@@ -646,7 +646,6 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
-          icon_url: string | null
           id: string
           item_type: string
           name: string
@@ -657,8 +656,7 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
-          icon_url?: string | null
-          id?: string
+          id: string
           item_type: string
           name: string
           rarity?: string
@@ -668,7 +666,6 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
-          icon_url?: string | null
           id?: string
           item_type?: string
           name?: string
@@ -1436,6 +1433,13 @@ export type Database = {
           mark_as_completed?: boolean
         }
         Returns: boolean
+      }
+      process_node_completion: {
+        Args: {
+          p_character_id: string
+          p_node_id: string
+        }
+        Returns: undefined
       }
       update_character_stat: {
         Args: {

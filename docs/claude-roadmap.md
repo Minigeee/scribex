@@ -5,6 +5,7 @@
 - [ ] Look into map / canvas solutions
 - [ ] Research peer review systems
 - [ ] Explore daily quest mechanics
+- [ ] Add basic trees to REDI 1 + 3
 
 ## Phase 1: Foundation (3-4 weeks)
 
@@ -23,14 +24,16 @@
 - [x] Create scoring system (90% threshold)
 - [x] Basic project text editor
 - [x] Implement "Writer's Block" suggestion feature
-- [x] Build basic AI evaluation for structured exercises
+- [ ] Build basic AI evaluation for structured exercises
 
 ## Phase 3: RPG Framework (4-5 weeks)
 
-- [ ] Design skill tree visualization
+- [X] Design skill tree visualization
+  - [X] Seed item templates (find an icon pack online)
+  - [X] Add rewards section
+- [ ] Design simple world map system
 - [ ] Implement character profile system
 - [ ] Create basic inventory system
-- [ ] Design simple world map navigation
 - [ ] Build quest tracking system
 - [ ] Implement reward distribution mechanics
 - [ ] Create daily quest system

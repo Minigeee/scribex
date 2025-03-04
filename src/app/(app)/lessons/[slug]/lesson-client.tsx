@@ -17,6 +17,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Check, CheckCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { processNodeCompletion } from '@/app/actions/process-node-completion';
+import { toast } from 'sonner';
 
 interface LessonClientProps {
   lesson: LessonWithContent;
@@ -182,15 +184,27 @@ export function LessonClient({ lesson, userId }: LessonClientProps) {
       // Refresh the page data to ensure server state is updated
       router.refresh();
 
-      // If all exercises are now completed, we could add additional logic here
-      // such as showing a congratulatory message or unlocking the next lesson
+      // If all exercises are now completed, process the node completion
       if (allCompleted && !areExercisesCompleted) {
         console.log('All exercises completed for lesson:', lesson.id);
-        // Optional: You could add a call here to mark the entire lesson as completed
-        // if you have that functionality in your backend
+        
+        // Call the server action to process node completion
+        // The server action will verify completion status before awarding rewards
+        const result = await processNodeCompletion(userId, lesson.id);
+        
+        if (result.success) {
+          toast.success('Lesson completed! Rewards have been granted.');
+        } else {
+          console.error('Error processing node completion:', result.message);
+          // Only show error toast if there's a skill tree node for this lesson
+          if (result.message !== 'No skill tree node found for this lesson') {
+            toast.error('Error processing completion rewards');
+          }
+        }
       }
     } catch (error) {
       console.error('Error updating exercise progress:', error);
+      toast.error('Error updating progress');
     }
   };
 
