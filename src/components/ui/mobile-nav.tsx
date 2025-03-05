@@ -65,7 +65,6 @@ export function MobileNav() {
               aria-label={item.name}
             >
               <item.icon className='h-5 w-5' />
-              <span className='text-xs'>{item.name}</span>
             </Link>
           );
         })}

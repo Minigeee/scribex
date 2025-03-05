@@ -396,7 +396,7 @@ export type Database = {
           id: string
           join_code: string
           name: string
-          owner_id: string
+          owner_id: string | null
           updated_at: string
         }
         Insert: {
@@ -405,7 +405,7 @@ export type Database = {
           id?: string
           join_code: string
           name: string
-          owner_id: string
+          owner_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -414,7 +414,7 @@ export type Database = {
           id?: string
           join_code?: string
           name?: string
-          owner_id?: string
+          owner_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1008,7 +1008,6 @@ export type Database = {
           rewards: Json | null
           title: string
           updated_at: string
-          word_count_target: number | null
         }
         Insert: {
           available_from?: string | null
@@ -1026,7 +1025,6 @@ export type Database = {
           rewards?: Json | null
           title: string
           updated_at?: string
-          word_count_target?: number | null
         }
         Update: {
           available_from?: string | null
@@ -1044,7 +1042,6 @@ export type Database = {
           rewards?: Json | null
           title?: string
           updated_at?: string
-          word_count_target?: number | null
         }
         Relationships: [
           {
@@ -1262,8 +1259,8 @@ export type Database = {
           initial_node?: boolean
           location_type: string
           name: string
-          position_x: number
-          position_y: number
+          position_x?: number
+          position_y?: number
           updated_at?: string
           world_id: string
         }

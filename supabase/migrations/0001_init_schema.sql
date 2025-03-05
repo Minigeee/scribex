@@ -21,7 +21,7 @@ CREATE TABLE classrooms (
     name TEXT NOT NULL,
     description TEXT,
     join_code TEXT UNIQUE NOT NULL,
-    owner_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    owner_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
 );

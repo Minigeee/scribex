@@ -8,28 +8,51 @@ import {
   SaveIcon,
   Share2Icon,
   TrashIcon,
+  ChevronRightIcon,
+  CheckCircle2Icon,
+  ScrollIcon,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { completeQuestProject } from '@/app/actions/complete-quest-project';
+import { Tables } from '@/lib/database.types';
+
+type ProjectWithGenre = Tables<'projects'> & {
+  genres: Tables<'genres'> | null;
+};
+
+// Define metadata interface
+interface ProjectMetadata {
+  quest_id?: string;
+  word_count_target?: number;
+  location_id?: string;
+  [key: string]: any;
+}
 
 interface ProjectActionsPanelProps {
-  projectId: string;
-  status: string;
-  onSave: () => Promise<void>;
-  isSaving: boolean;
+  project: ProjectWithGenre;
+  onManualSave: () => Promise<void>;
+  wordCount: number;
 }
 
 export function ProjectActionsPanel({
-  projectId,
-  status,
-  onSave,
-  isSaving,
+  project,
+  onManualSave,
+  wordCount,
 }: ProjectActionsPanelProps) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
   const [isChangingStatus, setIsChangingStatus] = useState(false);
-
+  const [isCompleting, setIsCompleting] = useState(false);
+  
+  // Check if the project is related to a quest
+  const metadata = project.metadata as ProjectMetadata | null;
+  const isQuestProject = !!metadata?.quest_id;
+  const wordCountTarget = metadata?.word_count_target || 0;
+  const hasMetWordCount = wordCount >= wordCountTarget;
+  const isCompleted = project.status === 'completed';
+  
   const handleDelete = async () => {
     if (
       !confirm(
@@ -46,7 +69,7 @@ export function ProjectActionsPanel({
       const { error } = await supabase
         .from('projects')
         .delete()
-        .eq('id', projectId);
+        .eq('id', project.id);
 
       if (error) throw error;
 
@@ -70,7 +93,7 @@ export function ProjectActionsPanel({
           status: newStatus,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', projectId);
+        .eq('id', project.id);
 
       if (error) throw error;
 
@@ -94,71 +117,99 @@ export function ProjectActionsPanel({
     toast.info('Share functionality coming soon');
   };
 
+  const handleCompleteQuest = async () => {
+    if (!isQuestProject || isCompleted) return;
+    
+    // First save the content
+    await onManualSave();
+    
+    setIsCompleting(true);
+    const toastId = toast.loading('Completing quest...');
+    
+    try {
+      const result = await completeQuestProject(project.id);
+      
+      if (result.success) {
+        toast.success('Quest completed!', {
+          id: toastId,
+          description: 'You have received rewards for this quest.'
+        });
+        router.refresh();
+      } else {
+        toast.error('Failed to complete quest', {
+          id: toastId,
+          description: result.message || 'Please try again.'
+        });
+      }
+    } catch (error) {
+      console.error('Error completing quest:', error);
+      toast.error('An error occurred', {
+        id: toastId,
+        description: 'Failed to complete quest. Please try again.'
+      });
+    } finally {
+      setIsCompleting(false);
+    }
+  };
+
   return (
-    <div className='flex flex-col gap-2'>
-      <h2 className='text-lg font-semibold'>Actions</h2>
-
-      <Button
-        variant='default'
-        className='w-full justify-start'
-        onClick={onSave}
-        disabled={isSaving}
-      >
-        <SaveIcon className='mr-2 h-4 w-4' />
-        {isSaving ? 'Saving...' : 'Save Changes'}
-      </Button>
-
-      {status !== 'completed' && (
-        <Button
-          variant='outline'
-          className='w-full justify-start'
-          onClick={() => handleStatusChange('completed')}
-          disabled={isChangingStatus}
-        >
-          <CheckCircleIcon className='mr-2 h-4 w-4' />
-          Mark as Completed
-        </Button>
-      )}
-
-      {status === 'completed' && (
-        <Button
-          variant='outline'
-          className='w-full justify-start'
-          onClick={() => handleStatusChange('in_progress')}
-          disabled={isChangingStatus}
-        >
-          <CheckCircleIcon className='mr-2 h-4 w-4' />
-          Mark as In Progress
-        </Button>
-      )}
-
-      <Button
-        variant='outline'
-        className='w-full justify-start'
-        onClick={handleExport}
-      >
-        <DownloadIcon className='mr-2 h-4 w-4' />
-        Export
-      </Button>
-
-      <Button
-        variant='outline'
-        className='w-full justify-start'
-        onClick={handleShare}
-      >
-        <Share2Icon className='mr-2 h-4 w-4' />
-        Share
-      </Button>
-
-      <Button
-        variant='destructive'
-        className='w-full justify-start'
-        onClick={handleDelete}
-        disabled={isDeleting}
-      >
-        <TrashIcon className='mr-2 h-4 w-4' />
-        {isDeleting ? 'Deleting...' : 'Delete Project'}
-      </Button>
+    <div className="space-y-4">
+      <div className="rounded-md border p-4">
+        <h3 className="mb-3 font-medium">Project Actions</h3>
+        <div className="space-y-2">
+          <Button 
+            onClick={() => router.push('/writing')} 
+            variant="outline" 
+            className="w-full justify-between"
+          >
+            Back to Projects
+            <ChevronRightIcon className="h-4 w-4" />
+          </Button>
+          
+          {isQuestProject && !isCompleted && (
+            <div className="pt-4">
+              <div className="mb-2 flex justify-between text-sm">
+                <span>Word Count:</span>
+                <span className={hasMetWordCount ? 'text-green-500' : 'text-muted-foreground'}>
+                  {wordCount} / {wordCountTarget}
+                </span>
+              </div>
+              <Button
+                onClick={handleCompleteQuest}
+                disabled={!hasMetWordCount || isCompleting}
+                className="w-full"
+              >
+                {isCompleting ? (
+                  <>
+                    <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2Icon className="mr-2 h-4 w-4" />
+                    Complete Quest
+                  </>
+                )}
+              </Button>
+              {!hasMetWordCount && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  You need to write at least {wordCountTarget} words to complete this quest.
+                </p>
+              )}
+            </div>
+          )}
+          
+          {isQuestProject && isCompleted && (
+            <div className="rounded-md bg-muted p-3 text-center text-sm">
+              <CheckCircle2Icon className="mx-auto mb-2 h-5 w-5 text-green-500" />
+              <p className="font-medium text-green-500">Quest Completed!</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                You've successfully completed this quest and earned rewards.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

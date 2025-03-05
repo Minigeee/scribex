@@ -206,10 +206,10 @@ export default async function SkillTreePage() {
 
   return (
     <div className='flex h-[calc(100vh-4rem)] md:h-screen flex-col bg-gradient-to-b from-background to-background/80 p-0'>
-      <div className='px-5 py-5 md:px-6 md:py-8 border-b'>
+      <div className='px-5 py-4 md:px-6 md:py-5 border-b'>
         <div className='flex flex-col gap-2 md:gap-4 md:flex-row md:items-center md:justify-between'>
           <div>
-            <h1 className='bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-xl md:text-3xl font-bold tracking-tight text-transparent'>
+            <h1 className='bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-xl md:text-2xl font-bold tracking-tight text-transparent'>
               Writing Skill Tree
             </h1>
             <p className='mt-2 text-muted-foreground hidden md:block'>
@@ -218,7 +218,7 @@ export default async function SkillTreePage() {
           </div>
 
           {/* Progress indicator */}
-          <div className='flex items-center gap-3 rounded-lg border bg-card p-3 shadow-sm'>
+          <div className='flex items-center gap-3 rounded-lg border bg-card px-3 py-2 md:px-3 md:py-3 shadow-sm'>
             <div className='relative flex h-12 w-12 items-center justify-center'>
               <svg className='h-12 w-12 -rotate-90 transform'>
                 <circle

@@ -26,8 +26,6 @@ import {
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-
-import { ItemIcon } from '@/components/ui/item-icon';
 import { getLayoutedElements } from '@/lib/utils/node-layout';
 import '@xyflow/react/dist/style.css';
 import { CoinsIcon, TrophyIcon } from 'lucide-react';
@@ -82,43 +80,10 @@ interface Reward {
   key?: string;
 }
 
-// Hook to fetch all item rewards for a node
-function useNodeRewards(rewards: Reward[] | undefined) {
-  // Extract item IDs from rewards
-  const itemIds = useMemo(() => {
-    if (!rewards) return [];
-    return rewards
-      .filter((reward) => reward.type === 'item' && reward.key)
-      .map((reward) => reward.key as string);
-  }, [rewards]);
-
-  // Fetch all items at once
-  const { items, isLoading } = useItems(itemIds.length > 0 ? itemIds : undefined);
-
-  // Create a map of item ID to item data for easy lookup
-  const itemsMap = useMemo(() => {
-    if (!items) return {};
-    return items.reduce((acc, item) => {
-      acc[item.id] = item;
-      return acc;
-    }, {} as Record<string, Tables<'item_templates'>>);
-  }, [items]);
-
-  return {
-    itemsMap,
-    isLoading,
-  };
-}
-
 // Component to display a single reward
 function RewardDisplay({ reward }: { reward: Reward & { itemName?: string } }) {
   const baseClasses =
     'flex items-center gap-1 rounded-md px-1.5 py-0.5 text-2xs font-medium';
-  
-  // Use the useItem hook to fetch item information when reward type is 'item' and we don't have the name yet
-  const { item, isLoading: isLoadingItem } = useItem(
-    reward.type === 'item' && !reward.itemName ? reward.key : undefined
-  );
 
   switch (reward.type) {
     case 'experience':
@@ -177,9 +142,6 @@ function SkillTreeNodeComponent({ data }: { data: any }) {
   const categoryStyle = data.getCategoryStyle(node);
   const lessonUrl = getLessonUrl(node, data.user);
   const rewards = (node.rewards as unknown as Reward[]) || [];
-  
-  // Use the useNodeRewards hook to fetch all item rewards for this node
-  const { itemsMap } = useNodeRewards(rewards.length > 0 ? rewards : undefined);
 
   const isCompleted = node.status === 'completed';
   const isUnlocked = node.status === 'unlocked';
@@ -231,7 +193,7 @@ function SkillTreeNodeComponent({ data }: { data: any }) {
       >
         <Card
           className={`flex h-full w-[220px] flex-col overflow-hidden transition-all sm:w-[250px] ${
-            isCompleted ? 'border-green-500/50 bg-green-50' : ''
+            isCompleted ? 'border-green-500/50 bg-green-50 dark:bg-green-900/50' : ''
           } ${isUnlocked ? 'border-primary/50 bg-card shadow-md' : ''} ${
             isLocked ? 'opacity-70 saturate-50' : ''
           }`}
@@ -280,7 +242,7 @@ function SkillTreeNodeComponent({ data }: { data: any }) {
             <Button
               size='sm'
               variant={isCompleted ? 'outline' : isUnlocked ? 'default' : 'secondary'}
-              className={`w-full ${
+              className={`w-full pointer-events-auto ${
                 isLocked ? 'cursor-not-allowed opacity-50' : ''
               }`}
               disabled={isLocked}

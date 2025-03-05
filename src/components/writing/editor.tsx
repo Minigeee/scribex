@@ -154,13 +154,16 @@ function EditorToolbar({
   return (
     <TooltipProvider>
       <div className='flex flex-wrap items-center gap-1 border-b p-2'>
-        <ToolbarButton
-          onClick={() => router.back()}
-          icon={<LogOut className='h-4 w-4 rotate-180' />}
-          tooltip='Exit'
-        />
-
-        <Separator orientation='vertical' />
+        {!isDesktop && (
+          <>
+            <ToolbarButton
+              onClick={() => router.back()}
+              icon={<LogOut className='h-4 w-4 rotate-180' />}
+              tooltip='Exit'
+            />
+            <Separator orientation='vertical' />
+          </>
+        )}
 
         {/* Essential formatting controls - always visible */}
         <ToolbarButton

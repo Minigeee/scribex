@@ -78,7 +78,7 @@ export function useConversations(userId: string | undefined) {
     if (conversations.length > 0 && !currentConversationId && !isLoading) {
       setCurrentConversationId(conversations[0].id);
     }
-  }, [conversations, currentConversationId, isLoading]);
+  }, [conversations, isLoading]);
 
   // Create a new conversation
   const createNewConversation = () => {

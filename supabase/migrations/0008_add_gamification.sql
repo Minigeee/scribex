@@ -131,7 +131,6 @@ CREATE TABLE IF NOT EXISTS public.quests (
     difficulty INTEGER NOT NULL DEFAULT 1,
     is_daily_quest BOOLEAN NOT NULL DEFAULT FALSE,
     prompt TEXT,
-    word_count_target INTEGER,
     rewards JSONB DEFAULT '[]'::jsonb, -- Direct JSON array of rewards
     prerequisite_quests UUID[] DEFAULT '{}',
     available_from TIMESTAMP WITH TIME ZONE,
@@ -714,6 +713,7 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 DECLARE
     v_character_id UUID;
+    v_default_classroom_id UUID := '10000000-0000-0000-0000-000000000001'; -- Default classroom ID
 BEGIN
     -- Create a character profile for the new user
     v_character_id := public.create_character_profile(NEW.id);
@@ -736,6 +736,21 @@ BEGIN
         OR prerequisite_nodes = '{}'::uuid[]
         OR array_length(prerequisite_nodes, 1) IS NULL
         OR array_length(prerequisite_nodes, 1) = 0;
+    
+    -- Add user to the default classroom as a student
+    INSERT INTO public.classroom_members (
+        classroom_id,
+        user_id,
+        role,
+        joined_at
+    )
+    VALUES (
+        v_default_classroom_id,
+        NEW.id,
+        'student',
+        now()
+    )
+    ON CONFLICT (classroom_id, user_id) DO NOTHING;
     
     RETURN NEW;
 END;

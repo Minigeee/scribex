@@ -1515,3 +1515,35 @@ VALUES
      {"type": "item", "key": "rhetoric_orb", "value": 1}
    ]', 
    '/icons/skills/style.svg');
+
+-- Create a default classroom for demo purposes
+INSERT INTO classrooms (id, name, description, join_code, owner_id)
+VALUES (
+  '10000000-0000-0000-0000-000000000001',
+  'Creative Writing Workshop',
+  'A collaborative space for students to develop their writing skills through creative exercises and peer feedback.',
+  'DEMO123',
+  (SELECT id FROM profiles WHERE username = 'admin' LIMIT 1)
+);
+
+-- Add some default members to the classroom (assuming these profiles exist)
+INSERT INTO classroom_members (classroom_id, user_id, role)
+SELECT 
+  '10000000-0000-0000-0000-000000000001',
+  id,
+  CASE 
+    WHEN username = 'admin' THEN 'teacher'
+    ELSE 'student'
+  END
+FROM profiles
+WHERE username IN ('admin', 'student1', 'student2')
+ON CONFLICT (classroom_id, user_id) DO NOTHING;
+
+-- Create a default world for the classroom
+INSERT INTO worlds (id, classroom_id, name, description)
+VALUES (
+  '20000000-0000-0000-0000-000000000001',
+  '10000000-0000-0000-0000-000000000001',
+  'Wordsmith Realm',
+  'A magical world where words have power and stories shape reality. Students embark on quests to develop their writing abilities and unlock new areas of the realm.'
+);

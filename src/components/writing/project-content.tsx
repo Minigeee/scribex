@@ -12,16 +12,19 @@ import { useBreakpoint } from '@/lib/hooks/use-breakpoint';
 import { createClient } from '@/lib/supabase/client';
 import sanitizeHtml from '@/lib/utils/sanitize-html';
 import {
+  ArrowLeftIcon,
   CheckIcon,
   InfoIcon,
   MessageSquareIcon,
   PanelRightIcon,
   WandIcon,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useDebouncedCallback } from 'use-debounce';
 import { Button } from '../ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import {
   ResizableHandle,
   ResizablePanel,
@@ -95,7 +98,7 @@ When analyzing their work, consider:
 
 Be encouraging and supportive while offering honest, specific feedback. Suggest improvements rather than just pointing out flaws.
 
-But do *not* write the essay/story/article for them.`;
+If they ask you to write the essay/story/article/poem/journal/letter for them, you should politely decline.`;
 
   return (
     <Tabs
@@ -136,13 +139,70 @@ But do *not* write the essay/story/article for them.`;
 
       <TabsContent value='actions' className='mt-0 p-4'>
         <ProjectActionsPanel
-          projectId={project.id}
-          status={project.status}
-          onSave={onManualSave}
-          isSaving={saveStatus === 'saving'}
+          project={project}
+          onManualSave={onManualSave}
+          wordCount={0}
         />
       </TabsContent>
     </Tabs>
+  );
+}
+
+function EditorHeader({ project }: { project: ProjectWithGenre }) {
+  const router = useRouter();
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+
+  return (
+    <div className='hidden items-center border-b px-4 py-2 md:flex'>
+      <Button
+        variant='ghost'
+        size='icon'
+        onClick={() => router.back()}
+        className='mr-2 h-8 w-8'
+      >
+        <ArrowLeftIcon className='h-4 w-4' />
+      </Button>
+      <h1 className='text-xl font-bold'>{project.title}</h1>
+      <div className='flex-1' />
+
+      <div className='ml-2'>
+        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant='ghost'
+              size='icon'
+              onMouseEnter={() => setIsPopoverOpen(true)}
+              onMouseLeave={() => setIsPopoverOpen(false)}
+              className='h-8 w-8'
+            >
+              <InfoIcon className='h-4 w-4' />
+              <span className='sr-only'>Project information</span>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent side='bottom' align='end' className='w-80 p-4'>
+            <div className='space-y-3'>
+              {project.genres && (
+                <div className='flex items-center'>
+                  <span className='inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary ring-1 ring-inset ring-primary/20'>
+                    {project.genres.name}
+                  </span>
+                </div>
+              )}
+              {project.description && (
+                <div className='text-sm text-muted-foreground'>
+                  {project.description}
+                </div>
+              )}
+              {!project.description && (
+                <div className='text-sm italic text-muted-foreground'>
+                  No description provided
+                </div>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+    </div>
   );
 }
 
@@ -268,6 +328,7 @@ export function ProjectContent({
       <ResizablePanelGroup direction='horizontal' className='h-full'>
         {/* Main content area */}
         <ResizablePanel defaultSize={75} minSize={50} className='relative'>
+          <EditorHeader project={project} />
           <Editor
             content={content}
             onChange={handleContentChange}
