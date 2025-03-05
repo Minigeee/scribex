@@ -26,6 +26,8 @@ DECLARE
     v_current_user_id UUID;
     v_node_progress_exists BOOLEAN;
     v_rewards_already_claimed BOOLEAN := FALSE;
+    v_next_node_id UUID;
+    v_all_prereqs_completed BOOLEAN;
 BEGIN
     -- Get the current user ID
     v_current_user_id := auth.uid();
@@ -231,6 +233,52 @@ BEGIN
         rewards_claimed = TRUE,
         updated_at = now();
     
+    -- Find and unlock next skill tree nodes where this node is a prerequisite
+    -- and all prerequisites for those nodes are now complete
+    FOR v_next_node_id IN (
+        SELECT id 
+        FROM public.skill_tree_nodes
+        WHERE p_node_id = ANY(prerequisite_nodes)
+    )
+    LOOP
+        -- Check if all prerequisites for this next node are completed
+        SELECT NOT EXISTS (
+            SELECT 1
+            FROM public.skill_tree_nodes stn
+            CROSS JOIN UNNEST(stn.prerequisite_nodes) AS prereq_id
+            LEFT JOIN public.character_skill_nodes csn ON 
+                csn.node_id = prereq_id AND 
+                csn.character_id = p_character_id AND
+                csn.status = 'completed'
+            WHERE stn.id = v_next_node_id
+            AND csn.id IS NULL
+        ) INTO v_all_prereqs_completed;
+        
+        -- If all prerequisites are completed, unlock this next node
+        IF v_all_prereqs_completed THEN
+            INSERT INTO public.character_skill_nodes (
+                character_id,
+                node_id,
+                status,
+                unlocked_at
+            ) VALUES (
+                p_character_id,
+                v_next_node_id,
+                'unlocked',
+                now()
+            )
+            ON CONFLICT (character_id, node_id) 
+            DO UPDATE SET
+                status = 
+                    CASE 
+                        WHEN character_skill_nodes.status = 'locked' THEN 'unlocked'
+                        ELSE character_skill_nodes.status -- Keep completed status if already completed
+                    END,
+                unlocked_at = COALESCE(character_skill_nodes.unlocked_at, now()),
+                updated_at = now();
+        END IF;
+    END LOOP;
+    
     RETURN TRUE;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -245,7 +293,8 @@ COMMENT ON FUNCTION public.process_node_completion IS
 Security: 
 1. Can only be called for your own character unless admin/service role
 2. Verifies all exercises are completed before processing rewards
-3. SECURITY DEFINER ensures the function runs with the privileges of its owner';
+3. SECURITY DEFINER ensures the function runs with the privileges of its owner
+4. Unlocks next skill tree nodes where this node is a prerequisite and all prerequisites for those nodes are now complete';
 
 -- Add a function to retry claiming rewards for a node
 CREATE OR REPLACE FUNCTION public.retry_node_rewards(

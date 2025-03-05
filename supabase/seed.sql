@@ -1321,7 +1321,6 @@ VALUES
    ]', 
    '/icons/skills/fallacies.svg'),
    
-  -- Mastery level
   ('20000000-0000-0000-0000-000000000008', 'Research Synthesis', 'Integrate diverse sources into a cohesive, original analysis', 'lesson', 2, '10000000-0000-0000-0000-000000000008', 
    '{"20000000-0000-0000-0000-000000000007"}', 
    '[
@@ -1416,3 +1415,103 @@ Your paragraph should be 5-7 sentences long.',
      "example_solution": "The local library is my favorite place to spend quiet afternoons. The tall bookshelves filled with countless stories create a sense of possibility and adventure. Comfortable reading nooks with plush chairs invite visitors to sit and lose themselves in a good book for hours. The library also offers free Wi-Fi and computer access, making it a practical resource for research and work. The helpful librarians are always ready to recommend new titles or help locate hard-to-find information. With its perfect combination of resources, comfort, and assistance, the library provides an ideal environment for both learning and relaxation."
    }',
    2, 15);
+
+-- Skill Tree Nodes for Mechanics & Grammar Layer
+INSERT INTO skill_tree_nodes (id, title, description, node_type, content_layer_id, lesson_id, prerequisite_nodes, rewards, icon_url)
+VALUES
+  -- Foundation level
+  ('40000000-0000-0000-0000-000000000001', 'Punctuation Basics', 'Learn the fundamentals of punctuation and how it affects meaning', 'lesson', 1, '00000000-0000-0000-0000-000000000001', '{}', 
+   '[
+     {"type": "experience", "value": 50},
+     {"type": "currency", "value": 25},
+     {"type": "stat", "value": 1}
+   ]', 
+   '/icons/skills/punctuation.svg'),
+   
+  ('40000000-0000-0000-0000-000000000002', 'Subject-Verb Agreement', 'Master the rules of making subjects and verbs agree in your writing', 'lesson', 1, '00000000-0000-0000-0000-000000000002', 
+   '{"40000000-0000-0000-0000-000000000001"}', 
+   '[
+     {"type": "experience", "value": 75},
+     {"type": "currency", "value": 30},
+     {"type": "stat", "value": 2}
+   ]', 
+   '/icons/skills/grammar.svg'),
+   
+  -- Additional nodes for future Mechanics & Grammar lessons (placeholders)
+  ('40000000-0000-0000-0000-000000000003', 'Sentence Structure', 'Learn to construct clear, effective sentences with proper structure', 'lesson', 1, null, 
+   '{"40000000-0000-0000-0000-000000000002"}', 
+   '[
+     {"type": "experience", "value": 100},
+     {"type": "currency", "value": 40},
+     {"type": "stat", "value": 2}
+   ]', 
+   '/icons/skills/sentence.svg'),
+   
+  ('40000000-0000-0000-0000-000000000004', 'Parts of Speech', 'Master the different word types and their functions in sentences', 'lesson', 1, null, 
+   '{"40000000-0000-0000-0000-000000000001"}', 
+   '[
+     {"type": "experience", "value": 75},
+     {"type": "currency", "value": 30},
+     {"type": "stat", "value": 1}
+   ]', 
+   '/icons/skills/parts-speech.svg'),
+   
+  ('40000000-0000-0000-0000-000000000005', 'Advanced Grammar', 'Master complex grammatical structures for sophisticated writing', 'lesson', 1, null, 
+   '{"40000000-0000-0000-0000-000000000002", "40000000-0000-0000-0000-000000000003", "40000000-0000-0000-0000-000000000004"}', 
+   '[
+     {"type": "experience", "value": 150},
+     {"type": "currency", "value": 75},
+     {"type": "stat", "value": 3},
+     {"type": "item", "key": "grammar_tome", "value": 1}
+   ]', 
+   '/icons/skills/advanced-grammar.svg');
+
+-- Skill Tree Nodes for Voice & Rhetoric Layer
+INSERT INTO skill_tree_nodes (id, title, description, node_type, content_layer_id, lesson_id, prerequisite_nodes, rewards, icon_url)
+VALUES
+  -- Foundation level
+  ('50000000-0000-0000-0000-000000000001', 'Understanding Audience', 'Learn how to adapt your writing for different readers', 'lesson', 3, '00000000-0000-0000-0000-000000000005', '{}', 
+   '[
+     {"type": "experience", "value": 50},
+     {"type": "currency", "value": 25},
+     {"type": "stat", "value": 1}
+   ]', 
+   '/icons/skills/audience.svg'),
+   
+  ('50000000-0000-0000-0000-000000000002', 'Developing Voice', 'Discover techniques to create a distinctive writing style', 'lesson', 3, '00000000-0000-0000-0000-000000000006', 
+   '{"50000000-0000-0000-0000-000000000001"}', 
+   '[
+     {"type": "experience", "value": 75},
+     {"type": "currency", "value": 30},
+     {"type": "stat", "value": 2}
+   ]', 
+   '/icons/skills/voice.svg'),
+   
+  -- Additional nodes for future Voice & Rhetoric lessons (placeholders)
+  ('50000000-0000-0000-0000-000000000003', 'Persuasive Techniques', 'Master the art of convincing others through effective rhetoric', 'lesson', 3, null, 
+   '{"50000000-0000-0000-0000-000000000002"}', 
+   '[
+     {"type": "experience", "value": 100},
+     {"type": "currency", "value": 40},
+     {"type": "stat", "value": 2}
+   ]', 
+   '/icons/skills/persuasion.svg'),
+   
+  ('50000000-0000-0000-0000-000000000004', 'Rhetorical Devices', 'Learn powerful literary techniques to enhance your writing', 'lesson', 3, null, 
+   '{"50000000-0000-0000-0000-000000000002"}', 
+   '[
+     {"type": "experience", "value": 100},
+     {"type": "currency", "value": 40},
+     {"type": "stat", "value": 2}
+   ]', 
+   '/icons/skills/rhetoric.svg'),
+   
+  ('50000000-0000-0000-0000-000000000005', 'Advanced Stylistics', 'Master sophisticated stylistic techniques for impactful writing', 'lesson', 3, null, 
+   '{"50000000-0000-0000-0000-000000000003", "50000000-0000-0000-0000-000000000004"}', 
+   '[
+     {"type": "experience", "value": 150},
+     {"type": "currency", "value": 75},
+     {"type": "stat", "value": 3},
+     {"type": "item", "key": "rhetoric_orb", "value": 1}
+   ]', 
+   '/icons/skills/style.svg');

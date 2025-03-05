@@ -48,6 +48,8 @@ CREATE TABLE IF NOT EXISTS public.skill_tree_nodes (
     content_layer_id INTEGER REFERENCES public.content_layers(id),
     lesson_id UUID REFERENCES public.lessons(id),
     prerequisite_nodes UUID[] DEFAULT '{}',
+    position_x INTEGER NOT NULL DEFAULT 0,
+    position_y INTEGER NOT NULL DEFAULT 0,
     rewards JSONB DEFAULT '[]'::jsonb, -- Direct JSON array of rewards
     icon_url TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
@@ -79,14 +81,25 @@ CREATE TABLE IF NOT EXISTS public.character_inventory (
     UNIQUE(character_id, item_template_id)
 );
 
+-- Worlds (associated with classrooms)
+CREATE TABLE IF NOT EXISTS public.worlds (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    classroom_id UUID NOT NULL REFERENCES public.classrooms(id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
+);
+
 -- World map locations (nodes)
 CREATE TABLE IF NOT EXISTS public.world_locations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    world_id UUID NOT NULL REFERENCES public.worlds(id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
     description TEXT,
     location_type VARCHAR(50) NOT NULL,
-    position_x INTEGER NOT NULL,
-    position_y INTEGER NOT NULL,
+    position_x INTEGER NOT NULL DEFAULT 0,
+    position_y INTEGER NOT NULL DEFAULT 0,
     icon_url TEXT,
     adjacent_locations UUID[] DEFAULT '{}',
     initial_node BOOLEAN NOT NULL DEFAULT FALSE,
@@ -699,9 +712,31 @@ FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 -- Create a function to automatically create a character profile when a user is created
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
+DECLARE
+    v_character_id UUID;
 BEGIN
     -- Create a character profile for the new user
-    PERFORM public.create_character_profile(NEW.id);
+    v_character_id := public.create_character_profile(NEW.id);
+    
+    -- Unlock all skill tree nodes that don't have prerequisites
+    INSERT INTO public.character_skill_nodes (
+        character_id,
+        node_id,
+        status,
+        unlocked_at
+    )
+    SELECT 
+        v_character_id,
+        id,
+        'unlocked',
+        now()
+    FROM public.skill_tree_nodes
+    WHERE 
+        prerequisite_nodes IS NULL 
+        OR prerequisite_nodes = '{}'::uuid[]
+        OR array_length(prerequisite_nodes, 1) IS NULL
+        OR array_length(prerequisite_nodes, 1) = 0;
+    
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

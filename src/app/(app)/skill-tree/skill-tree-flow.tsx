@@ -41,8 +41,7 @@ type SkillTreeNode = Tables<'skill_tree_nodes'> & {
 };
 
 type SkillTreeNodeWithProgress = SkillTreeNode & {
-  completed: boolean;
-  current: boolean;
+  status: 'locked' | 'unlocked' | 'completed';
 };
 
 type CategoryStyle = {
@@ -182,24 +181,28 @@ function SkillTreeNodeComponent({ data }: { data: any }) {
   // Use the useNodeRewards hook to fetch all item rewards for this node
   const { itemsMap } = useNodeRewards(rewards.length > 0 ? rewards : undefined);
 
+  const isCompleted = node.status === 'completed';
+  const isUnlocked = node.status === 'unlocked';
+  const isLocked = node.status === 'locked';
+
   // Animation variants for the card
   const cardVariants = {
     initial: { scale: 0.9, opacity: 0.6 },
     animate: {
       scale: 1,
       opacity: 1,
-      boxShadow: node.current
+      boxShadow: isUnlocked
         ? '0 0 15px rgba(var(--primary-rgb)/0.5)'
-        : node.completed
+        : isCompleted
           ? '0 0 10px rgba(34, 197, 94, 0.3)'
           : 'none',
       transition: { duration: 0.3 },
     },
     hover: {
       scale: 1.05,
-      boxShadow: node.current
+      boxShadow: isUnlocked
         ? '0 0 20px rgba(var(--primary-rgb)/0.7)'
-        : node.completed
+        : isCompleted
           ? '0 0 15px rgba(34, 197, 94, 0.5)'
           : '0 0 10px rgba(100, 100, 100, 0.2)',
       transition: { duration: 0.2 },
@@ -213,7 +216,7 @@ function SkillTreeNodeComponent({ data }: { data: any }) {
         type='target'
         position={Position.Top}
         style={{
-          background: node.completed ? '#22c55e' : '#888',
+          background: isCompleted ? '#22c55e' : '#888',
           width: '10px',
           height: '10px',
         }}
@@ -222,15 +225,15 @@ function SkillTreeNodeComponent({ data }: { data: any }) {
       <motion.div
         initial='initial'
         animate='animate'
-        whileHover={node.completed || node.current ? 'hover' : 'animate'}
+        whileHover={isCompleted || isUnlocked ? 'hover' : 'animate'}
         variants={cardVariants}
         className='flex h-full'
       >
         <Card
           className={`flex h-full w-[220px] flex-col overflow-hidden transition-all sm:w-[250px] ${
-            node.completed ? 'border-green-500/50 bg-green-50/30' : ''
-          } ${node.current ? 'border-primary/50 bg-card shadow-md' : ''} ${
-            !node.completed && !node.current ? 'opacity-70 saturate-50' : ''
+            isCompleted ? 'border-green-500/50 bg-green-50' : ''
+          } ${isUnlocked ? 'border-primary/50 bg-card shadow-md' : ''} ${
+            isLocked ? 'opacity-70 saturate-50' : ''
           }`}
         >
           <CardHeader className='flex-grow pb-2 pt-3'>
@@ -240,7 +243,7 @@ function SkillTreeNodeComponent({ data }: { data: any }) {
               >
                 {categoryStyle.label}
               </div>
-              {node.completed && (
+              {isCompleted && (
                 <div className='rounded-full bg-green-100 p-1 text-green-800'>
                   <svg
                     xmlns='http://www.w3.org/2000/svg'
@@ -258,51 +261,33 @@ function SkillTreeNodeComponent({ data }: { data: any }) {
                 </div>
               )}
             </div>
-            <CardTitle className='mt-2 text-base sm:text-lg'>
-              {node.title}
-            </CardTitle>
-            <CardDescription className='line-clamp-2 text-xs sm:text-sm'>
+            <CardTitle className='mt-2 text-base'>{node.title}</CardTitle>
+            <CardDescription className='line-clamp-3 mt-1 text-xs'>
               {node.description}
             </CardDescription>
 
             {/* Rewards section */}
             {rewards && rewards.length > 0 && (
-              <div className='mt-2 border-t border-dashed border-gray-200 pt-1.5'>
-                <div className='mb-1 text-2xs font-medium text-gray-500'>
-                  Rewards:
-                </div>
-                <div className='grid grid-cols-1 gap-1 sm:grid-cols-2'>
-                  {rewards.map((reward, index) => (
-                    <RewardDisplay 
-                      key={`${reward.type}-${index}`} 
-                      reward={{
-                        ...reward,
-                        // If it's an item reward and we have the item data, use the item name
-                        ...(reward.type === 'item' && reward.key && itemsMap[reward.key] && {
-                          itemName: itemsMap[reward.key].name
-                        })
-                      }} 
-                    />
-                  ))}
-                </div>
+              <div className='mt-2 flex flex-wrap gap-1'>
+                {rewards.map((reward, index) => (
+                  <RewardDisplay key={index} reward={reward} />
+                ))}
               </div>
             )}
           </CardHeader>
-          <CardFooter className='pb-3 pt-2'>
+
+          <CardFooter className='border-t bg-card/50 p-2'>
             <Button
-              className='pointer-events-auto w-full text-sm'
-              variant={
-                node.current
-                  ? 'default'
-                  : node.completed
-                    ? 'outline'
-                    : 'secondary'
-              }
-              disabled={!node.completed && !node.current}
+              size='sm'
+              variant={isCompleted ? 'outline' : isUnlocked ? 'default' : 'secondary'}
+              className={`w-full ${
+                isLocked ? 'cursor-not-allowed opacity-50' : ''
+              }`}
+              disabled={isLocked}
               asChild
             >
               <Link href={lessonUrl}>
-                {node.completed ? 'Review' : node.current ? 'Start' : 'Locked'}
+                {isCompleted ? 'Review' : isUnlocked ? 'Start' : 'Locked'}
               </Link>
             </Button>
           </CardFooter>
@@ -314,7 +299,7 @@ function SkillTreeNodeComponent({ data }: { data: any }) {
         type='source'
         position={Position.Bottom}
         style={{
-          background: node.completed ? '#22c55e' : '#888',
+          background: isCompleted ? '#22c55e' : '#888',
           width: '10px',
           height: '10px',
         }}
@@ -473,6 +458,8 @@ export function SkillTreeFlow({
       <ReactFlow
         nodes={n}
         edges={e}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
         minZoom={0.3}
         maxZoom={1.5}

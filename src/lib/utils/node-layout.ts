@@ -1,365 +1,356 @@
 import { Edge, Node } from '@xyflow/react';
 
-// Custom game skill tree layout algorithm with better vertical organization
-export const getLayoutedElements = (nodes: Node[], edges: Edge[], nodeHeight?: number) => {
-  if (nodes.length === 0) return { nodes, edges };
-
-  // Layout configuration
-  const nodeWidth = 250;
-  nodeHeight = nodeHeight || 180;
-  const horizontalSpacing = nodeWidth * 1.5;
-  const verticalSpacing = nodeHeight * 1.5;
-
-  try {
-    // Build adjacency lists
-    const childNodes: Record<string, string[]> = {};
-    const parentNodes: Record<string, string[]> = {};
-
-    // Initialize lists
-    nodes.forEach((node) => {
-      childNodes[node.id] = [];
-      parentNodes[node.id] = [];
-    });
-
-    // Populate lists
-    edges.forEach((edge) => {
-      const { source, target } = edge;
-      childNodes[source].push(target);
-      parentNodes[target].push(source);
-    });
-
-    // Find root nodes (no parents)
-    const rootIds = nodes
-      .filter((node) => parentNodes[node.id].length === 0)
-      .map((node) => node.id);
-
-    if (rootIds.length === 0 && nodes.length > 0) {
-      rootIds.push(nodes[0].id);
-    }
-
-    // Step 1: Assign logical layers (not just depth from root)
-    // We want nodes to be placed in later layers if they depend on multiple nodes
-    const nodeLayers: Record<string, number> = {};
-
-    // Initial BFS to assign minimum required layers
-    const assignLayers = () => {
-      const queue: { id: string; layer: number }[] = rootIds.map((id) => ({
-        id,
-        layer: 0,
-      }));
-
-      while (queue.length > 0) {
-        const { id, layer } = queue.shift()!;
-
-        // If we've already assigned this node to a deeper layer, keep that assignment
-        if (nodeLayers[id] !== undefined && nodeLayers[id] >= layer) {
-          continue;
-        }
-
-        nodeLayers[id] = layer;
-
-        // Add all children to the queue with incremented layer
-        childNodes[id].forEach((childId) => {
-          queue.push({ id: childId, layer: layer + 1 });
-        });
-      }
-    };
-
-    assignLayers();
-
-    // Step 2: Ensure dependent nodes are always in a later layer than ALL their parents
-    const ensureProperLayering = () => {
-      let changed = true;
-
-      while (changed) {
-        changed = false;
-
-        nodes.forEach((node) => {
-          const nodeLayer = nodeLayers[node.id];
-
-          // Check if any parent is in the same or later layer
-          parentNodes[node.id].forEach((parentId) => {
-            const parentLayer = nodeLayers[parentId];
-
-            if (parentLayer >= nodeLayer) {
-              // Move this node one layer deeper than its deepest parent
-              nodeLayers[node.id] = parentLayer + 1;
-              changed = true;
-            }
-          });
-        });
-      }
-    };
-
-    ensureProperLayering();
-
-    // Step 3: Find the longest/main path through the tree
-    // This will be centered vertically in our layout
-    const findMainPaths = () => {
-      // Find all possible paths from roots to leaf nodes
-      const findPathsFromNode = (
-        nodeId: string,
-        currentPath: string[] = []
-      ): string[][] => {
-        const newPath = [...currentPath, nodeId];
-
-        // If this is a leaf node (no children), return the path
-        if (childNodes[nodeId].length === 0) {
-          return [newPath];
-        }
-
-        // Otherwise, get all paths from children and prepend this node
-        let paths: string[][] = [];
-        childNodes[nodeId].forEach((childId) => {
-          paths = [...paths, ...findPathsFromNode(childId, newPath)];
-        });
-
-        return paths;
-      };
-
-      // Get all paths from all root nodes
-      let allPaths: string[][] = [];
-      rootIds.forEach((rootId) => {
-        allPaths = [...allPaths, ...findPathsFromNode(rootId)];
-      });
-
-      // Find the longest path(s)
-      let maxLength = 0;
-      allPaths.forEach((path) => {
-        maxLength = Math.max(maxLength, path.length);
-      });
-
-      // Get all paths that have the maximum length
-      const longestPaths = allPaths.filter((path) => path.length === maxLength);
-
-      // Return the first longest path (we could implement more complex selection criteria here)
-      return longestPaths[0] || [];
-    };
-
-    const mainPath = findMainPaths();
-
-    // Step 4: Group nodes by layer
-    const nodesByLayer: Record<number, string[]> = {};
-
-    Object.entries(nodeLayers).forEach(([nodeId, layer]) => {
-      if (!nodesByLayer[layer]) {
-        nodesByLayer[layer] = [];
-      }
-      nodesByLayer[layer].push(nodeId);
-    });
-
-    // Step 5: Improved horizontal positioning within each layer
-    const positions: Record<string, { x: number; y: number }> = {};
-    const maxLayer = Math.max(...Object.keys(nodesByLayer).map(Number));
-
-    // Create special ordering for nodes to ensure main path is centered
-    const layerNodesOrdering: Record<number, string[]> = {};
-
-    // First, place main path nodes exactly at center (x=0) for each layer
-    mainPath.forEach((nodeId) => {
-      const layer = nodeLayers[nodeId];
-      if (!layerNodesOrdering[layer]) {
-        layerNodesOrdering[layer] = [];
-      }
-      // Add main path node to center position
-      layerNodesOrdering[layer].push(nodeId);
-    });
-
-    // Now add the remaining nodes to each layer, alternating left and right
-    for (let layer = 0; layer <= maxLayer; layer++) {
-      const allNodesInLayer = nodesByLayer[layer] || [];
-      if (!layerNodesOrdering[layer]) {
-        layerNodesOrdering[layer] = [];
-      }
-
-      // Get non-main path nodes sorted by importance (number of children)
-      const nonMainPathNodes = allNodesInLayer
-        .filter((id) => !mainPath.includes(id))
-        .sort((a, b) => childNodes[b].length - childNodes[a].length);
-
-      // Alternate adding nodes to left and right of main path
-      const leftNodes: string[] = [];
-      const rightNodes: string[] = [];
-
-      nonMainPathNodes.forEach((nodeId, idx) => {
-        if (idx % 2 === 0) {
-          leftNodes.unshift(nodeId); // Add to left (beginning)
-        } else {
-          rightNodes.push(nodeId); // Add to right (end)
-        }
-      });
-
-      // Insert left nodes before main path and right nodes after
-      layerNodesOrdering[layer] = [
-        ...leftNodes,
-        ...layerNodesOrdering[layer],
-        ...rightNodes,
-      ];
-    }
-
-    // Now position all nodes with the special ordering
-    for (let layer = 0; layer <= maxLayer; layer++) {
-      const orderedNodesInLayer = layerNodesOrdering[layer] || [];
-      const y = layer * verticalSpacing;
-
-      // Calculate spacing to center the entire layer
-      const totalWidth = (orderedNodesInLayer.length - 1) * horizontalSpacing;
-      let startX = -totalWidth / 2;
-
-      // Position each node according to the special ordering
-      orderedNodesInLayer.forEach((nodeId, index) => {
-        positions[nodeId] = {
-          x: startX + index * horizontalSpacing,
-          y,
-        };
-      });
-    }
-
-    // Step 5.5: Adjust positions for nodes with multiple parents
-    for (let layer = 1; layer <= maxLayer; layer++) {
-      // Start from layer 1 since layer 0 has no parents
-      const nodesInLayer = nodesByLayer[layer] || [];
-      const xOffsets: Record<string, number> = {};
-
-      // Calculate ideal position for each node based on parents' positions
-      nodesInLayer.forEach((nodeId) => {
-        const parentIds = parentNodes[nodeId];
-
-        // Only adjust nodes with multiple parents
-        if (parentIds.length >= 2) {
-          // Calculate average x position of parents
-          let parentXSum = 0;
-          parentIds.forEach((parentId) => {
-            if (positions[parentId]) {
-              parentXSum += positions[parentId].x;
-            }
-          });
-
-          const avgParentX = parentXSum / parentIds.length;
-          const currentX = positions[nodeId].x;
-
-          // Calculate offset from current position
-          xOffsets[nodeId] = avgParentX - currentX;
-        }
-      });
-
-      // Adjust offsets to minimize overlap
-      if (Object.keys(xOffsets).length > 0) {
-        // Group nodes by position and movement direction
-        const nodesByXPosition: Record<number, string[]> = {};
-
-        // Group nodes by their current positions (rounded to nearest horizontal spacing)
-        nodesInLayer.forEach((nodeId) => {
-          if (!positions[nodeId]) return;
-
-          const xPos =
-            Math.round(positions[nodeId].x / (horizontalSpacing / 2)) *
-            (horizontalSpacing / 2);
-          if (!nodesByXPosition[xPos]) {
-            nodesByXPosition[xPos] = [];
-          }
-          nodesByXPosition[xPos].push(nodeId);
-        });
-
-        // For each position group, analyze if nodes are converging
-        Object.entries(nodesByXPosition).forEach(([xPosStr, nodeIds]) => {
-          if (nodeIds.length <= 1) return; // Skip positions with only one node
-
-          // Get nodes with offsets in this position group
-          const nodesWithOffsets = nodeIds.filter(
-            (id) => xOffsets[id] !== undefined
-          );
-          if (nodesWithOffsets.length <= 1) return; // Need at least 2 nodes with offsets to have convergence
-
-          // Check if nodes are converging (some moving left, some right)
-          const movingRight = nodesWithOffsets.filter((id) => xOffsets[id] > 0);
-          const movingLeft = nodesWithOffsets.filter((id) => xOffsets[id] < 0);
-          const stayingPut = nodesWithOffsets.filter(
-            (id) => xOffsets[id] === 0
-          );
-
-          // If we have nodes moving in opposite directions, they're converging
-          const isConverging = movingRight.length > 0 && movingLeft.length > 0;
-
-          if (isConverging) {
-            // Find max positive and negative offset
-            const maxPositive = Math.max(
-              ...movingRight.map((id) => xOffsets[id])
-            );
-            const maxNegative = Math.abs(
-              Math.min(...movingLeft.map((id) => xOffsets[id]))
-            );
-
-            // Scale both to prevent overlap (aim for at most 1/3 of spacing)
-            const maxMagnitude = Math.max(maxPositive, maxNegative);
-            const scaleFactor = horizontalSpacing / 6 / maxMagnitude;
-
-            // Apply scaling only to converging nodes
-            [...movingRight, ...movingLeft].forEach((nodeId) => {
-              xOffsets[nodeId] *= scaleFactor;
-            });
-          }
-        });
-
-        // Check if nodes would be too close after applying offsets
-        const nodePositionsAfterOffset: Record<string, number> = {};
-        nodesInLayer.forEach((nodeId) => {
-          if (positions[nodeId]) {
-            nodePositionsAfterOffset[nodeId] =
-              positions[nodeId].x + (xOffsets[nodeId] || 0);
-          }
-        });
-
-        // Sort nodes by their would-be positions
-        const sortedNodeIds = Object.keys(nodePositionsAfterOffset).sort(
-          (a, b) => nodePositionsAfterOffset[a] - nodePositionsAfterOffset[b]
-        );
-
-        // Check for minimum spacing violations and adjust if needed
-        const minSpacing = horizontalSpacing * 0.75;
-        let needsAdjustment = false;
-
-        for (let i = 1; i < sortedNodeIds.length; i++) {
-          const prevId = sortedNodeIds[i - 1];
-          const currId = sortedNodeIds[i];
-          const distance =
-            nodePositionsAfterOffset[currId] - nodePositionsAfterOffset[prevId];
-
-          if (distance < minSpacing) {
-            needsAdjustment = true;
-            break;
-          }
-        }
-
-        // If we need to adjust, scale all offsets proportionally
-        if (needsAdjustment) {
-          const maxOffset = Math.max(...Object.values(xOffsets).map(Math.abs));
-          if (maxOffset > 0) {
-            const scaleFactor = horizontalSpacing / 4 / maxOffset;
-            Object.keys(xOffsets).forEach((nodeId) => {
-              xOffsets[nodeId] *= scaleFactor;
-            });
-          }
-        }
-
-        // Apply adjusted offsets to node positions
-        Object.entries(xOffsets).forEach(([nodeId, offset]) => {
-          if (positions[nodeId]) {
-            positions[nodeId].x += offset;
-          }
-        });
-      }
-    }
-
-    // Step 6: Apply positions to original nodes
-    const layoutedNodes = nodes.map((node) => ({
-      ...node,
-      position: positions[node.id] || { x: 0, y: 0 },
-    }));
-
-    return { nodes: layoutedNodes, edges };
-  } catch (error) {
-    console.error('Error applying custom layout:', error);
-    return { nodes, edges };
+// Custom skill tree layout algorithm with vertical branching structure
+export const getLayoutedElements = (nodes: Node[], edges: Edge[], nodeHeight: number = 100) => {
+  if (!nodes.length) return { nodes, edges };
+
+  // Find the root node (node with no incoming edges)
+  const hasIncomingEdge = new Set(edges.map(e => e.target));
+  const rootNodes = nodes.filter(node => !hasIncomingEdge.has(node.id));
+  
+  if (!rootNodes.length) {
+    // If no root node found, use the first node as root
+    rootNodes.push(nodes[0]);
   }
+
+  // Create an adjacency list for faster traversal
+  const adjacencyList: Record<string, string[]> = {};
+  const reverseAdjacencyList: Record<string, string[]> = {};
+  
+  // Initialize adjacency lists
+  nodes.forEach(node => {
+    adjacencyList[node.id] = [];
+    reverseAdjacencyList[node.id] = [];
+  });
+  
+  // Fill adjacency lists
+  edges.forEach(edge => {
+    adjacencyList[edge.source].push(edge.target);
+    reverseAdjacencyList[edge.target].push(edge.source);
+  });
+
+  // Calculate node levels (distance from root)
+  const nodeLevels: Record<string, number> = {};
+  const nodeVisited: Record<string, boolean> = {};
+  
+  // Initialize with root nodes
+  rootNodes.forEach(root => {
+    nodeLevels[root.id] = 0;
+    nodeVisited[root.id] = true;
+  });
+  
+  // BFS to calculate initial levels
+  const queue = [...rootNodes.map(node => node.id)];
+  while (queue.length > 0) {
+    const currentId = queue.shift()!;
+    const neighbors = adjacencyList[currentId] || [];
+    
+    for (const neighbor of neighbors) {
+      // Update level if not set or if new path is shorter
+      if (!nodeVisited[neighbor] || nodeLevels[neighbor] > nodeLevels[currentId] + 1) {
+        nodeLevels[neighbor] = nodeLevels[currentId] + 1;
+        nodeVisited[neighbor] = true;
+        queue.push(neighbor);
+      }
+    }
+  }
+
+  // Resolve level conflicts - if a node has a prerequisite on the same level, push it down
+  let hasChanges = true;
+  while (hasChanges) {
+    hasChanges = false;
+
+    nodes.forEach(node => {
+      const prerequisites = reverseAdjacencyList[node.id] || [];
+      
+      // Check for prerequisites on the same level
+      for (const prereqId of prerequisites) {
+        if (nodeLevels[prereqId] >= nodeLevels[node.id]) {
+          // Push this node down one level
+          nodeLevels[node.id] = nodeLevels[prereqId] + 1;
+          hasChanges = true;
+          
+          // Since we pushed this node down, we need to update its descendants
+          const descendantsQueue = [...adjacencyList[node.id]];
+          const visited = new Set<string>();
+          visited.add(node.id);
+          
+          while (descendantsQueue.length > 0) {
+            const descendantId = descendantsQueue.shift()!;
+            if (visited.has(descendantId)) continue;
+            visited.add(descendantId);
+            
+            // Update level if needed
+            if (nodeLevels[descendantId] <= nodeLevels[node.id]) {
+              nodeLevels[descendantId] = nodeLevels[node.id] + 1;
+              
+              // Add its descendants to the queue
+              adjacencyList[descendantId].forEach(id => {
+                if (!visited.has(id)) {
+                  descendantsQueue.push(id);
+                }
+              });
+            }
+          }
+          
+          break; // Once pushed down, no need to check other prerequisites
+        }
+      }
+    });
+  }
+
+  // Find the node with maximum distance from root (furthest leaf)
+  let maxDistance = 0;
+  let furthestNodeId = rootNodes[0].id;
+  
+  Object.entries(nodeLevels).forEach(([nodeId, level]) => {
+    if (level > maxDistance) {
+      maxDistance = level;
+      furthestNodeId = nodeId;
+    }
+  });
+
+  // Calculate shortest path from furthest node back to root
+  const mainBranchNodes = new Set<string>();
+  let currentNode = furthestNodeId;
+  mainBranchNodes.add(currentNode);
+  
+  while (reverseAdjacencyList[currentNode] && reverseAdjacencyList[currentNode].length > 0) {
+    // Find prerequisite with minimum level (shortest path back to root)
+    const prerequisites = reverseAdjacencyList[currentNode];
+    let minLevel = Number.MAX_SAFE_INTEGER;
+    let nextNode = prerequisites[0];
+    
+    for (const prereqId of prerequisites) {
+      if (nodeLevels[prereqId] < minLevel) {
+        minLevel = nodeLevels[prereqId];
+        nextNode = prereqId;
+      }
+    }
+    
+    currentNode = nextNode;
+    mainBranchNodes.add(currentNode);
+  }
+  
+  // Identify branches starting from main branch
+  const branches: string[][] = [];
+  const nodeInBranch: Record<string, number> = {};
+  
+  // Main branch is branch 0
+  branches.push(Array.from(mainBranchNodes));
+  mainBranchNodes.forEach(nodeId => {
+    nodeInBranch[nodeId] = 0;
+  });
+  
+  // Find leaf nodes
+  const isLeafNode = (nodeId: string): boolean => 
+    !adjacencyList[nodeId] || adjacencyList[nodeId].length === 0;
+  
+  // Find branch points (nodes with multiple outgoing edges)
+  const isBranchPoint = (nodeId: string): boolean => 
+    adjacencyList[nodeId] && adjacencyList[nodeId].length > 1;
+  
+  // Find merge points (nodes with multiple incoming edges)
+  const isMergePoint = (nodeId: string): boolean => 
+    reverseAdjacencyList[nodeId] && reverseAdjacencyList[nodeId].length > 1;
+
+  // Identify all non-main branch nodes using BFS
+  const identifyBranches = () => {
+    // Start with all branch points on the main branch
+    const branchPoints = Array.from(mainBranchNodes).filter(nodeId => isBranchPoint(nodeId));
+    
+    // Process branch points
+    branchPoints.forEach(branchPoint => {
+      const neighbors = adjacencyList[branchPoint];
+      
+      neighbors.forEach(neighborId => {
+        // Skip if already in main branch
+        if (mainBranchNodes.has(neighborId)) return;
+        
+        // Create a new branch for this neighbor
+        const newBranchId = branches.length;
+        const newBranch: string[] = [neighborId];
+        nodeInBranch[neighborId] = newBranchId;
+        
+        // Trace this branch
+        const queue = [neighborId];
+        const visited = new Set<string>([neighborId]);
+        
+        while (queue.length > 0) {
+          const currentId = queue.shift()!;
+          const nextNodes = adjacencyList[currentId] || [];
+          
+          for (const nextId of nextNodes) {
+            // If already visited or in main branch, skip
+            if (visited.has(nextId) || mainBranchNodes.has(nextId)) continue;
+            
+            visited.add(nextId);
+            newBranch.push(nextId);
+            nodeInBranch[nextId] = newBranchId;
+            
+            // If this is a branch point but not a merge point, we need to decide
+            if (isBranchPoint(nextId) && !isMergePoint(nextId)) {
+              // Process this branch point immediately
+              const subNeighbors = adjacencyList[nextId];
+              
+              subNeighbors.forEach(subId => {
+                if (!visited.has(subId) && !mainBranchNodes.has(subId)) {
+                  queue.push(subId);
+                }
+              });
+            }
+            // If this is a merge point, don't follow its children
+            else if (!isMergePoint(nextId)) {
+              queue.push(nextId);
+            }
+          }
+        }
+        
+        branches.push(newBranch);
+      });
+    });
+  };
+  
+  // Identify all branches
+  identifyBranches();
+
+  // Make sure all nodes are assigned to a branch
+  nodes.forEach(node => {
+    if (nodeInBranch[node.id] === undefined) {
+      // Find shortest path to main branch
+      const visited = new Set<string>();
+      const queue: [string, number][] = [[node.id, -1]]; // [nodeId, parentBranch]
+      
+      while (queue.length > 0) {
+        const [currentId, parentBranch] = queue.shift()!;
+        if (visited.has(currentId)) continue;
+        visited.add(currentId);
+        
+        // If we know which branch this node belongs to
+        if (nodeInBranch[currentId] !== undefined) {
+          let currentBranch = nodeInBranch[currentId];
+          
+          // Backtrack and assign all nodes in path to this branch
+          for (const visitedId of Array.from(visited)) {
+            if (nodeInBranch[visitedId] === undefined) {
+              nodeInBranch[visitedId] = currentBranch;
+              branches[currentBranch].push(visitedId);
+            }
+          }
+          
+          break;
+        }
+        
+        // Check prerequisites
+        for (const prereqId of reverseAdjacencyList[currentId] || []) {
+          if (!visited.has(prereqId)) {
+            queue.push([prereqId, parentBranch]);
+          }
+        }
+        
+        // Check descendants
+        for (const childId of adjacencyList[currentId] || []) {
+          if (!visited.has(childId)) {
+            queue.push([childId, parentBranch]);
+          }
+        }
+      }
+      
+      // If still not assigned, put in branch 0 (main branch)
+      if (nodeInBranch[node.id] === undefined) {
+        nodeInBranch[node.id] = 0;
+        branches[0].push(node.id);
+      }
+    }
+  });
+
+  // Calculate x-position for each branch
+  const HORIZONTAL_SPACING = 300; // Space between branches
+  const branchPositions: Record<number, number> = {};
+  
+  // Calculate total width
+  const branchCount = branches.length;
+  const totalWidth = (branchCount - 1) * HORIZONTAL_SPACING;
+  
+  // Position branches horizontally - main branch in center, others spread out
+  branchPositions[0] = 0; // Main branch at center
+  
+  // Position other branches
+  let leftBranchIndex = 1;
+  let rightBranchIndex = 1;
+  
+  for (let i = 1; i < branchCount; i++) {
+    if (i % 2 === 1) {
+      // Position on the right
+      branchPositions[i] = rightBranchIndex * HORIZONTAL_SPACING;
+      rightBranchIndex++;
+    } else {
+      // Position on the left
+      branchPositions[i] = -leftBranchIndex * HORIZONTAL_SPACING;
+      leftBranchIndex++;
+    }
+  }
+
+  // Calculate final node positions
+  const VERTICAL_SPACING = nodeHeight + 100; // Space between levels
+  const positionedNodes = nodes.map(node => {
+    const level = nodeLevels[node.id] || 0;
+    const branchIndex = nodeInBranch[node.id] || 0;
+    
+    return {
+      ...node,
+      position: {
+        x: branchPositions[branchIndex],
+        y: level * VERTICAL_SPACING
+      }
+    };
+  });
+
+  // For merge points, adjust position to be centered between incoming branches
+  nodes.forEach(node => {
+    if (isMergePoint(node.id)) {
+      const parentIds = reverseAdjacencyList[node.id];
+      let sumX = 0;
+      
+      // Sum up all parent x positions
+      parentIds.forEach(parentId => {
+        const parentNode = positionedNodes.find(n => n.id === parentId);
+        if (parentNode) {
+          sumX += parentNode.position.x;
+        }
+      });
+      
+      // Average x position of parents
+      const avgX = sumX / parentIds.length;
+      
+      // Find this node in positionedNodes and update x position
+      const nodeToUpdate = positionedNodes.find(n => n.id === node.id);
+      if (nodeToUpdate) {
+        nodeToUpdate.position.x = avgX;
+      }
+    }
+  });
+
+  // Create nice curved edges
+  const positionedEdges = edges.map(edge => {
+    // Check if this is a "branch" edge (nodes in different branches)
+    const sourceNodeBranchIndex = nodeInBranch[edge.source];
+    const targetNodeBranchIndex = nodeInBranch[edge.target];
+    
+    const isCrossBranchEdge = sourceNodeBranchIndex !== targetNodeBranchIndex;
+    const isMainBranchEdge = sourceNodeBranchIndex === 0 || targetNodeBranchIndex === 0;
+    
+    return {
+      ...edge,
+      type: 'smoothstep', // Use smooth step edges for nice visualization
+      animated: true,
+      style: {
+        stroke: isMainBranchEdge ? '#444' : (isCrossBranchEdge ? '#666' : '#888'),
+        strokeWidth: isMainBranchEdge ? 2.5 : (isCrossBranchEdge ? 1.5 : 2),
+        opacity: isMainBranchEdge ? 0.9 : 0.8,
+      },
+    };
+  });
+
+  return { nodes: positionedNodes, edges: positionedEdges };
 };

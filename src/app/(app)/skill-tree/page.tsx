@@ -13,8 +13,7 @@ type SkillTreeNode = Tables<'skill_tree_nodes'> & {
 };
 
 type SkillTreeNodeWithProgress = SkillTreeNode & {
-  completed: boolean;
-  current: boolean;
+  status: 'locked' | 'unlocked' | 'completed';
 };
 
 // Category icons for different content layers
@@ -51,36 +50,22 @@ export default async function SkillTreePage() {
     )
     .order('content_layer_id');
 
-  // Fetch user progress if user is logged in
-  let userProgress: Record<string, boolean> = {};
+  // Fetch character skill node progress if user is logged in
+  let nodeProgress: Record<string, { status: 'locked' | 'unlocked' | 'completed' }> = {};
 
   if (user) {
-    const { data: progress } = await supabase
-      .from('user_progress')
-      .select('lesson_id, completed')
-      .eq('user_id', user.id)
-      .eq('completed', true);
+    const { data: characterSkillNodes } = await supabase
+      .from('character_skill_nodes')
+      .select('node_id, status')
+      .eq('character_id', user.id);
 
-    // Also check for completed article reads
-    const { data: articleReads } = await supabase
-      .from('lesson_article_reads')
-      .select('lesson_id, completed')
-      .eq('user_id', user.id)
-      .eq('completed', true);
-
-    // Combine progress data
-    if (progress) {
-      progress.forEach((item) => {
-        if (item.lesson_id) {
-          userProgress[item.lesson_id] = true;
-        }
-      });
-    }
-
-    if (articleReads) {
-      articleReads.forEach((item) => {
-        if (item.lesson_id) {
-          userProgress[item.lesson_id] = true;
+    // Create a map of node progress
+    if (characterSkillNodes && characterSkillNodes.length > 0) {
+      characterSkillNodes.forEach((item) => {
+        if (item.node_id) {
+          nodeProgress[item.node_id] = { 
+            status: item.status as 'locked' | 'unlocked' | 'completed'
+          };
         }
       });
     }
@@ -88,24 +73,18 @@ export default async function SkillTreePage() {
 
   // Process skill tree nodes to add progress information
   const processedNodes: SkillTreeNodeWithProgress[] = [];
-  let foundCurrent = false;
 
   skillTreeNodes?.forEach((node) => {
-    const isCompleted = node.lesson
-      ? userProgress[node.lesson.id] || false
-      : false;
-    let isCurrent = false;
-
-    // Mark the first uncompleted node as current
-    if (!isCompleted && !foundCurrent) {
-      isCurrent = true;
-      foundCurrent = true;
-    }
-
+    // Get node status from character_skill_nodes or default to 'locked'
+    const nodeStatus = nodeProgress[node.id]?.status || 'locked';
+    
+    // For nodes with no prerequisites, default to 'unlocked' if not already set
+    const hasNoPrereqs = !node.prerequisite_nodes || node.prerequisite_nodes.length === 0;
+    const defaultStatus = hasNoPrereqs ? 'unlocked' : 'locked';
+    
     processedNodes.push({
       ...node,
-      completed: isCompleted,
-      current: isCurrent,
+      status: nodeStatus || defaultStatus,
     });
   });
 
@@ -162,7 +141,7 @@ export default async function SkillTreePage() {
   if (contentLayers) {
     contentLayers.forEach((layer) => {
       const nodes = nodesByLayer[layer.id] || [];
-      const completed = nodes.filter((node) => node.completed).length;
+      const completed = nodes.filter((node) => node.status === 'completed').length;
       const total = nodes.length;
       const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
 

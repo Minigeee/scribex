@@ -214,6 +214,7 @@ export type Database = {
           id: string
           project_id: string | null
           quest_id: string
+          rewards_claimed: boolean | null
           started_at: string | null
           status: string
           updated_at: string
@@ -225,6 +226,7 @@ export type Database = {
           id?: string
           project_id?: string | null
           quest_id: string
+          rewards_claimed?: boolean | null
           started_at?: string | null
           status?: string
           updated_at?: string
@@ -236,6 +238,7 @@ export type Database = {
           id?: string
           project_id?: string | null
           quest_id?: string
+          rewards_claimed?: boolean | null
           started_at?: string | null
           status?: string
           updated_at?: string
@@ -260,6 +263,57 @@ export type Database = {
             columns: ["quest_id"]
             isOneToOne: false
             referencedRelation: "quests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      character_skill_nodes: {
+        Row: {
+          character_id: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          node_id: string
+          rewards_claimed: boolean | null
+          status: string
+          unlocked_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          character_id: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          node_id: string
+          rewards_claimed?: boolean | null
+          status?: string
+          unlocked_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          character_id?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          node_id?: string
+          rewards_claimed?: boolean | null
+          status?: string
+          unlocked_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_skill_nodes_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "character_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "character_skill_nodes_node_id_fkey"
+            columns: ["node_id"]
+            isOneToOne: false
+            referencedRelation: "skill_tree_nodes"
             referencedColumns: ["id"]
           },
         ]
@@ -1039,6 +1093,8 @@ export type Database = {
           id: string
           lesson_id: string | null
           node_type: string
+          position_x: number
+          position_y: number
           prerequisite_nodes: string[] | null
           rewards: Json | null
           title: string
@@ -1052,6 +1108,8 @@ export type Database = {
           id?: string
           lesson_id?: string | null
           node_type: string
+          position_x?: number
+          position_y?: number
           prerequisite_nodes?: string[] | null
           rewards?: Json | null
           title: string
@@ -1065,6 +1123,8 @@ export type Database = {
           id?: string
           lesson_id?: string | null
           node_type?: string
+          position_x?: number
+          position_y?: number
           prerequisite_nodes?: string[] | null
           rewards?: Json | null
           title?: string
@@ -1191,6 +1251,7 @@ export type Database = {
           position_x: number
           position_y: number
           updated_at: string
+          world_id: string
         }
         Insert: {
           adjacent_locations?: string[] | null
@@ -1204,6 +1265,7 @@ export type Database = {
           position_x: number
           position_y: number
           updated_at?: string
+          world_id: string
         }
         Update: {
           adjacent_locations?: string[] | null
@@ -1217,8 +1279,17 @@ export type Database = {
           position_x?: number
           position_y?: number
           updated_at?: string
+          world_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "world_locations_world_id_fkey"
+            columns: ["world_id"]
+            isOneToOne: false
+            referencedRelation: "worlds"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       world_node_status: {
         Row: {
@@ -1264,6 +1335,41 @@ export type Database = {
             columns: ["location_id"]
             isOneToOne: false
             referencedRelation: "world_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      worlds: {
+        Row: {
+          classroom_id: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          classroom_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          classroom_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "worlds_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
             referencedColumns: ["id"]
           },
         ]
@@ -1439,7 +1545,21 @@ export type Database = {
           p_character_id: string
           p_node_id: string
         }
-        Returns: undefined
+        Returns: boolean
+      }
+      retry_node_rewards: {
+        Args: {
+          p_character_id: string
+          p_node_id: string
+        }
+        Returns: boolean
+      }
+      retry_quest_rewards: {
+        Args: {
+          p_character_id: string
+          p_quest_id: string
+        }
+        Returns: boolean
       }
       update_character_stat: {
         Args: {
