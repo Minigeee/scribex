@@ -10,17 +10,28 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { ItemReward } from '@/components/ui/item-reward';
 import { Tables } from '@/lib/database.types';
 import { useQuestPrompt } from '@/lib/hooks/use-quest-prompt';
-import { Loader2Icon, ScrollIcon } from 'lucide-react';
+import { CoinsIcon, Loader2Icon, ScrollIcon, TrophyIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
 
 // Define types and styles
 type Quest = Tables<'quests'> & {
   genres: Tables<'genres'> | null;
 };
+
+// Define reward types
+type RewardType = 'experience' | 'currency' | 'stat' | 'item';
+
+interface Reward {
+  type: RewardType;
+  value: number;
+  key?: string;
+}
 
 // Define genre styles
 const genreStyles: Record<string, { bgColor: string; textColor: string }> = {
@@ -31,6 +42,69 @@ const genreStyles: Record<string, { bgColor: string; textColor: string }> = {
   Journalism: { bgColor: 'bg-amber-100', textColor: 'text-amber-800' },
   default: { bgColor: 'bg-gray-100', textColor: 'text-gray-800' },
 };
+
+// Component to display a single reward
+function RewardDisplay({ reward }: { reward: Reward & { itemName?: string } }) {
+  const baseClasses =
+    'flex items-center gap-1 rounded-md px-1.5 py-0.5 text-2xs font-medium';
+
+  switch (reward.type) {
+    case 'experience':
+      return (
+        <div className={`${baseClasses} bg-amber-50 text-amber-700`}>
+          <TrophyIcon className='h-3 w-3 flex-shrink-0' />
+          <span className='truncate'>+{reward.value} XP</span>
+        </div>
+      );
+    case 'currency':
+      return (
+        <div className={`${baseClasses} bg-yellow-50 text-yellow-700`}>
+          <CoinsIcon className='h-3 w-3 flex-shrink-0' />
+          <span className='truncate'>+{reward.value} Coins</span>
+        </div>
+      );
+    case 'stat':
+      return (
+        <div className={`${baseClasses} bg-blue-50 text-blue-700`}>
+          <svg
+            xmlns='http://www.w3.org/2000/svg'
+            width='10'
+            height='10'
+            viewBox='0 0 24 24'
+            fill='none'
+            stroke='currentColor'
+            strokeWidth='2'
+            strokeLinecap='round'
+            strokeLinejoin='round'
+            className='flex-shrink-0'
+          >
+            <path d='M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z' />
+            <polyline points='14 2 14 8 20 8' />
+            <path d='M16 13H8' />
+            <path d='M16 17H8' />
+            <path d='M10 9H8' />
+          </svg>
+          <span className='truncate'>
+            +{reward.value}{' '}
+            {reward.key || `Stat Point${reward.value > 1 ? 's' : ''}`}
+          </span>
+        </div>
+      );
+    case 'item':
+      if (!reward.key) return null;
+
+      // Use the ItemReward component
+      return (
+        <ItemReward
+          itemId={reward.key}
+          quantity={reward.value}
+          className='pointer-events-auto'
+        />
+      );
+    default:
+      return null;
+  }
+}
 
 interface QuestCardProps {
   quest: Quest;
@@ -67,6 +141,9 @@ export function QuestCard({ quest }: QuestCardProps) {
   const genreName = quest.genres?.name || 'default';
   const genreStyle = genreStyles[genreName] || genreStyles.default;
 
+  // Parse rewards from quest data
+  const rewards = quest.rewards as Reward[] | null;
+
   return (
     <Card className='overflow-hidden'>
       <CardHeader className='pb-2'>
@@ -88,7 +165,9 @@ export function QuestCard({ quest }: QuestCardProps) {
         ) : questPrompt ? (
           <div className='rounded-md bg-muted p-3 text-sm'>
             <h4 className='mb-1 font-medium'>Writing Prompt:</h4>
-            <p className='italic text-muted-foreground'>{questPrompt}</p>
+            <span className='prose prose-sm text-muted-foreground'>
+              <ReactMarkdown>{questPrompt}</ReactMarkdown>
+            </span>
           </div>
         ) : (
           <div className='flex items-center justify-center rounded-md bg-muted p-3'>
@@ -96,6 +175,21 @@ export function QuestCard({ quest }: QuestCardProps) {
             <span className='ml-2 text-xs text-muted-foreground'>
               Could not load prompt
             </span>
+          </div>
+        )}
+
+        {/* Rewards section */}
+        {rewards && rewards.length > 0 && (
+          <div className='mt-2'>
+            <h4 className='mb-1 text-xs font-medium'>Rewards:</h4>
+            <div className='flex flex-wrap gap-1.5'>
+              {rewards.map((reward, index) => (
+                <RewardDisplay
+                  key={`${reward.type}-${index}`}
+                  reward={reward}
+                />
+              ))}
+            </div>
           </div>
         )}
       </CardContent>

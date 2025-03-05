@@ -98,7 +98,8 @@ INSERT INTO genres (name, description) VALUES
 ('Persuasive', 'Argumentative and persuasive writing'),
 ('Informative', 'Expository and informational writing'),
 ('Poetry', 'Creative expression through verse'),
-('Journalism', 'Reporting and news-style writing');
+('Journalism', 'Reporting and news-style writing'),
+('Creative Writing', 'Imaginative and original fiction writing');
 
 -- OWL Projects
 CREATE TABLE projects (

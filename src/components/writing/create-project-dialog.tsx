@@ -18,7 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tables, TablesInsert } from '@/lib/database.types';
 import { createClient } from '@/lib/supabase/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { PlusIcon, RefreshCwIcon } from 'lucide-react';
+import { RefreshCwIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -39,9 +39,13 @@ type Genre = Tables<'genres'>;
 
 interface CreateProjectDialogProps {
   genres: Genre[];
+  children: React.ReactNode;
 }
 
-export function CreateProjectDialog({ genres }: CreateProjectDialogProps) {
+export function CreateProjectDialog({
+  genres,
+  children,
+}: CreateProjectDialogProps) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
@@ -173,12 +177,7 @@ export function CreateProjectDialog({ genres }: CreateProjectDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <PlusIcon className='mr-2 h-4 w-4' />
-          Create Project
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className='sm:max-w-[500px]'>
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader>

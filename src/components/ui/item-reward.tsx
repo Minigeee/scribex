@@ -42,7 +42,7 @@ export function ItemReward({
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
       className={cn(
-        'flex items-center gap-1 rounded-md px-1.5 py-0.5 text-2xs font-medium',
+        'flex items-center gap-1 rounded-md px-1.5 py-0.5 text-2xs font-medium cursor-default',
         item?.rarity && RARITY_COLORS[item?.rarity as keyof typeof RARITY_COLORS],
         className
       )}
@@ -100,8 +100,8 @@ export function ItemReward({
                       className='flex items-center gap-1 text-2xs'
                     >
                       <span className='capitalize'>{stat}:</span>
-                      <span className='font-medium text-green-600'>
-                        +{value}
+                      <span className={cn('font-medium', value > 0 ? 'text-green-600' : 'text-red-600')}>
+                        {value > 0 ? '+' : ''}{value}
                       </span>
                     </div>
                   ))}

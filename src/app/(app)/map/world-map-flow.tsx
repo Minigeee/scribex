@@ -1,16 +1,8 @@
 'use client';
 
-import { generateQuestPrompt } from '@/app/actions/generate-quest-prompt';
-import { startQuest } from '@/app/actions/start-quest';
+import { QuestCard } from '@/components/map/quest-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -18,7 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { QuestCard } from '@/components/map/quest-card';
 import { Tables } from '@/lib/database.types';
 import { useBreakpoint } from '@/lib/hooks/use-breakpoint';
 import { User } from '@supabase/supabase-js';
@@ -43,9 +34,12 @@ import '@xyflow/react/dist/style.css';
 import { motion } from 'framer-motion';
 import {
   CastleIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  FilterIcon,
   HomeIcon,
+  InfoIcon,
   LandmarkIcon,
-  Loader2Icon,
   MapIcon,
   MapPinIcon,
   MountainIcon,
@@ -54,10 +48,10 @@ import {
   TentIcon,
   TreesIcon,
   WavesIcon,
+  XIcon,
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
-import { toast } from 'sonner';
+import { memo, useEffect, useMemo, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 // Define types for world locations and quests with their relationships
 type WorldLocation = Tables<'world_locations'>;
@@ -87,16 +81,16 @@ interface WorldMapFlowProps {
 
 // Define location type icons
 const locationTypeIcons: Record<string, React.ReactNode> = {
-  town: <HomeIcon className='h-5 w-5' />,
-  forest: <TreesIcon className='h-5 w-5' />,
-  mountain: <MountainIcon className='h-5 w-5' />,
-  lake: <WavesIcon className='h-5 w-5' />,
-  castle: <CastleIcon className='h-5 w-5' />,
-  cave: <LandmarkIcon className='h-5 w-5' />,
-  ruins: <LandmarkIcon className='h-5 w-5' />,
-  camp: <TentIcon className='h-5 w-5' />,
-  oasis: <PalmtreeIcon className='h-5 w-5' />,
-  default: <MapPinIcon className='h-5 w-5' />,
+  town: <HomeIcon className='h-6 w-6' />,
+  forest: <TreesIcon className='h-6 w-6' />,
+  mountain: <MountainIcon className='h-6 w-6' />,
+  lake: <WavesIcon className='h-6 w-6' />,
+  castle: <CastleIcon className='h-6 w-6' />,
+  cave: <LandmarkIcon className='h-6 w-6' />,
+  ruins: <LandmarkIcon className='h-6 w-6' />,
+  camp: <TentIcon className='h-6 w-6' />,
+  oasis: <PalmtreeIcon className='h-6 w-6' />,
+  default: <MapPinIcon className='h-6 w-6' />,
 };
 
 // Define location type styles
@@ -178,21 +172,10 @@ const statusStyles: Record<
   },
 };
 
-// Define genre styles
-const genreStyles: Record<string, { bgColor: string; textColor: string }> = {
-  Narrative: { bgColor: 'bg-blue-100', textColor: 'text-blue-800' },
-  Persuasive: { bgColor: 'bg-purple-100', textColor: 'text-purple-800' },
-  Informative: { bgColor: 'bg-green-100', textColor: 'text-green-800' },
-  Poetry: { bgColor: 'bg-pink-100', textColor: 'text-pink-800' },
-  Journalism: { bgColor: 'bg-amber-100', textColor: 'text-amber-800' },
-  default: { bgColor: 'bg-gray-100', textColor: 'text-gray-800' },
-};
-
 // Custom node component for world locations
 function WorldLocationNode({ data }: NodeProps) {
   const location = data.location as LocationWithStatus;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const router = useRouter();
 
   const locationType = location.location_type || 'default';
   const status = location.status || 'locked';
@@ -209,12 +192,6 @@ function WorldLocationNode({ data }: NodeProps) {
     animate: {
       scale: 1,
       opacity: status === 'locked' ? 0.7 : 1,
-      boxShadow:
-        status === 'unlocked'
-          ? '0 0 15px rgba(59, 130, 246, 0.5)'
-          : status === 'completed'
-            ? '0 0 10px rgba(34, 197, 94, 0.3)'
-            : 'none',
       transition: { duration: 0.3 },
     },
   };
@@ -222,30 +199,56 @@ function WorldLocationNode({ data }: NodeProps) {
   return (
     <>
       <motion.div
-        className={`relative rounded-lg border-2 p-2 shadow-md ${typeStyle.bgColor} ${typeStyle.textColor} ${
-          status === 'locked'
-            ? 'border-gray-300 opacity-70'
-            : `${typeStyle.borderColor}`
+        className={`relative flex max-w-[250px] flex-col rounded-lg border-2 ${typeStyle.bgColor} ${typeStyle.textColor} ${
+          status === 'locked' ? 'border-gray-300' : `${typeStyle.borderColor}`
         }`}
         initial='initial'
         animate='animate'
         variants={nodeVariants}
         onClick={() => status !== 'locked' && setIsDialogOpen(true)}
-        style={{ cursor: status === 'locked' ? 'not-allowed' : 'pointer' }}
+        style={{
+          cursor: status === 'locked' ? 'not-allowed' : 'pointer',
+        }}
       >
-        <div className='flex flex-col items-center gap-1'>
-          <div className='flex items-center gap-1'>
-            {icon}
-            <span className='text-sm font-medium'>{location.name}</span>
-          </div>
-          <Badge
-            variant='outline'
-            className={`${statusStyle.bgColor} ${statusStyle.textColor} text-xs`}
+        {/* Header section with icon, title and tags */}
+        <div className='flex items-start gap-4 border-b border-gray-200 p-2'>
+          {/* Rounded icon box */}
+          <div
+            className={`flex h-10 w-10 items-center justify-center rounded-md ${typeStyle.borderColor} border p-1`}
           >
-            {status.charAt(0).toUpperCase() + status.slice(1)}
-          </Badge>
+            {icon}
+          </div>
+
+          {/* Title and tags */}
+          <div className='flex flex-col'>
+            <span className='line-clamp-1 font-medium'>{location.name}</span>
+            <div className='mt-1 flex flex-wrap gap-1'>
+              <Badge
+                variant='outline'
+                className={`${statusStyle.bgColor} ${statusStyle.textColor} h-5 rounded-sm px-1 py-0 text-xs`}
+              >
+                {status.charAt(0).toUpperCase() + status.slice(1)}
+              </Badge>
+              <Badge
+                variant='outline'
+                className={`${typeStyle.bgColor} ${typeStyle.textColor} h-5 rounded-sm px-1 py-0 text-xs`}
+              >
+                {locationType.charAt(0).toUpperCase() + locationType.slice(1)}
+              </Badge>
+            </div>
+          </div>
+        </div>
+
+        {/* Card content with truncated description */}
+        <div className='p-2'>
+          <p className='line-clamp-2 text-xs text-muted-foreground'>
+            {location.description ||
+              `A ${location.location_type} area with various writing challenges.`}
+          </p>
+
+          {/* Quest count indicator */}
           {location.quests.length > 0 && (
-            <div className='mt-1 flex items-center gap-1 text-xs'>
+            <div className='mt-2 flex items-center gap-1 text-xs'>
               <ScrollIcon className='h-3 w-3' />
               <span>
                 {location.quests.length} quest
@@ -259,25 +262,13 @@ function WorldLocationNode({ data }: NodeProps) {
         <Handle
           type='target'
           position={Position.Top}
-          className='!bg-gray-400'
+          className='hidden'
           isConnectable={false}
         />
         <Handle
           type='source'
           position={Position.Bottom}
-          className='!bg-gray-400'
-          isConnectable={false}
-        />
-        <Handle
-          type='target'
-          position={Position.Left}
-          className='!bg-gray-400'
-          isConnectable={false}
-        />
-        <Handle
-          type='source'
-          position={Position.Right}
-          className='!bg-gray-400'
+          className='hidden'
           isConnectable={false}
         />
       </motion.div>
@@ -290,9 +281,11 @@ function WorldLocationNode({ data }: NodeProps) {
               {icon}
               {location.name}
             </DialogTitle>
-            <DialogDescription>
-              {location.description ||
-                `A ${location.location_type} area with various writing challenges.`}
+            <DialogDescription className='prose prose-sm text-left'>
+              <ReactMarkdown>
+                {location.description ||
+                  `A ${location.location_type} area with various writing challenges.`}
+              </ReactMarkdown>
             </DialogDescription>
           </DialogHeader>
 
@@ -333,6 +326,8 @@ function WorldLocationNode({ data }: NodeProps) {
     </>
   );
 }
+
+const WorldLocationNodeMemo = memo(WorldLocationNode);
 
 // This helper function returns the intersection point
 // of the line between the center of the intersectionNode and the target node
@@ -451,12 +446,12 @@ function WorldMapBezierEdge({ source, target, style }: EdgeProps) {
 
 // Main component
 export function WorldMapFlow({ locations, edges }: WorldMapFlowProps) {
-  const isMobile = useBreakpoint('md');
+  const isMobile = !useBreakpoint('md');
 
   // Define node types
   const nodeTypes = useMemo(
     () => ({
-      location: WorldLocationNode,
+      location: WorldLocationNodeMemo,
     }),
     []
   );
@@ -474,7 +469,7 @@ export function WorldMapFlow({ locations, edges }: WorldMapFlowProps) {
     return locations.map((location) => ({
       id: location.id,
       type: 'location',
-      position: { x: location.position_x, y: location.position_y },
+      position: { x: 2 * location.position_x, y: 2 * location.position_y },
       data: { location },
     }));
   }, [locations]);
@@ -504,6 +499,11 @@ export function WorldMapFlow({ locations, edges }: WorldMapFlowProps) {
   // Filter nodes by status
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
+  
+  // State for mobile panel visibility
+  const [showFiltersPanel, setShowFiltersPanel] = useState(!isMobile);
+  const [showLegendPanel, setShowLegendPanel] = useState(!isMobile);
+  const [showTypesPanel, setShowTypesPanel] = useState(!isMobile);
 
   // Apply filters
   useEffect(() => {
@@ -537,6 +537,19 @@ export function WorldMapFlow({ locations, edges }: WorldMapFlowProps) {
     return Array.from(types);
   }, [locations]);
 
+  // Toggle mobile panel visibility when screen size changes
+  useEffect(() => {
+    if (!isMobile) {
+      setShowFiltersPanel(true);
+      setShowLegendPanel(true);
+      setShowTypesPanel(true);
+    } else {
+      setShowFiltersPanel(false);
+      setShowLegendPanel(false);
+      setShowTypesPanel(false);
+    }
+  }, [isMobile]);
+
   return (
     <ReactFlow
       nodes={nodes}
@@ -561,105 +574,211 @@ export function WorldMapFlow({ locations, edges }: WorldMapFlowProps) {
         size={isMobile ? 0.5 : 1}
       />
 
-      {/* Filter panel */}
-      <Panel
-        position='top-left'
-        className='rounded-lg bg-background/80 p-2 shadow-md backdrop-blur-sm'
-      >
-        <div className='flex max-w-[90vw] flex-wrap gap-2'>
+      {/* Mobile Controls Panel */}
+      {isMobile && (
+        <Panel
+          position='top-center'
+          className='flex gap-2 rounded-lg bg-background/80 p-2 shadow-md backdrop-blur-sm'
+        >
           <Button
             size='sm'
-            variant={statusFilter === null ? 'default' : 'outline'}
-            onClick={() => setStatusFilter(null)}
-            className='text-xs'
+            variant='outline'
+            className='h-8 w-8 p-0'
+            onClick={() => setShowFiltersPanel(!showFiltersPanel)}
           >
-            <MapIcon className='mr-1 h-3 w-3' />
-            All
+            <FilterIcon className='h-4 w-4' />
           </Button>
+          <Button
+            size='sm'
+            variant='outline'
+            className='h-8 w-8 p-0'
+            onClick={() => setShowTypesPanel(!showTypesPanel)}
+          >
+            <MapPinIcon className='h-4 w-4' />
+          </Button>
+          <Button
+            size='sm'
+            variant='outline'
+            className='h-8 w-8 p-0'
+            onClick={() => setShowLegendPanel(!showLegendPanel)}
+          >
+            <InfoIcon className='h-4 w-4' />
+          </Button>
+        </Panel>
+      )}
 
-          {Object.keys(statusStyles).map((status) => (
-            <Button
-              key={status}
-              size='sm'
-              variant={statusFilter === status ? 'default' : 'outline'}
-              onClick={() =>
-                setStatusFilter(status === statusFilter ? null : status)
-              }
-              className={`text-xs ${statusFilter === status ? '' : `${statusStyles[status].textColor}`}`}
-            >
-              {status.charAt(0).toUpperCase() + status.slice(1)}
-            </Button>
-          ))}
-
-          {typeFilter && (
-            <Button
-              size='sm'
-              variant='outline'
-              onClick={() => setTypeFilter(null)}
-              className='ml-2 text-xs'
-            >
-              Clear Type
-            </Button>
+      {/* Filter panel */}
+      {showFiltersPanel && (
+        <Panel
+          position='top-left'
+          className='rounded-lg bg-background/80 p-2 shadow-md backdrop-blur-sm'
+        >
+          {isMobile && (
+            <div className='mb-2 flex items-center justify-between'>
+              <span className='text-xs font-medium'>Status Filters</span>
+              <Button
+                size='sm'
+                variant='ghost'
+                className='h-6 w-6 p-0'
+                onClick={() => setShowFiltersPanel(false)}
+              >
+                <XIcon className='h-3 w-3' />
+              </Button>
+            </div>
           )}
-        </div>
-      </Panel>
+          <div className='flex max-w-[90vw] flex-wrap gap-2'>
+            <Button
+              size='sm'
+              variant={statusFilter === null ? 'default' : 'outline'}
+              onClick={() => setStatusFilter(null)}
+              className={`text-xs ${isMobile ? 'px-2 py-1' : ''}`}
+            >
+              <MapIcon className={`${isMobile ? '' : 'mr-1'} h-3 w-3`} />
+              {!isMobile && 'All'}
+            </Button>
+
+            {Object.keys(statusStyles).map((status) => (
+              <Button
+                key={status}
+                size='sm'
+                variant={statusFilter === status ? 'default' : 'outline'}
+                onClick={() =>
+                  setStatusFilter(status === statusFilter ? null : status)
+                }
+                className={`text-xs ${statusFilter === status ? '' : `${statusStyles[status].textColor}`} ${isMobile ? 'px-2 py-1' : ''}`}
+              >
+                <div 
+                  className={`mr-1 h-2 w-2 rounded-full ${statusStyles[status].bgColor}`}
+                ></div>
+                {!isMobile && status.charAt(0).toUpperCase() + status.slice(1)}
+                {isMobile && status.charAt(0).toUpperCase()}
+              </Button>
+            ))}
+
+            {typeFilter && (
+              <Button
+                size='sm'
+                variant='outline'
+                onClick={() => setTypeFilter(null)}
+                className={`ml-auto text-xs ${isMobile ? 'px-2 py-1' : ''}`}
+              >
+                {isMobile ? <XIcon className='h-3 w-3' /> : 'Clear Type'}
+              </Button>
+            )}
+          </div>
+        </Panel>
+      )}
 
       {/* Location types panel */}
-      <Panel
-        position='bottom-left'
-        className='rounded-lg bg-background/80 p-2 shadow-md backdrop-blur-sm'
-      >
-        <div className='flex max-w-[90vw] flex-wrap gap-2'>
-          {locationTypes.map((type) => {
-            const style =
-              locationTypeStyles[type] || locationTypeStyles.default;
-            const icon = locationTypeIcons[type] || locationTypeIcons.default;
-
-            return (
+      {showTypesPanel && (
+        <Panel
+          position='bottom-left'
+          className='rounded-lg bg-background/80 p-2 shadow-md backdrop-blur-sm'
+        >
+          {isMobile && (
+            <div className='mb-2 flex items-center justify-between'>
+              <span className='text-xs font-medium'>Location Types</span>
               <Button
-                key={type}
                 size='sm'
-                variant={typeFilter === type ? 'default' : 'outline'}
-                onClick={() => setTypeFilter(type === typeFilter ? null : type)}
-                className={`text-xs ${typeFilter === type ? '' : `${style.textColor}`}`}
+                variant='ghost'
+                className='h-6 w-6 p-0'
+                onClick={() => setShowTypesPanel(false)}
               >
-                <span className='mr-1'>{icon}</span>
-                {type.charAt(0).toUpperCase() + type.slice(1)}
+                <XIcon className='h-3 w-3' />
               </Button>
-            );
-          })}
-        </div>
-      </Panel>
+            </div>
+          )}
+          <div className='flex max-w-[90vw] flex-wrap gap-2'>
+            {isMobile ? (
+              // Mobile view - compact grid of icons
+              <div className='grid grid-cols-4 gap-2'>
+                {locationTypes.map((type) => {
+                  const style =
+                    locationTypeStyles[type] || locationTypeStyles.default;
+                  const icon = locationTypeIcons[type] || locationTypeIcons.default;
+
+                  return (
+                    <Button
+                      key={type}
+                      size='sm'
+                      variant={typeFilter === type ? 'default' : 'outline'}
+                      onClick={() => setTypeFilter(type === typeFilter ? null : type)}
+                      className={`h-8 w-8 p-0 ${typeFilter === type ? '' : `${style.textColor}`}`}
+                    >
+                      <span>{icon}</span>
+                    </Button>
+                  );
+                })}
+              </div>
+            ) : (
+              // Desktop view - full buttons with text
+              locationTypes.map((type) => {
+                const style =
+                  locationTypeStyles[type] || locationTypeStyles.default;
+                const icon = locationTypeIcons[type] || locationTypeIcons.default;
+
+                return (
+                  <Button
+                    key={type}
+                    size='sm'
+                    variant={typeFilter === type ? 'default' : 'outline'}
+                    onClick={() => setTypeFilter(type === typeFilter ? null : type)}
+                    className={`text-xs ${typeFilter === type ? '' : `${style.textColor}`}`}
+                  >
+                    <span className='mr-1'>{icon}</span>
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </Button>
+                );
+              })
+            )}
+          </div>
+        </Panel>
+      )}
 
       {/* Legend panel */}
-      <Panel
-        position='bottom-right'
-        className='rounded-lg bg-background/80 p-2 shadow-md backdrop-blur-sm'
-      >
-        <div className='text-xs text-muted-foreground'>
-          <div className='mb-1 font-medium'>Map Legend</div>
-          <div className='flex flex-col gap-1'>
-            <div className='flex items-center gap-1'>
-              <div
-                className={`h-3 w-3 rounded-full ${statusStyles.locked.bgColor}`}
-              ></div>
-              <span>Locked</span>
+      {showLegendPanel && (
+        <Panel
+          position='bottom-right'
+          className='rounded-lg bg-background/80 p-2 shadow-md backdrop-blur-sm'
+        >
+          {isMobile && (
+            <div className='mb-1 flex items-center justify-between'>
+              <span className='text-xs font-medium'>Legend</span>
+              <Button
+                size='sm'
+                variant='ghost'
+                className='h-6 w-6 p-0'
+                onClick={() => setShowLegendPanel(false)}
+              >
+                <XIcon className='h-3 w-3' />
+              </Button>
             </div>
-            <div className='flex items-center gap-1'>
-              <div
-                className={`h-3 w-3 rounded-full ${statusStyles.unlocked.bgColor}`}
-              ></div>
-              <span>Unlocked</span>
-            </div>
-            <div className='flex items-center gap-1'>
-              <div
-                className={`h-3 w-3 rounded-full ${statusStyles.completed.bgColor}`}
-              ></div>
-              <span>Completed</span>
+          )}
+          <div className='text-xs text-muted-foreground'>
+            {!isMobile && <div className='mb-1 font-medium'>Map Legend</div>}
+            <div className={`flex ${isMobile ? 'flex-row' : 'flex-col'} gap-1`}>
+              <div className='flex items-center gap-1'>
+                <div
+                  className={`h-3 w-3 rounded-full ${statusStyles.locked.bgColor}`}
+                ></div>
+                <span>Locked</span>
+              </div>
+              <div className='flex items-center gap-1'>
+                <div
+                  className={`h-3 w-3 rounded-full ${statusStyles.unlocked.bgColor}`}
+                ></div>
+                <span>Unlocked</span>
+              </div>
+              <div className='flex items-center gap-1'>
+                <div
+                  className={`h-3 w-3 rounded-full ${statusStyles.completed.bgColor}`}
+                ></div>
+                <span>Completed</span>
+              </div>
             </div>
           </div>
-        </div>
-      </Panel>
+        </Panel>
+      )}
     </ReactFlow>
   );
 }

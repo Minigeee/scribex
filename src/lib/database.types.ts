@@ -1004,7 +1004,7 @@ export type Database = {
           location_id: string | null
           prerequisite_quests: string[] | null
           prompt: string | null
-          quest_type: string
+          prompt_expires_at: string | null
           rewards: Json | null
           title: string
           updated_at: string
@@ -1021,7 +1021,7 @@ export type Database = {
           location_id?: string | null
           prerequisite_quests?: string[] | null
           prompt?: string | null
-          quest_type: string
+          prompt_expires_at?: string | null
           rewards?: Json | null
           title: string
           updated_at?: string
@@ -1038,7 +1038,7 @@ export type Database = {
           location_id?: string | null
           prerequisite_quests?: string[] | null
           prompt?: string | null
-          quest_type?: string
+          prompt_expires_at?: string | null
           rewards?: Json | null
           title?: string
           updated_at?: string

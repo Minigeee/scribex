@@ -4,6 +4,27 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function ProjectLoading() {
   return (
     <div className='flex h-[calc(100vh-10rem)] gap-4'>
+      {/* Main content area skeleton */}
+      <div className='flex-1 overflow-auto rounded-lg border bg-card shadow-sm'>
+        <div className='mx-auto max-w-3xl p-8'>
+          <Skeleton className='mb-6 h-8 w-3/4' />
+          <Skeleton className='mb-4 h-6 w-full' />
+          <Skeleton className='mb-4 h-6 w-full' />
+          <Skeleton className='mb-4 h-6 w-5/6' />
+          <Skeleton className='mb-4 h-6 w-full' />
+          <Skeleton className='mb-8 h-6 w-4/5' />
+
+          <Skeleton className='mb-4 h-6 w-full' />
+          <Skeleton className='mb-4 h-6 w-full' />
+          <Skeleton className='mb-8 h-6 w-3/4' />
+
+          <Skeleton className='mb-4 h-6 w-full' />
+          <Skeleton className='mb-4 h-6 w-full' />
+          <Skeleton className='mb-4 h-6 w-5/6' />
+          <Skeleton className='mb-4 h-6 w-full' />
+        </div>
+      </div>
+
       {/* Left sidebar skeleton */}
       <div className='flex w-80 flex-col gap-4'>
         <div className='flex-1'>
@@ -48,27 +69,6 @@ export default function ProjectLoading() {
               <Skeleton className='h-10 w-full' />
             </CardContent>
           </Card>
-        </div>
-      </div>
-
-      {/* Main content area skeleton */}
-      <div className='flex-1 overflow-auto rounded-lg border bg-card shadow-sm'>
-        <div className='mx-auto max-w-3xl p-8'>
-          <Skeleton className='mb-6 h-8 w-3/4' />
-          <Skeleton className='mb-4 h-6 w-full' />
-          <Skeleton className='mb-4 h-6 w-full' />
-          <Skeleton className='mb-4 h-6 w-5/6' />
-          <Skeleton className='mb-4 h-6 w-full' />
-          <Skeleton className='mb-8 h-6 w-4/5' />
-
-          <Skeleton className='mb-4 h-6 w-full' />
-          <Skeleton className='mb-4 h-6 w-full' />
-          <Skeleton className='mb-8 h-6 w-3/4' />
-
-          <Skeleton className='mb-4 h-6 w-full' />
-          <Skeleton className='mb-4 h-6 w-full' />
-          <Skeleton className='mb-4 h-6 w-5/6' />
-          <Skeleton className='mb-4 h-6 w-full' />
         </div>
       </div>
     </div>

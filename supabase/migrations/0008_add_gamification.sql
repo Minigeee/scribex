@@ -125,12 +125,12 @@ CREATE TABLE IF NOT EXISTS public.quests (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     title VARCHAR(100) NOT NULL,
     description TEXT,
-    quest_type VARCHAR(50) NOT NULL,
     location_id UUID REFERENCES public.world_locations(id),
     genre_id INTEGER REFERENCES public.genres(id),
     difficulty INTEGER NOT NULL DEFAULT 1,
     is_daily_quest BOOLEAN NOT NULL DEFAULT FALSE,
     prompt TEXT,
+    prompt_expires_at TIMESTAMP WITH TIME ZONE,
     rewards JSONB DEFAULT '[]'::jsonb, -- Direct JSON array of rewards
     prerequisite_quests UUID[] DEFAULT '{}',
     available_from TIMESTAMP WITH TIME ZONE,

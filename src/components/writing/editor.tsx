@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import sanitizeHtml from '@/lib/utils/sanitize-html';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import Placeholder from '@tiptap/extension-placeholder';
 import {
   Bold,
   Code,
@@ -39,6 +40,7 @@ import { useEffect, useMemo } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import { ScrollArea } from '../ui/scroll-area';
 import { Separator } from '../ui/separator';
+import './editor.css';
 
 interface EditorProps {
   content: string;
@@ -287,7 +289,10 @@ export function Editor({
         ),
       },
     },
-    extensions: [StarterKit],
+    extensions: [StarterKit, Placeholder.configure({
+      placeholder: 'Start writing...',
+    }),
+    ],
     content: initialContent,
     editable,
     onUpdate: ({ editor }) => {

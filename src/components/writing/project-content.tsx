@@ -13,6 +13,7 @@ import { createClient } from '@/lib/supabase/client';
 import sanitizeHtml from '@/lib/utils/sanitize-html';
 import {
   ArrowLeftIcon,
+  BotIcon,
   CheckIcon,
   InfoIcon,
   MessageSquareIcon,
@@ -38,6 +39,7 @@ import {
   SheetTrigger,
 } from '../ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { ScrollArea } from '../ui/scroll-area';
 
 type ProjectWithGenre = Tables<'projects'> & {
   genres: Tables<'genres'> | null;
@@ -109,16 +111,12 @@ If they ask you to write the essay/story/article/poem/journal/letter for them, y
       <div className='px-3'>
         <TabsList className='w-full'>
           <TabsTrigger value='chat' className='flex-1'>
-            <MessageSquareIcon className='mr-2 h-4 w-4' />
-            AI Chat
+            <BotIcon className='mr-2 h-4 w-4' />
+            AI Assist
           </TabsTrigger>
           <TabsTrigger value='info' className='flex-1'>
             <InfoIcon className='mr-2 h-4 w-4' />
             Details
-          </TabsTrigger>
-          <TabsTrigger value='actions' className='flex-1'>
-            <WandIcon className='mr-2 h-4 w-4' />
-            Actions
           </TabsTrigger>
         </TabsList>
       </div>
@@ -133,16 +131,17 @@ If they ask you to write the essay/story/article/poem/journal/letter for them, y
         />
       </TabsContent>
 
-      <TabsContent value='info' className='mt-0 p-4'>
-        <ProjectInfoPanel project={project} onProjectUpdate={onProjectUpdate} />
-      </TabsContent>
-
-      <TabsContent value='actions' className='mt-0 p-4'>
-        <ProjectActionsPanel
-          project={project}
+      <TabsContent value='info' className='flex-1 overflow-auto'>
+        <ScrollArea className='h-full'>
+          <div className='px-4 pt-2 pb-20 space-y-4'>
+            <ProjectInfoPanel project={project} onProjectUpdate={onProjectUpdate} />
+            <ProjectActionsPanel
+              project={project}
           onManualSave={onManualSave}
-          wordCount={0}
-        />
+              wordCount={0}
+            />
+          </div>
+        </ScrollArea>
       </TabsContent>
     </Tabs>
   );
