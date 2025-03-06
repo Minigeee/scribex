@@ -530,7 +530,7 @@ export default async function MapPage() {
 
   const characterId = characterProfile.id;
 
-  // Check if user has a world
+  // Get user's classroom
   const { data: userClassrooms } = await supabase
     .from('classroom_members')
     .select('classroom_id')
@@ -543,66 +543,26 @@ export default async function MapPage() {
 
   const classroomId = userClassrooms.classroom_id;
 
-  // Check if world exists for this classroom
-  let { data: existingWorld } = await supabase
+  // Get world for classroom
+  const { data: world } = await supabase
     .from('worlds')
-    .select('id, name')
+    .select('id, name, data')
     .eq('classroom_id', classroomId)
     .single();
 
-  // If no world exists, create one
-  if (!existingWorld) {
-    const { data: newWorld, error: worldError } = await serviceClient
-      .from('worlds')
-      .insert({
-        classroom_id: classroomId,
-        name: 'Adventure World',
-        description: 'A world of writing adventures and challenges',
-      })
-      .select()
-      .single();
-
-    if (worldError) {
-      console.error('Error creating world:', worldError);
-      return <div>Error creating world</div>;
-    }
-
-    existingWorld = newWorld;
+  if (!world) {
+    return <div>No world found for classroom</div>;
   }
 
-  // Check if world has locations
+  // Get world locations
   const { data: existingLocations } = await supabase
     .from('world_locations')
     .select('*')
-    .eq('world_id', existingWorld.id);
+    .eq('world_id', world.id);
 
-  let locations: WorldLocation[] = [];
+  let locations: WorldLocation[] = existingLocations || [];
 
-  // If no locations exist, generate and persist them
-  if (!existingLocations || existingLocations.length === 0) {
-    // Generate mock world map
-    const generatedLocations = await generateMockWorldMap();
-
-    // Update the locations with the correct world_id
-    locations = generatedLocations.map((location) => ({
-      ...location,
-      world_id: existingWorld!.id,
-    }));
-
-    // Save locations to the database
-    const { error: locationsError } = await serviceClient
-      .from('world_locations')
-      .insert(locations);
-
-    if (locationsError) {
-      console.error('Error creating locations:', locationsError);
-      return <div>Error creating world locations</div>;
-    }
-  } else {
-    locations = existingLocations;
-  }
-
-  // Check if quests exist for these locations
+  // Get quests for these locations
   const { data: existingQuests } = await supabase
     .from('quests')
     .select('*, genres(*)')
@@ -611,51 +571,16 @@ export default async function MapPage() {
       locations.map((loc) => loc.id)
     );
 
-  let quests: Quest[] = [];
-
-  // If no quests exist, generate and persist them
-  if (!existingQuests || existingQuests.length === 0) {
-    const generatedQuests = await generateMockQuests(locations);
-
-    // Save quests to the database
-    const questsToInsert = generatedQuests.map((quest) => ({
-      title: quest.title,
-      description: quest.description,
-      location_id: quest.location_id,
-      genre_id: quest.genre_id,
-      difficulty: quest.difficulty,
-      is_daily_quest: quest.is_daily_quest,
-      prompt: quest.prompt,
-      prompt_expires_at: quest.prompt_expires_at,
-      rewards: quest.rewards,
-      prerequisite_quests: quest.prerequisite_quests,
-      available_from: quest.available_from,
-      available_until: quest.available_until,
-    }));
-
-    const { data: insertedQuests, error: questsError } = await serviceClient
-      .from('quests')
-      .insert(questsToInsert)
-      .select('*, genres(*)');
-
-    if (questsError) {
-      console.error('Error creating quests:', questsError);
-      return <div>Error creating quests</div>;
-    }
-
-    quests = insertedQuests;
-  } else {
-    quests = existingQuests;
-  }
-
-  // Create edges from locations
-  const edges = createEdgesFromLocations(locations);
+  let quests: Quest[] = existingQuests || [];
 
   // Get node status for character
   const { data: nodeStatus } = await supabase
     .from('world_node_status')
     .select('*')
     .eq('character_id', characterId);
+
+  // Create edges from locations
+  const edges = createEdgesFromLocations(locations);
 
   // Combine locations with status and quests
   const locationsWithStatus = combineLocationsWithStatus(locations, quests);
@@ -710,7 +635,7 @@ export default async function MapPage() {
         <div className='flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-4'>
           <div>
             <h1 className='bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-xl font-bold tracking-tight text-transparent md:text-3xl'>
-              Open World Learning
+              {world.name}
             </h1>
             <p className='mt-2 hidden text-muted-foreground md:block'>
               Explore the world map and complete writing quests to unlock new
@@ -750,6 +675,7 @@ export default async function MapPage() {
             locations={locationsWithStatus}
             edges={edges}
             user={user}
+            mapData={world.data as any}
           />
         </div>
       </div>

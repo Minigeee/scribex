@@ -1,5 +1,6 @@
 'use client';
 
+import { MapVectorBackground } from '@/components/map/map-vector-background';
 import { QuestCard } from '@/components/map/quest-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,46 +11,28 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Tables } from '@/lib/database.types';
+import { Json, Tables } from '@/lib/database.types';
 import { useBreakpoint } from '@/lib/hooks/use-breakpoint';
+import { reconstructMapData, SanitizedMapData } from '@/lib/map-utils';
 import { User } from '@supabase/supabase-js';
 import {
-  Background,
   BaseEdge,
   Edge,
   EdgeProps,
+  getStraightPath,
   Handle,
-  MarkerType,
   Node,
   NodeProps,
   Panel,
   Position,
   ReactFlow,
-  getBezierPath,
   useEdgesState,
   useInternalNode,
   useNodesState,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { motion } from 'framer-motion';
-import {
-  CastleIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-  FilterIcon,
-  HomeIcon,
-  InfoIcon,
-  LandmarkIcon,
-  MapIcon,
-  MapPinIcon,
-  MountainIcon,
-  PalmtreeIcon,
-  ScrollIcon,
-  TentIcon,
-  TreesIcon,
-  WavesIcon,
-  XIcon,
-} from 'lucide-react';
+import { FilterIcon, InfoIcon, MapIcon, MapPinIcon, XIcon } from 'lucide-react';
 import { memo, useEffect, useMemo, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 
@@ -77,20 +60,21 @@ interface WorldMapFlowProps {
   locations: LocationWithStatus[];
   edges: LocationEdge[];
   user: User | null;
+  mapData?: Json;
 }
 
-// Define location type icons
-const locationTypeIcons: Record<string, React.ReactNode> = {
-  town: <HomeIcon className='h-6 w-6' />,
-  forest: <TreesIcon className='h-6 w-6' />,
-  mountain: <MountainIcon className='h-6 w-6' />,
-  lake: <WavesIcon className='h-6 w-6' />,
-  castle: <CastleIcon className='h-6 w-6' />,
-  cave: <LandmarkIcon className='h-6 w-6' />,
-  ruins: <LandmarkIcon className='h-6 w-6' />,
-  camp: <TentIcon className='h-6 w-6' />,
-  oasis: <PalmtreeIcon className='h-6 w-6' />,
-  default: <MapPinIcon className='h-6 w-6' />,
+// Define location type icons and colors (matching POI_ICONS from poi-layer.tsx)
+const locationStyles: Record<string, { icon: string; color: string }> = {
+  town: { icon: '🏘️', color: '#E67E22' },
+  forest: { icon: '🌲', color: '#27AE60' },
+  mountain: { icon: '⛰️', color: '#7F8C8D' },
+  lake: { icon: '🌊', color: '#3498DB' },
+  castle: { icon: '🏰', color: '#8E44AD' },
+  cave: { icon: '🕳️', color: '#34495E' },
+  ruins: { icon: '🏛️', color: '#BDC3C7' },
+  camp: { icon: '⛺', color: '#F1C40F' },
+  oasis: { icon: '🌴', color: '#2ECC71' },
+  default: { icon: '📍', color: '#E74C3C' },
 };
 
 // Define location type styles
@@ -179,12 +163,7 @@ function WorldLocationNode({ data }: NodeProps) {
 
   const locationType = location.location_type || 'default';
   const status = location.status || 'locked';
-
-  const typeStyle =
-    locationTypeStyles[locationType] || locationTypeStyles.default;
-  const statusStyle = statusStyles[status];
-
-  const icon = locationTypeIcons[locationType] || locationTypeIcons.default;
+  const style = locationStyles[locationType] || locationStyles.default;
 
   // Animation variants for the node
   const nodeVariants = {
@@ -199,9 +178,7 @@ function WorldLocationNode({ data }: NodeProps) {
   return (
     <>
       <motion.div
-        className={`relative flex max-w-[250px] flex-col rounded-lg border-2 ${typeStyle.bgColor} ${typeStyle.textColor} ${
-          status === 'locked' ? 'border-gray-300' : `${typeStyle.borderColor}`
-        }`}
+        className='group relative pointer-events-auto'
         initial='initial'
         animate='animate'
         variants={nodeVariants}
@@ -210,65 +187,42 @@ function WorldLocationNode({ data }: NodeProps) {
           cursor: status === 'locked' ? 'not-allowed' : 'pointer',
         }}
       >
-        {/* Header section with icon, title and tags */}
-        <div className='flex items-start gap-4 border-b border-gray-200 p-2'>
-          {/* Rounded icon box */}
-          <div
-            className={`flex h-10 w-10 items-center justify-center rounded-md ${typeStyle.borderColor} border p-1`}
-          >
-            {icon}
-          </div>
-
-          {/* Title and tags */}
-          <div className='flex flex-col'>
-            <span className='line-clamp-1 font-medium'>{location.name}</span>
-            <div className='mt-1 flex flex-wrap gap-1'>
-              <Badge
-                variant='outline'
-                className={`${statusStyle.bgColor} ${statusStyle.textColor} h-5 rounded-sm px-1 py-0 text-xs`}
-              >
-                {status.charAt(0).toUpperCase() + status.slice(1)}
-              </Badge>
-              <Badge
-                variant='outline'
-                className={`${typeStyle.bgColor} ${typeStyle.textColor} h-5 rounded-sm px-1 py-0 text-xs`}
-              >
-                {locationType.charAt(0).toUpperCase() + locationType.slice(1)}
-              </Badge>
-            </div>
-          </div>
+        {/* POI Node */}
+        <div
+          className={`relative flex h-3 w-3 items-center justify-center rounded-full ${
+            status === 'locked' ? 'bg-gray-200' : 'bg-white'
+          }`}
+          style={{
+            border: `1px solid ${style.color}`,
+          }}
+        >
+          <span style={{ fontSize: '0.4rem' }}>{style.icon}</span>
         </div>
 
-        {/* Card content with truncated description */}
-        <div className='p-2'>
-          <p className='line-clamp-2 text-xs text-muted-foreground'>
-            {location.description ||
-              `A ${location.location_type} area with various writing challenges.`}
-          </p>
-
-          {/* Quest count indicator */}
-          {location.quests.length > 0 && (
-            <div className='mt-2 flex items-center gap-1 text-xs'>
-              <ScrollIcon className='h-3 w-3' />
-              <span>
-                {location.quests.length} quest
-                {location.quests.length !== 1 ? 's' : ''}
-              </span>
-            </div>
-          )}
+        {/* Location Name Label */}
+        <div
+          className={`absolute left-1/2 top-full -translate-x-1/2 whitespace-nowrap text-center font-medium text-white`}
+          style={{
+            maxWidth: '150px',
+            fontSize: '0.25rem',
+          }}
+        >
+          {location.name.length > 15
+            ? `${location.name.substring(0, 12)}...`
+            : location.name}
         </div>
 
         {/* Handles for connections */}
         <Handle
           type='target'
           position={Position.Top}
-          className='hidden'
+          className='!border-0 !bg-transparent'
           isConnectable={false}
         />
         <Handle
           type='source'
           position={Position.Bottom}
-          className='hidden'
+          className='!border-0 !bg-transparent'
           isConnectable={false}
         />
       </motion.div>
@@ -278,7 +232,9 @@ function WorldLocationNode({ data }: NodeProps) {
         <DialogContent className='max-h-[90vh] overflow-y-auto sm:max-w-[600px]'>
           <DialogHeader>
             <DialogTitle className='flex items-center gap-2'>
-              {icon}
+              <span className='text-xl'>
+                {locationStyles[locationType].icon}
+              </span>
               {location.name}
             </DialogTitle>
             <DialogDescription className='prose prose-sm text-left'>
@@ -293,13 +249,13 @@ function WorldLocationNode({ data }: NodeProps) {
             <div className='flex flex-wrap gap-2'>
               <Badge
                 variant='outline'
-                className={`${statusStyle.bgColor} ${statusStyle.textColor}`}
+                className={`${statusStyles[status].bgColor} ${statusStyles[status].textColor}`}
               >
                 {status.charAt(0).toUpperCase() + status.slice(1)}
               </Badge>
               <Badge
                 variant='outline'
-                className={`${typeStyle.bgColor} ${typeStyle.textColor}`}
+                className={`${locationTypeStyles[locationType].bgColor} ${locationTypeStyles[locationType].textColor}`}
               >
                 {locationType.charAt(0).toUpperCase() + locationType.slice(1)}
               </Badge>
@@ -399,8 +355,8 @@ function getEdgeParams(source: Node, target: Node) {
   };
 }
 
-// Custom Bezier Edge component
-function WorldMapBezierEdge({ source, target, style }: EdgeProps) {
+// Custom Straight Edge component
+function WorldMapStraightEdge({ source, target, style }: EdgeProps) {
   const sourceNode = useInternalNode(source);
   const targetNode = useInternalNode(target);
 
@@ -408,27 +364,13 @@ function WorldMapBezierEdge({ source, target, style }: EdgeProps) {
     return null;
   }
 
-  const { sx, sy, tx, ty, sourcePos, targetPos } = getEdgeParams(
-    sourceNode,
-    targetNode
-  );
-
-  // Calculate the distance between nodes to adjust the curve
-  const dx = Math.abs(sx - tx);
-  const dy = Math.abs(sy - ty);
-  const distance = Math.sqrt(dx * dx + dy * dy);
-
-  // Adjust the curvature based on distance
-  const curvature = Math.min(0.5, Math.max(0.2, distance / 500));
-
-  const [edgePath] = getBezierPath({
+  const { sx, sy, tx, ty } = getEdgeParams(sourceNode, targetNode);
+  
+  const [edgePath] = getStraightPath({
     sourceX: sx,
     sourceY: sy,
-    sourcePosition: sourcePos,
     targetX: tx,
     targetY: ty,
-    targetPosition: targetPos,
-    curvature,
   });
 
   return (
@@ -436,17 +378,20 @@ function WorldMapBezierEdge({ source, target, style }: EdgeProps) {
       path={edgePath}
       style={{
         ...style,
-        strokeWidth: 2,
-        stroke: '#94a3b8',
-        opacity: 0.7,
+        strokeWidth: 1,
+        stroke: 'rgba(255, 255, 255, 0.6)',
       }}
     />
   );
 }
 
 // Main component
-export function WorldMapFlow({ locations, edges }: WorldMapFlowProps) {
+export function WorldMapFlow({ locations, edges, mapData }: WorldMapFlowProps) {
   const isMobile = !useBreakpoint('md');
+
+  const reconstructedMapData = useMemo(() => {
+    return reconstructMapData(mapData as SanitizedMapData);
+  }, [mapData]);
 
   // Define node types
   const nodeTypes = useMemo(
@@ -459,20 +404,28 @@ export function WorldMapFlow({ locations, edges }: WorldMapFlowProps) {
   // Define edge types
   const edgeTypes = useMemo(
     () => ({
-      bezier: WorldMapBezierEdge,
+      straight: WorldMapStraightEdge,
     }),
     []
   );
 
   // Create nodes from locations
   const initialNodes: Node[] = useMemo(() => {
+    console.log(locations);
     return locations.map((location) => ({
       id: location.id,
       type: 'location',
-      position: { x: 2 * location.position_x, y: 2 * location.position_y },
+      position: {
+        x: reconstructedMapData
+          ? location.position_x * (reconstructedMapData.width / 800) - 6
+          : 2 * location.position_x,
+        y: reconstructedMapData
+          ? location.position_y * (reconstructedMapData.height / 600) - 6
+          : 2 * location.position_y,
+      },
       data: { location },
     }));
-  }, [locations]);
+  }, [locations, reconstructedMapData]);
 
   // Create edges from connections
   const initialEdges: Edge[] = useMemo(() => {
@@ -480,14 +433,12 @@ export function WorldMapFlow({ locations, edges }: WorldMapFlowProps) {
       id: edge.id,
       source: edge.source,
       target: edge.target,
-      type: 'bezier',
-      markerEnd: {
-        type: MarkerType.Arrow,
-      },
+      type: 'straight',
+      animated: false,
       style: {
         strokeWidth: 2,
-        stroke: '#94a3b8',
-        opacity: 0.7,
+        stroke: 'rgba(255, 255, 255, 0.6)',
+        strokeDasharray: '4 2',
       },
     }));
   }, [edges]);
@@ -499,7 +450,7 @@ export function WorldMapFlow({ locations, edges }: WorldMapFlowProps) {
   // Filter nodes by status
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
-  
+
   // State for mobile panel visibility
   const [showFiltersPanel, setShowFiltersPanel] = useState(!isMobile);
   const [showLegendPanel, setShowLegendPanel] = useState(!isMobile);
@@ -559,20 +510,31 @@ export function WorldMapFlow({ locations, edges }: WorldMapFlowProps) {
       nodeTypes={nodeTypes}
       edgeTypes={edgeTypes}
       minZoom={0.3}
-      maxZoom={1.5}
+      maxZoom={10}
       defaultViewport={{ x: 0, y: 0, zoom: isMobile ? 0.7 : 1 }}
       fitView
-      fitViewOptions={{ padding: isMobile ? 0.3 : 0.5 }}
-      /* elementsSelectable={false} */
+      fitViewOptions={{
+        padding: isMobile ? 0.3 : 0.5,
+        maxZoom: mapData ? 1.2 : 1.5,
+      }}
       nodesDraggable={false}
+      elementsSelectable={false}
       proOptions={{ hideAttribution: true }}
       className='h-full w-full'
     >
-      <Background
-        color='#888'
-        gap={isMobile ? 15 : 20}
-        size={isMobile ? 0.5 : 1}
-      />
+      {/* Render map vector background if map data exists */}
+      {reconstructedMapData && (
+        <MapVectorBackground
+          centers={reconstructedMapData.centers}
+          edges={reconstructedMapData.edges}
+          corners={reconstructedMapData.corners}
+          view={'stylized'}
+          width={reconstructedMapData.width}
+          height={reconstructedMapData.height}
+          poiGraph={null}
+          onSelectPOI={() => {}}
+        />
+      )}
 
       {/* Mobile Controls Panel */}
       {isMobile && (
@@ -647,7 +609,7 @@ export function WorldMapFlow({ locations, edges }: WorldMapFlowProps) {
                 }
                 className={`text-xs ${statusFilter === status ? '' : `${statusStyles[status].textColor}`} ${isMobile ? 'px-2 py-1' : ''}`}
               >
-                <div 
+                <div
                   className={`mr-1 h-2 w-2 rounded-full ${statusStyles[status].bgColor}`}
                 ></div>
                 {!isMobile && status.charAt(0).toUpperCase() + status.slice(1)}
@@ -665,117 +627,6 @@ export function WorldMapFlow({ locations, edges }: WorldMapFlowProps) {
                 {isMobile ? <XIcon className='h-3 w-3' /> : 'Clear Type'}
               </Button>
             )}
-          </div>
-        </Panel>
-      )}
-
-      {/* Location types panel */}
-      {showTypesPanel && (
-        <Panel
-          position='bottom-left'
-          className='rounded-lg bg-background/80 p-2 shadow-md backdrop-blur-sm'
-        >
-          {isMobile && (
-            <div className='mb-2 flex items-center justify-between'>
-              <span className='text-xs font-medium'>Location Types</span>
-              <Button
-                size='sm'
-                variant='ghost'
-                className='h-6 w-6 p-0'
-                onClick={() => setShowTypesPanel(false)}
-              >
-                <XIcon className='h-3 w-3' />
-              </Button>
-            </div>
-          )}
-          <div className='flex max-w-[90vw] flex-wrap gap-2'>
-            {isMobile ? (
-              // Mobile view - compact grid of icons
-              <div className='grid grid-cols-4 gap-2'>
-                {locationTypes.map((type) => {
-                  const style =
-                    locationTypeStyles[type] || locationTypeStyles.default;
-                  const icon = locationTypeIcons[type] || locationTypeIcons.default;
-
-                  return (
-                    <Button
-                      key={type}
-                      size='sm'
-                      variant={typeFilter === type ? 'default' : 'outline'}
-                      onClick={() => setTypeFilter(type === typeFilter ? null : type)}
-                      className={`h-8 w-8 p-0 ${typeFilter === type ? '' : `${style.textColor}`}`}
-                    >
-                      <span>{icon}</span>
-                    </Button>
-                  );
-                })}
-              </div>
-            ) : (
-              // Desktop view - full buttons with text
-              locationTypes.map((type) => {
-                const style =
-                  locationTypeStyles[type] || locationTypeStyles.default;
-                const icon = locationTypeIcons[type] || locationTypeIcons.default;
-
-                return (
-                  <Button
-                    key={type}
-                    size='sm'
-                    variant={typeFilter === type ? 'default' : 'outline'}
-                    onClick={() => setTypeFilter(type === typeFilter ? null : type)}
-                    className={`text-xs ${typeFilter === type ? '' : `${style.textColor}`}`}
-                  >
-                    <span className='mr-1'>{icon}</span>
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </Button>
-                );
-              })
-            )}
-          </div>
-        </Panel>
-      )}
-
-      {/* Legend panel */}
-      {showLegendPanel && (
-        <Panel
-          position='bottom-right'
-          className='rounded-lg bg-background/80 p-2 shadow-md backdrop-blur-sm'
-        >
-          {isMobile && (
-            <div className='mb-1 flex items-center justify-between'>
-              <span className='text-xs font-medium'>Legend</span>
-              <Button
-                size='sm'
-                variant='ghost'
-                className='h-6 w-6 p-0'
-                onClick={() => setShowLegendPanel(false)}
-              >
-                <XIcon className='h-3 w-3' />
-              </Button>
-            </div>
-          )}
-          <div className='text-xs text-muted-foreground'>
-            {!isMobile && <div className='mb-1 font-medium'>Map Legend</div>}
-            <div className={`flex ${isMobile ? 'flex-row' : 'flex-col'} gap-1`}>
-              <div className='flex items-center gap-1'>
-                <div
-                  className={`h-3 w-3 rounded-full ${statusStyles.locked.bgColor}`}
-                ></div>
-                <span>Locked</span>
-              </div>
-              <div className='flex items-center gap-1'>
-                <div
-                  className={`h-3 w-3 rounded-full ${statusStyles.unlocked.bgColor}`}
-                ></div>
-                <span>Unlocked</span>
-              </div>
-              <div className='flex items-center gap-1'>
-                <div
-                  className={`h-3 w-3 rounded-full ${statusStyles.completed.bgColor}`}
-                ></div>
-                <span>Completed</span>
-              </div>
-            </div>
           </div>
         </Panel>
       )}

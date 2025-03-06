@@ -1340,6 +1340,7 @@ export type Database = {
         Row: {
           classroom_id: string
           created_at: string
+          data: Json
           description: string | null
           id: string
           name: string
@@ -1348,6 +1349,7 @@ export type Database = {
         Insert: {
           classroom_id: string
           created_at?: string
+          data?: Json
           description?: string | null
           id?: string
           name: string
@@ -1356,6 +1358,7 @@ export type Database = {
         Update: {
           classroom_id?: string
           created_at?: string
+          data?: Json
           description?: string | null
           id?: string
           name?: string

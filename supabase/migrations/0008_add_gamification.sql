@@ -87,6 +87,7 @@ CREATE TABLE IF NOT EXISTS public.worlds (
     classroom_id UUID NOT NULL REFERENCES public.classrooms(id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
     description TEXT,
+    data JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
 );
