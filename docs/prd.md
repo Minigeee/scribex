@@ -81,7 +81,7 @@ interactive learning, engaging aesthetics, intuitive UI, and AI-assisted feedbac
 - Character Development:
   - Students create and customize their own avatar
   - Multiple character classes with different writing specialties (e.g., Poet, Journalist, Novelist)
-  - Stat progression tied to writing skills (e.g., Clarity, Creativity, Persuasion)
+  - Stat progression tied to writing skills
   - Inventory system for collecting writing tools, accessories, and rewards
   - Rank progression system (C to S ranks) that visually displays writing mastery level
 - Inclusive Incentive System:
@@ -112,7 +112,6 @@ interactive learning, engaging aesthetics, intuitive UI, and AI-assisted feedbac
   - Special rooms unlock based on faction-wide writing accomplishments
   - Displays trophies and artifacts from world events and competitions
 - Collectible System:
-  - Rare writing implements with unique visual effects
   - Decorative items that tell stories about the world
   - Achievement badges and trophies displayed in personal and faction spaces
   - Collection albums for tracking discoveries throughout the writing world
@@ -195,21 +194,6 @@ interactive learning, engaging aesthetics, intuitive UI, and AI-assisted feedbac
 - Faction management and moderation tools.
 - Collection and achievement tracking systems.
 - Peer review participation and quality metrics.
-
-## Gender Inclusivity Strategy
-
-- Multiple character archetypes that break traditional gender stereotypes.
-- Diverse narrative themes that appeal to various interests (adventure, relationship-building, problem-solving, creative expression).
-- Customization options that allow for personal expression beyond binary gender choices.
-- Achievement systems that reward different play styles (collaboration, creativity, precision, leadership).
-- Regular user testing with diverse gender groups to ensure balanced appeal.
-- Storylines and quests that feature diverse role models and perspectives.
-- Balanced incentive systems including:
-  - Collection and decoration for personal/faction spaces
-  - Visible progression through ranks and achievements
-  - Collaborative faction-based activities
-  - Competitive individual and group challenges
-  - Creative expression through world-building
 
 ## Next Steps
 

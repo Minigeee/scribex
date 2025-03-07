@@ -477,17 +477,6 @@ export function WorldMapFlow({ locations, edges, mapData }: WorldMapFlowProps) {
     setNodes(filteredNodes);
   }, [statusFilter, typeFilter, initialNodes, setNodes]);
 
-  // Get unique location types
-  const locationTypes = useMemo(() => {
-    const types = new Set<string>();
-    locations.forEach((location) => {
-      if (location.location_type) {
-        types.add(location.location_type);
-      }
-    });
-    return Array.from(types);
-  }, [locations]);
-
   // Toggle mobile panel visibility when screen size changes
   useEffect(() => {
     if (!isMobile) {
@@ -513,10 +502,6 @@ export function WorldMapFlow({ locations, edges, mapData }: WorldMapFlowProps) {
       maxZoom={10}
       defaultViewport={{ x: 0, y: 0, zoom: isMobile ? 0.7 : 1 }}
       fitView
-      fitViewOptions={{
-        padding: isMobile ? 0.3 : 0.5,
-        maxZoom: mapData ? 1.2 : 1.5,
-      }}
       nodesDraggable={false}
       elementsSelectable={false}
       proOptions={{ hideAttribution: true }}

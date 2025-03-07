@@ -31,8 +31,10 @@
 - [X] Design skill tree visualization
   - [X] Seed item templates (find an icon pack online)
   - [X] Add rewards section
-- [ ] Design simple world map system
+- [X] Design simple world map system
+  - [ ] Clean up world map creation screen
 - [ ] Implement character profile system
+  - [ ] Implement level updating system (rn only xp is added but new levels are not calculated)
 - [ ] Create basic inventory system
 - [ ] Build quest tracking system
 - [ ] Implement reward distribution mechanics

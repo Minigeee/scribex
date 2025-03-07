@@ -1,10 +1,11 @@
 import { createServiceClient } from '@/lib/supabase/service';
 import { createClient } from '@/lib/supabase/server';
 import { Tables } from '@/lib/database.types';
-import { generateMockQuests } from '@/app/actions/generate-quests';
 import { revalidatePath } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { generateWorldLocations, LocationGenerationInput, GeneratedLocationInfo } from '@/app/actions/generate-world-locations';
+import { generateCompletion, systemMessage, userMessage } from '@/lib/utils/ai';
 
 // Define types for sanitized map data
 type SanitizedCenter = {
@@ -98,6 +99,372 @@ export const config = {
   },
 };
 
+// Find nearby biome for a location based on its position
+function findBiomeAtPosition(centers: SanitizedCenter[], position: { x: number; y: number }): string | null {
+  // Find the closest center to this position
+  let closestCenter: SanitizedCenter | null = null;
+  let minDistance = Infinity;
+  
+  for (const center of centers) {
+    const distance = Math.sqrt(
+      Math.pow(center.point.x - position.x, 2) + 
+      Math.pow(center.point.y - position.y, 2)
+    );
+    
+    if (distance < minDistance) {
+      minDistance = distance;
+      closestCenter = center;
+    }
+  }
+  
+  return closestCenter?.biome || null;
+}
+
+// Get terrain features based on biome and nearby centers
+function getTerrainFeatures(centers: SanitizedCenter[], position: { x: number; y: number }, radius: number): string[] {
+  const features: string[] = [];
+  const nearbyBiomes = new Set<string>();
+  
+  // Check for nearby water bodies, mountains, etc.
+  for (const center of centers) {
+    const distance = Math.sqrt(
+      Math.pow(center.point.x - position.x, 2) + 
+      Math.pow(center.point.y - position.y, 2)
+    );
+    
+    if (distance < radius) {
+      nearbyBiomes.add(center.biome);
+      
+      if (center.water) features.push('water body');
+      if (center.coast) features.push('coastline');
+      if (center.ocean) features.push('ocean');
+      if (center.elevation > 0.7) features.push('mountains');
+      if (center.elevation > 0.5 && center.elevation <= 0.7) features.push('hills');
+      // Check for river on edges instead of centers
+    }
+  }
+  
+  // Add unique biomes as features - convert to array to avoid Set iteration issues
+  const biomeArray = Array.from(nearbyBiomes);
+  for (const biome of biomeArray) {
+    features.push(biome);
+  }
+  
+  return features; // We don't need to deduplicate since we're using a Set for biomes
+}
+
+// Enhanced version of generateWorldLocations that takes map context into account
+async function generateWorldLocationsWithContext(
+  locations: SaveMapInput['locations'], 
+  centers: SanitizedCenter[],
+  adjacencyLists: Record<string, string[]>,
+  existingLocationsByID: Record<string, SaveMapInput['locations'][0]> = {}
+): Promise<Record<string, GeneratedLocationInfo>> {
+  // Group locations into smaller batches for context-aware generation
+  // We'll use batches of 3 to allow more context per batch
+  const batches: SaveMapInput['locations'][] = [];
+  for (let i = 0; i < locations.length; i += 3) {
+    batches.push(locations.slice(i, i + 3));
+  }
+
+  const generatedLocations: Record<string, GeneratedLocationInfo> = {};
+  // Track used names to prevent duplicates
+  const usedNames = new Set<string>();
+  
+  // Process each batch
+  for (let i = 0; i < batches.length; i++) {
+    const batch = batches[i];
+    console.log(`Processing batch ${i + 1} of ${batches.length}`);
+
+    // Convert to LocationGenerationInput format with enhanced context
+    const inputs: Array<LocationGenerationInput & { 
+      id: string;
+      biome?: string; 
+      terrainFeatures?: string[];
+      nearbyLocations?: {
+        name: string;
+        type: string;
+        description?: string;
+      }[];
+    }> = batch.map(loc => {
+      // Find biome and terrain features
+      const biome = findBiomeAtPosition(centers, loc.position);
+      const terrainFeatures = getTerrainFeatures(centers, loc.position, 100);
+      
+      // Find nearby locations that have already been generated
+      const nearbyLocations: {name: string; type: string; description?: string}[] = [];
+      const adjacentIDs = adjacencyLists[loc.id] || [];
+      
+      for (const adjID of adjacentIDs) {
+        // Use existing generated location if available, otherwise use input data
+        const adjacent = existingLocationsByID[adjID] || 
+          (generatedLocations[adjID] ? {
+            name: generatedLocations[adjID].name,
+            locationType: generatedLocations[adjID].locationType,
+            description: generatedLocations[adjID].description
+          } : null);
+        
+        if (adjacent) {
+          nearbyLocations.push({
+            name: adjacent.name,
+            type: typeof adjacent.locationType === 'string' ? adjacent.locationType : '',
+            description: adjacent.description
+          });
+        }
+      }
+      
+      return {
+        id: loc.id,
+        locationType: loc.locationType as any,
+        position: loc.position,
+        isInitialNode: loc.isInitialNode,
+        biome: biome || undefined,
+        terrainFeatures,
+        nearbyLocations: nearbyLocations.length > 0 ? nearbyLocations : undefined
+      };
+    });
+    
+    try {
+      // Generate data with the enhanced context
+      const generated = await generateEnhancedLocations(inputs, Array.from(usedNames));
+      
+      // Store the results
+      for (let i = 0; i < generated.length; i++) {
+        const loc = generated[i];
+        const originalInput = inputs[i];
+        
+        if (originalInput) {
+          // Ensure the name is unique before adding it
+          let uniqueName = loc.name;
+          let counter = 1;
+          
+          // If the name is already used, append a number to make it unique
+          while (usedNames.has(uniqueName.toLowerCase())) {
+            uniqueName = `${loc.name} ${counter}`;
+            counter++;
+          }
+          
+          // If we had to rename, update the location name
+          if (uniqueName !== loc.name) {
+            loc.name = uniqueName;
+          }
+          
+          // Add the name to our set of used names
+          usedNames.add(uniqueName.toLowerCase());
+          
+          // Store the generated location
+          generatedLocations[originalInput.id] = loc;
+        }
+      }
+    } catch (error) {
+      console.error('Error generating location batch:', error);
+      // Fallback with basic location info for this batch
+      for (const loc of batch) {
+        // Create a unique name for the fallback location
+        let fallbackName = `${loc.locationType} ${Math.round(loc.position.x)},${Math.round(loc.position.y)}`;
+        let counter = 1;
+        
+        while (usedNames.has(fallbackName.toLowerCase())) {
+          fallbackName = `${loc.locationType} ${Math.round(loc.position.x)},${Math.round(loc.position.y)} ${counter}`;
+          counter++;
+        }
+        
+        usedNames.add(fallbackName.toLowerCase());
+        
+        generatedLocations[loc.id] = {
+          name: fallbackName,
+          description: `A ${loc.locationType} area.`,
+          locationType: loc.locationType as any,
+          appearance: loc.appearance || `Typical ${loc.locationType} appearance.`,
+          keyCharacteristics: loc.keyCharacteristics || `Standard ${loc.locationType} features.`,
+          loreHistory: loc.loreHistory || `No known history.`,
+          culture: loc.culture || `Standard inhabitants of a ${loc.locationType}.`,
+        };
+      }
+    }
+  }
+  
+  return generatedLocations;
+}
+
+// Generate enhanced locations with context-aware prompts
+async function generateEnhancedLocations(
+  enhancedInputs: (LocationGenerationInput & { 
+    id: string;
+    biome?: string; 
+    terrainFeatures?: string[];
+    nearbyLocations?: {
+      name: string;
+      type: string;
+      description?: string;
+    }[];
+  })[],
+  existingNames: string[] = []
+): Promise<GeneratedLocationInfo[]> {
+  // Convert the enhanced inputs to standard LocationGenerationInput
+  const standardInputs: LocationGenerationInput[] = enhancedInputs.map(input => ({
+    locationType: input.locationType,
+    position: input.position,
+    isInitialNode: input.isInitialNode
+  }));
+  
+  // Create a custom prompt that includes the context information
+  const customPrompt = createContextAwarePrompt(enhancedInputs, existingNames);
+  
+  // Use the existing generation function but with a custom prompt
+  return await generateWorldLocationsWithCustomPrompt(standardInputs, customPrompt);
+}
+
+// Create a context-aware prompt for location generation
+function createContextAwarePrompt(
+  enhancedInputs: (LocationGenerationInput & { 
+    id: string;
+    biome?: string; 
+    terrainFeatures?: string[];
+    nearbyLocations?: {
+      name: string;
+      type: string;
+      description?: string;
+    }[];
+  })[],
+  existingNames: string[] = []
+): string {
+  const locationPrompts = enhancedInputs
+    .map((loc, index) => {
+      // Build terrain features string
+      const terrainStr = loc.terrainFeatures && loc.terrainFeatures.length > 0
+        ? `    - Terrain Features: ${loc.terrainFeatures.join(', ')}`
+        : '';
+      
+      // Build nearby locations string
+      const nearbyStr = loc.nearbyLocations && loc.nearbyLocations.length > 0
+        ? `    - Nearby Locations: ${loc.nearbyLocations.map(nl => 
+            `${nl.name} (${nl.type})${nl.description ? ` - ${nl.description.split('.')[0]}.` : ''}`
+          ).join('; ')}`
+        : '';
+        
+      // Combine all context
+      return `Location ${index + 1}:
+    - Type: ${loc.locationType}
+    - Position: (${loc.position.x}, ${loc.position.y})
+    - Is Starting Location: ${loc.isInitialNode ? 'Yes' : 'No'}
+    - Biome: ${loc.biome || 'Unknown'}
+${terrainStr}
+${nearbyStr}`;
+    })
+    .join('\n\n');
+
+  // Add existing names as context to prevent duplicates
+  let existingNamesContext = '';
+  if (existingNames.length > 0) {
+    existingNamesContext = `\n\nIMPORTANT: The following location names are ALREADY IN USE and must NOT be repeated:
+${existingNames.map(name => `- ${name}`).join('\n')}
+
+Each new location MUST have a name that is NOT in this list. Names should be distinctive and unique.`;
+  }
+
+  return `Please generate detailed information for the following ${enhancedInputs.length} locations.
+Consider the provided context about biomes, terrain features, and nearby locations to create a cohesive world.
+
+${locationPrompts}${existingNamesContext}
+
+Respond with a JSON array of location objects, each with these properties:
+- name: A creative, thematic name that fits the biome and surroundings (MUST BE UNIQUE and NOT match any existing names)
+- description: A concise description (2-3 sentences) that references the terrain and geographical context
+- locationType: The original location type
+- appearance: Key visual appearance details that reflect the biome and terrain features
+- keyCharacteristics: Notable characteristics that make it unique
+- loreHistory: Brief lore/history if applicable
+- culture: Cultural elements or inhabitants that would make sense in this environment
+
+Keep each field concise but descriptive (1-3 sentences each). Response must be valid JSON.`;
+}
+
+// Modified version of generateWorldLocations that accepts a custom prompt
+async function generateWorldLocationsWithCustomPrompt(
+  locations: LocationGenerationInput[],
+  customPrompt: string
+): Promise<GeneratedLocationInfo[]> {
+  try {
+    if (locations.length === 0) {
+      return [];
+    }
+
+    const results: GeneratedLocationInfo[] = [];
+    const response = await generateCompletion({
+      messages: [
+        systemMessage(
+          `You are a creative world-building assistant specializing in creating immersive, realistic, and 
+          grounded locations with a slight fictional twist for an educational writing platform. Each location should have:
+          1. A realistic, contextually appropriate name that is UNIQUE and not used elsewhere on the map
+          2. A concise description (2-3 sentences)
+          3. Key visual appearance details
+          4. Notable characteristics that make it unique
+          5. Cultural elements or inhabitants
+          
+          Your responses should be in valid JSON format as an array of location objects.
+          Create a diverse set of locations that feel cohesive and realistic, avoiding overly fantastical elements.
+          Focus on historically plausible settings that could support both fiction and non-fiction writing assignments.
+          For initial nodes, create accessible, welcoming starting locations.
+          Pay special attention to geographical context, biomes, and relationships between nearby locations.
+          IMPORTANT: Ensure each location has a UNIQUE name that is not already used on the map.
+          Output only the JSON array without code blocks.`
+        ),
+        userMessage(customPrompt),
+      ],
+      temperature: 0.7,
+      maxTokens: 4000,
+    });
+
+    try {
+      const jsonText = response.text.trim();
+      // Extract JSON if it's wrapped in code blocks
+      const jsonMatch =
+        jsonText.match(/\`\`\`json\n([\s\S]*)\n\`\`\`/) ||
+        jsonText.match(/\`\`\`([\s\S]*)\n\`\`\`/);
+      const cleanJson = jsonMatch ? jsonMatch[1] : jsonText;
+
+      const parsedLocations = JSON.parse(
+        cleanJson
+      ) as GeneratedLocationInfo[];
+      results.push(...parsedLocations);
+    } catch (error) {
+      console.error('Error parsing AI response as JSON:', error);
+      console.log('Raw response:', response.text);
+      // Fallback with basic location info
+      locations.forEach((loc) => {
+        results.push({
+          name: `${capitalizeFirstLetter(loc.locationType as string)} ${loc.position.x},${loc.position.y}`,
+          description: `A ${loc.locationType} area with various writing challenges.`,
+          locationType: loc.locationType,
+          appearance: `Typical ${loc.locationType} appearance.`,
+          keyCharacteristics: `Standard ${loc.locationType} features.`,
+          loreHistory: `No known history.`,
+          culture: `Standard inhabitants of a ${loc.locationType}.`,
+        });
+      });
+    }
+
+    return results;
+  } catch (error) {
+    console.error('Error generating world locations with custom prompt:', error);
+    // Return basic locations as fallback
+    return locations.map((loc) => ({
+      name: `${capitalizeFirstLetter(loc.locationType as string)} ${loc.position.x},${loc.position.y}`,
+      description: `A ${loc.locationType} area with various writing challenges.`,
+      locationType: loc.locationType,
+      appearance: `Typical ${loc.locationType} appearance.`,
+      keyCharacteristics: `Standard ${loc.locationType} features.`,
+      loreHistory: `No known history.`,
+      culture: `Standard inhabitants of a ${loc.locationType}.`,
+    }));
+  }
+}
+
+function capitalizeFirstLetter(str: string): string {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Parse the request body
@@ -179,21 +546,71 @@ export async function POST(request: NextRequest) {
       adjacencyLists[targetId].push(sourceId);
     });
 
+    // Create a mapping of original location IDs to the location objects
+    const locationsById: Record<string, SaveMapInput['locations'][0]> = {};
+    input.locations.forEach(loc => {
+      locationsById[loc.id] = loc;
+    });
+
+    // Create a mapping of the new UUIDs to the original IDs
+    const reverseIdMapping: Record<string, string> = {};
+    Object.entries(idMapping).forEach(([originalId, newId]) => {
+      reverseIdMapping[newId] = originalId;
+    });
+
+    // Create adjacency lists using original IDs for context generation
+    const originalAdjacencyLists: Record<string, string[]> = {};
+    Object.entries(adjacencyLists).forEach(([newId, adjacentNewIds]) => {
+      const originalId = reverseIdMapping[newId];
+      originalAdjacencyLists[originalId] = adjacentNewIds.map(adjNewId => reverseIdMapping[adjNewId]);
+    });
+
+    // Generate location details with context
+    const generatedLocations = await generateWorldLocationsWithContext(
+      input.locations,
+      input.centers,
+      originalAdjacencyLists,
+      locationsById
+    );
+
     // Convert MapLocation array to world_locations format with new UUIDs
-    const worldLocations: Tables<'world_locations'>[] = input.locations.map((loc) => ({
-      id: idMapping[loc.id],
-      world_id: world.id,
-      name: loc.name,
-      description: createRichDescription(loc),
-      location_type: loc.locationType,
-      position_x: Math.round(loc.position.x),
-      position_y: Math.round(loc.position.y),
-      adjacent_locations: adjacencyLists[idMapping[loc.id]] || [],
-      initial_node: loc.isInitialNode,
-      icon_url: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }));
+    const worldLocations: Tables<'world_locations'>[] = input.locations.map((loc) => {
+      const generatedLoc = generatedLocations[loc.id] || {
+        name: loc.name,
+        description: loc.description,
+        appearance: loc.appearance || '',
+        keyCharacteristics: loc.keyCharacteristics || '',
+        loreHistory: loc.loreHistory || '',
+        culture: loc.culture || '',
+        locationType: loc.locationType as any
+      };
+
+      // Create rich description from generated data
+      const richDescription = createRichDescription({
+        ...loc,
+        name: generatedLoc.name,
+        description: generatedLoc.description,
+        appearance: generatedLoc.appearance,
+        keyCharacteristics: generatedLoc.keyCharacteristics,
+        loreHistory: generatedLoc.loreHistory,
+        culture: generatedLoc.culture
+      });
+
+      return {
+        id: idMapping[loc.id],
+        world_id: world.id,
+        name: generatedLoc.name,
+        description: richDescription,
+        location_type: loc.locationType,
+        position_x: Math.round(loc.position.x),
+        position_y: Math.round(loc.position.y),
+        adjacent_locations: adjacencyLists[idMapping[loc.id]] || [],
+        initial_node: loc.isInitialNode,
+        icon_url: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    });
 
     // Save new world locations
     const { error: insertError } = await serviceClient
@@ -208,7 +625,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate and save quests for each location
-    const quests = await generateMockQuests(worldLocations);
+    const quests = await generateQuests(worldLocations, serviceClient);
     
     const { error: questsError } = await serviceClient
       .from('quests')
@@ -268,4 +685,263 @@ function createRichDescription(location: SaveMapInput['locations'][0]): string {
   ];
 
   return parts.filter(Boolean).join('\n\n');
+}
+
+// Define reward types
+type RewardItem =
+  | {
+      type: string;
+      value: number;
+    }
+  | {
+      type: 'item';
+      key: string;
+      value: number;
+    };
+
+type Quest = Tables<'quests'>;
+
+/**
+ * Generates quest rewards based on location and difficulty
+ */
+async function generateQuestRewards(
+  location: Tables<'world_locations'>,
+  difficulty: number,
+  serviceClient: ReturnType<typeof createServiceClient>
+): Promise<RewardItem[]> {
+  // Fetch all item templates from the database
+  const { data: itemTemplates, error } = await serviceClient
+    .from('item_templates')
+    .select('id, name, rarity');
+
+  if (error || !itemTemplates) {
+    console.error('Error fetching item templates:', error);
+    // Return basic rewards if we can't fetch items
+    return [
+      { type: 'experience', value: difficulty * 50 },
+      { type: 'currency', value: difficulty * 10 },
+    ];
+  }
+
+  // Initialize rewards array with base rewards
+  const rewards: RewardItem[] = [
+    { type: 'experience', value: difficulty * 50 },
+    { type: 'currency', value: difficulty * 10 },
+  ];
+
+  // Group items by rarity
+  const itemsByRarity: Record<string, string[]> = {
+    common: [],
+    uncommon: [],
+    rare: [],
+    epic: [],
+  };
+
+  // Populate the itemsByRarity object with item IDs from the database
+  itemTemplates.forEach((item) => {
+    const rarity = item.rarity.toLowerCase();
+    if (itemsByRarity[rarity]) {
+      itemsByRarity[rarity].push(item.id);
+    }
+  });
+
+  // Determine rarity based on location type and difficulty
+  const rarityOptions: Record<string, string[]> = {
+    town: ['common'],
+    forest: ['common', 'uncommon'],
+    mountain: ['common', 'uncommon', 'rare'],
+    lake: ['common', 'uncommon'],
+    castle: ['uncommon', 'rare'],
+    cave: ['uncommon', 'rare'],
+    ruins: ['rare', 'epic'],
+    camp: ['common'],
+    oasis: ['uncommon', 'rare'],
+  };
+
+  // Default to common if location type not found
+  const locationRarities = rarityOptions[location.location_type] || ['common'];
+
+  // Higher difficulty increases chance of better rarities
+  let selectedRarities: string[] = [];
+  if (difficulty <= 2) {
+    // For low difficulty, mostly use the first rarity option
+    selectedRarities = [locationRarities[0]];
+    if (locationRarities.length > 1 && Math.random() < 0.3) {
+      selectedRarities.push(locationRarities[1]);
+    }
+  } else if (difficulty <= 4) {
+    // For medium difficulty, use first two rarity options if available
+    selectedRarities = locationRarities.slice(0, Math.min(2, locationRarities.length));
+  } else {
+    // For high difficulty, use all available rarities
+    selectedRarities = [...locationRarities];
+  }
+
+  // Determine number of items based on difficulty
+  const numItems = Math.min(difficulty, 3);
+
+  // Add items to rewards
+  for (let i = 0; i < numItems; i++) {
+    // Select a random rarity from the available options
+    const rarity = selectedRarities[Math.floor(Math.random() * selectedRarities.length)];
+
+    // Get items for this rarity
+    const availableItems = itemsByRarity[rarity] || [];
+
+    if (availableItems.length > 0) {
+      // Select a random item from this rarity
+      const itemId = availableItems[Math.floor(Math.random() * availableItems.length)];
+
+      // Add to rewards with random quantity (1-3)
+      const quantity = Math.floor(Math.random() * 3) + 1;
+      rewards.push({ type: 'item', key: itemId, value: quantity });
+    }
+  }
+
+  return rewards;
+}
+
+/**
+ * Extracts structured details from a location description
+ */
+function parseLocationDescription(description: string | null): Record<string, string> {
+  const details: Record<string, string> = {
+    appearance: '',
+    keyCharacteristics: '',
+    history: '',
+    culture: '',
+  };
+
+  if (!description) {
+    return {
+      mainDescription: '',
+      ...details,
+    };
+  }
+
+  // Extract sections from the rich description
+  const sections = description.split('\n\n');
+
+  // The first section is the main description
+  const mainDescription = sections[0] || '';
+
+  // Parse other sections
+  for (const section of sections) {
+    if (section.startsWith('**Appearance:**')) {
+      details.appearance = section.replace('**Appearance:**', '').trim();
+    } else if (section.startsWith('**Key Characteristics:**')) {
+      details.keyCharacteristics = section.replace('**Key Characteristics:**', '').trim();
+    } else if (section.startsWith('**History:**')) {
+      details.history = section.replace('**History:**', '').trim();
+    } else if (section.startsWith('**Culture:**')) {
+      details.culture = section.replace('**Culture:**', '').trim();
+    }
+  }
+
+  return {
+    mainDescription,
+    ...details,
+  };
+}
+
+/**
+ * Creates a quest title based on location details
+ */
+function createQuestTitle(
+  locationName: string,
+  locationDetails: Record<string, string>,
+  questIndex: number
+): string {
+  // Create more varied quest titles
+  const questTitles = [
+    `The Mystery of ${locationName}`,
+    `Journey Through ${locationName}`,
+    `Secrets of ${locationName}`,
+    `Tales from ${locationName}`,
+    `Exploring ${locationName}`,
+  ];
+
+  return questTitles[questIndex % questTitles.length];
+}
+
+/**
+ * Creates a detailed quest description based on location details
+ */
+function createQuestDescription(
+  location: Tables<'world_locations'>,
+  locationDetails: Record<string, string>
+): string {
+  let description = `Write about your adventures in ${location.name}.`;
+
+  // Add details from the location if available
+  if (locationDetails.keyCharacteristics) {
+    description += ` Explore the ${locationDetails.keyCharacteristics}`;
+  }
+
+  if (locationDetails.culture) {
+    description += ` Interact with ${locationDetails.culture}`;
+  }
+
+  return description;
+}
+
+/**
+ * Generates quests for each location
+ */
+async function generateQuests(
+  locations: Tables<'world_locations'>[],
+  serviceClient: ReturnType<typeof createServiceClient>
+): Promise<Quest[]> {
+  const genres = [
+    'Narrative',
+    'Persuasive',
+    'Informative',
+    'Poetry',
+    'Journalism',
+    'Creative Writing',
+  ];
+  const difficulties = [1, 2, 3, 4, 5];
+  const quests: Quest[] = [];
+
+  for (const location of locations) {
+    // Generate 1-3 quests per location
+    const numQuests = Math.floor(Math.random() * 3) + 1;
+
+    // Extract location details to inform quest generation
+    const locationDetails = parseLocationDescription(location.description);
+
+    for (let i = 0; i < numQuests; i++) {
+      const genreIndex = Math.floor(Math.random() * genres.length);
+      const genre = genres[genreIndex];
+      const genreId = genreIndex + 1; // Use numeric IDs for genres
+      const difficulty = difficulties[Math.floor(Math.random() * difficulties.length)];
+
+      // Create a more detailed quest based on location information
+      const questTitle = createQuestTitle(location.name, locationDetails, i);
+      const questDescription = createQuestDescription(location, locationDetails);
+
+      // Generate rewards based on location and difficulty
+      const rewards = await generateQuestRewards(location, difficulty, serviceClient);
+
+      quests.push({
+        id: crypto.randomUUID(),
+        title: questTitle,
+        description: questDescription,
+        location_id: location.id,
+        genre_id: genreId,
+        difficulty,
+        is_daily_quest: false,
+        prompt: null, // Keep prompt null as they get generated on the fly
+        prompt_expires_at: null,
+        rewards,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        available_from: null,
+        available_until: null,
+        prerequisite_quests: null,
+      });
+    }
+  }
+
+  return quests;
 } 
