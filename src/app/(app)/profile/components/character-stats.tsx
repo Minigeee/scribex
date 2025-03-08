@@ -14,8 +14,9 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from '@/components/ui/hover-card';
+import { Switch } from '@/components/ui/switch';
 import { CharacterStats as CharacterStatsType } from '@/lib/types/character-stats';
-import { InfoIcon, MinusCircle, PlusCircle, Save } from 'lucide-react';
+import { InfoIcon, MinusCircle, PlusCircle, Save, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { allocateStats } from '@/app/actions/allocate-stats';
 import { toast } from 'sonner';
@@ -33,6 +34,7 @@ export function CharacterStats({
   const [currentStats, setCurrentStats] = useState<CharacterStatsType>({ ...stats });
   const [pendingChanges, setPendingChanges] = useState<Partial<CharacterStatsType>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [devMode, setDevMode] = useState(false);
 
   // Stat descriptions for hover tooltips
   const statDescriptions: Record<
@@ -59,7 +61,7 @@ export function CharacterStats({
 
   // Function to handle stat increase
   const handleIncreaseStat = (statName: keyof CharacterStatsType) => {
-    if (availablePoints > 0) {
+    if (devMode || availablePoints > 0) {
       // Update the pending changes
       const currentChange = pendingChanges[statName] || 0;
       const newChanges = { 
@@ -68,18 +70,30 @@ export function CharacterStats({
       };
       
       setPendingChanges(newChanges);
-      setAvailablePoints((prev) => prev - 1);
+      
+      // Only decrease available points if not in dev mode
+      if (!devMode) {
+        setAvailablePoints((prev) => prev - 1);
+      }
     }
   };
 
   // Function to handle stat decrease (undo allocation)
   const handleDecreaseStat = (statName: keyof CharacterStatsType) => {
+    // In dev mode, allow decreasing even if there's no pending change
     const currentChange = pendingChanges[statName] || 0;
+    const currentValue = currentStats[statName];
     
-    if (currentChange > 0) {
+    // In dev mode, allow decreasing below the original value
+    if (devMode || currentChange > 0) {
       const newChanges = { ...pendingChanges };
       
-      newChanges[statName] = currentChange - 1;
+      // If in dev mode and no pending changes yet, start tracking from negative
+      if (devMode && currentChange === 0) {
+        newChanges[statName] = -1;
+      } else {
+        newChanges[statName] = currentChange - 1;
+      }
       
       // Remove the stat from changes if it's back to 0
       if (newChanges[statName] === 0) {
@@ -87,7 +101,11 @@ export function CharacterStats({
       }
       
       setPendingChanges(newChanges);
-      setAvailablePoints((prev) => prev + 1);
+      
+      // Only increase available points if not in dev mode and we're undoing a pending increase
+      if (!devMode && currentChange > 0) {
+        setAvailablePoints((prev) => prev + 1);
+      }
     }
   };
 
@@ -98,7 +116,8 @@ export function CharacterStats({
     setIsSubmitting(true);
     
     try {
-      const result = await allocateStats(pendingChanges);
+      // Pass the devMode flag to the allocateStats function
+      const result = await allocateStats(pendingChanges, devMode);
       
       if (result.success) {
         // Update the stats with the new values
@@ -161,9 +180,10 @@ export function CharacterStats({
           </HoverCard>
         </div>
         <div className='flex items-center gap-2'>
-          <span className={`w-8 text-center font-bold ${pendingValue > 0 ? 'text-primary' : ''}`}>
+          <span className={`w-8 text-center font-bold ${pendingValue !== 0 ? 'text-primary' : ''}`}>
             {previewValue}
             {pendingValue > 0 && <span className='text-xs text-primary'> (+{pendingValue})</span>}
+            {pendingValue < 0 && <span className='text-xs text-destructive'> ({pendingValue})</span>}
           </span>
           
           <Button
@@ -171,7 +191,7 @@ export function CharacterStats({
             size='icon'
             className='h-8 w-8'
             onClick={() => handleIncreaseStat(statName)}
-            disabled={availablePoints <= 0}
+            disabled={!devMode && availablePoints <= 0}
           >
             <PlusCircle className='h-4 w-4' />
             <span className='sr-only'>Increase {displayName}</span>
@@ -182,7 +202,7 @@ export function CharacterStats({
             size='icon'
             className='h-8 w-8'
             onClick={() => handleDecreaseStat(statName)}
-            disabled={pendingValue <= 0}
+            disabled={!devMode && pendingValue <= 0}
           >
             <MinusCircle className='h-4 w-4' />
             <span className='sr-only'>Decrease {displayName}</span>
@@ -195,19 +215,60 @@ export function CharacterStats({
   // Check if there are any pending changes
   const hasPendingChanges = Object.keys(pendingChanges).length > 0;
 
+  // Toggle dev mode
+  const toggleDevMode = () => {
+    setDevMode(!devMode);
+    
+    // If turning off dev mode, reset any negative stat changes
+    if (devMode) {
+      const cleanedChanges = { ...pendingChanges };
+      let pointsToRestore = 0;
+      
+      Object.entries(cleanedChanges).forEach(([stat, value]) => {
+        if (value < 0) {
+          delete cleanedChanges[stat as keyof CharacterStatsType];
+        } else if (value > 0) {
+          pointsToRestore += value;
+        }
+      });
+      
+      setPendingChanges(cleanedChanges);
+      setAvailablePoints(statPointsAvailable - pointsToRestore);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className='flex items-center justify-between'>
           <span>Character Stats</span>
-          {availablePoints > 0 && (
-            <span className='rounded-md bg-primary/10 px-2 py-1 text-sm font-normal text-primary'>
-              {availablePoints} points available
-            </span>
-          )}
+          <div className='flex items-center gap-4'>
+            {availablePoints > 0 && !devMode && (
+              <span className='rounded-md bg-primary/10 px-2 py-1 text-sm font-normal text-primary'>
+                {availablePoints} points available
+              </span>
+            )}
+            <div className='flex items-center gap-2'>
+              <Switch
+                checked={devMode}
+                onCheckedChange={toggleDevMode}
+                id="dev-mode"
+                aria-label="Toggle dev mode"
+              />
+              <div className='flex items-center gap-1 text-sm text-muted-foreground'>
+                <Sparkles className='h-4 w-4' />
+                <span>Dev Mode</span>
+              </div>
+            </div>
+          </div>
         </CardTitle>
         <CardDescription>
           Improve your stats to unlock more challenging writing quests
+          {devMode && (
+            <span className='ml-1 text-amber-500'>
+              (Dev Mode: unlimited stat points)
+            </span>
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent>

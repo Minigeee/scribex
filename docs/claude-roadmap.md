@@ -8,10 +8,10 @@
   - Difficulty determined by distance from starting town
   - Stats (types) required determined by genre (maps to a set of one or two types + chance for random additional stat)
   - Stat points required determined by difficulty
-- [ ] Add leaderboard points `points` to reward generation
-  - [ ] REDI
-  - [ ] OWL
-- [ ] Test quest completion by adding a "[TEST] Complete Quest" button
+- [X] Add leaderboard points `points` to reward generation
+  - [X] REDI
+  - [X] OWL
+- [X] Test quest completion by adding a "[TEST] Complete Quest" button
 - [ ] Implement leaderboard
 
 Do if have time:

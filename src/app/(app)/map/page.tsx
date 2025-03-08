@@ -267,7 +267,14 @@ export default async function MapPage() {
             <div className='h-8 w-px bg-border'></div>
             <div className='flex flex-col'>
               <span className='text-xs text-muted-foreground'>Quests</span>
-              <span className='font-medium'>{quests.length} Available</span>
+              <span className='font-medium'>
+                {
+                  locationsWithStatus
+                    .filter(loc => loc.status === 'unlocked' || loc.status === 'completed')
+                    .flatMap(loc => loc.quests)
+                    .length
+                } Available
+              </span>
             </div>
           </div>
         </div>

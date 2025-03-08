@@ -158,6 +158,7 @@ const statusStyles: Record<
 function WorldLocationNode({ data }: NodeProps) {
   const location = data.location as LocationWithStatus;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const locationDescription = useMemo(() => location.description?.split('\n\n')?.[0], [location.description]);
 
   const locationType = location.location_type || 'default';
   const status = location.status || 'locked';
@@ -188,7 +189,7 @@ function WorldLocationNode({ data }: NodeProps) {
         {/* POI Node */}
         <div
           className={`relative flex h-3 w-3 items-center justify-center rounded-full ${
-            status === 'locked' ? 'bg-gray-200' : 'bg-white'
+            status === 'locked' ? 'bg-gray-200' : status === 'completed' ? 'bg-green-200' : 'bg-white'
           }`}
           style={{
             border: `1px solid ${style.color}`,
@@ -237,7 +238,7 @@ function WorldLocationNode({ data }: NodeProps) {
             </DialogTitle>
             <DialogDescription className='prose prose-sm text-left'>
               <ReactMarkdown>
-                {location.description ||
+                {locationDescription ||
                   `A ${location.location_type} area with various writing challenges.`}
               </ReactMarkdown>
             </DialogDescription>

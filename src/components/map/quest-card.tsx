@@ -262,7 +262,7 @@ export function QuestCard({ quest }: QuestCardProps) {
         {/* Stat prerequisites section */}
         {statPrerequisites.length > 0 && (
           <div className='mt-2'>
-            <h4 className='mb-1 text-xs font-medium'>Requirements:</h4>
+            <h4 className='mb-1 text-xs font-medium'>Stat Requirements:</h4>
             <div className='flex flex-wrap gap-1.5'>
               {isLoadingStats ? (
                 <div className='flex items-center gap-1 rounded-md bg-gray-50 px-1.5 py-0.5 text-2xs font-medium text-gray-700'>

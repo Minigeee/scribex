@@ -16,7 +16,7 @@ import type { ExerciseWithProgress, LessonWithContent } from '@/lib/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Check, CheckCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { processNodeCompletion } from '@/app/actions/process-node-completion';
 import { toast } from 'sonner';
 
@@ -55,6 +55,13 @@ export function LessonClient({ lesson, userId }: LessonClientProps) {
     totalExercises > 0
       ? Math.round((completedExercises / totalExercises) * 100)
       : 0;
+
+  // Calculate a user level based on completed exercises
+  // This is a simple approach that doesn't require database queries
+  const userLevel = useMemo(() => {
+    // Base level is 15, and each completed exercise adds 2 levels, up to a max of 50
+    return Math.min(15 + (completedExercises * 2), 50);
+  }, [completedExercises]);
 
   // Update areExercisesCompleted whenever exercises state changes
   useEffect(() => {
@@ -103,6 +110,7 @@ export function LessonClient({ lesson, userId }: LessonClientProps) {
     },
     onError: (error) => {
       console.error('Error marking article as read:', error);
+      toast.error('Failed to mark article as read');
     },
   });
 
@@ -181,6 +189,15 @@ export function LessonClient({ lesson, userId }: LessonClientProps) {
       );
       setAreExercisesCompleted(allCompleted);
 
+      // Show toast notification based on score
+      if (completed) {
+        toast.success(`Exercise completed with a score of ${score}%!`);
+      } else if (score >= 70) {
+        toast.info(`Good progress! Your score: ${score}%. Try again to complete.`);
+      } else {
+        toast.warning(`Your score: ${score}%. Review feedback and try again.`);
+      }
+
       // Refresh the page data to ensure server state is updated
       router.refresh();
 
@@ -249,6 +266,10 @@ export function LessonClient({ lesson, userId }: LessonClientProps) {
 
           <div className='inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800'>
             Progress: {progressPercentage}%
+          </div>
+
+          <div className='inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800'>
+            Level: {userLevel}
           </div>
         </div>
       </div>
@@ -362,6 +383,7 @@ export function LessonClient({ lesson, userId }: LessonClientProps) {
                     key={exercise.id}
                     exercise={exercise}
                     onComplete={handleExerciseComplete}
+                    userLevel={userLevel}
                   />
                 ))
               ) : (

@@ -1,3 +1,9 @@
+import {
+  gradeFillBlankExercise,
+  gradeFreeResponseExercise,
+  gradeRewriteExercise,
+  UserLevel,
+} from '@/app/actions/grade-exercise';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -12,8 +18,22 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import type { ExerciseWithProgress } from '@/lib/types';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, Loader2, XCircle } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+
+/**
+ * Maps a user's character level to a proficiency level for grading purposes
+ * @param characterLevel The user's character level (1-100)
+ * @returns The corresponding proficiency level
+ */
+export function mapCharacterLevelToProficiency(
+  characterLevel: number
+): UserLevel {
+  if (characterLevel <= 10) return 'beginner';
+  if (characterLevel <= 30) return 'intermediate';
+  if (characterLevel <= 60) return 'advanced';
+  return 'expert';
+}
 
 interface ExerciseItemProps {
   exercise: ExerciseWithProgress;
@@ -22,6 +42,7 @@ interface ExerciseItemProps {
     score: number,
     userAnswers: Record<string, any>
   ) => void;
+  userLevel?: number; // User's character level (1-100)
 }
 
 type MultipleChoiceQuestion = {
@@ -60,7 +81,11 @@ interface ParsedQuestion {
   text: string;
 }
 
-export function ExerciseItem({ exercise, onComplete }: ExerciseItemProps) {
+export function ExerciseItem({
+  exercise,
+  onComplete,
+  userLevel = 15,
+}: ExerciseItemProps) {
   const [isExpanded, setIsExpanded] = useState(
     !exercise.user_progress?.completed
   );
@@ -73,6 +98,16 @@ export function ExerciseItem({ exercise, onComplete }: ExerciseItemProps) {
     Record<string | number, boolean>
   >({});
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isGrading, setIsGrading] = useState(false);
+  const [detailedFeedback, setDetailedFeedback] = useState<
+    Record<string | number, string>
+  >({});
+
+  // Convert user level to proficiency category
+  const proficiencyLevel = useMemo(
+    () => mapCharacterLevelToProficiency(userLevel),
+    [userLevel]
+  );
 
   const isCompleted = exercise.user_progress?.completed || false;
   const lastScore = exercise.user_progress?.score || 0;
@@ -179,140 +214,198 @@ export function ExerciseItem({ exercise, onComplete }: ExerciseItemProps) {
     }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     let score = 0;
     let feedbackMessage = '';
     let isCorrect = false;
     const newWrongAnswers: Record<string | number, boolean> = {};
+    const newDetailedFeedback: Record<string | number, string> = {};
 
     setIsSubmitted(true);
+    setIsGrading(true);
 
-    switch (exercise.exercise_type) {
-      case 'multiple_choice': {
-        if (parsedSolution?.questions) {
-          const questions =
-            parsedSolution.questions as MultipleChoiceQuestion[];
-          let correctCount = 0;
+    try {
+      switch (exercise.exercise_type) {
+        case 'multiple_choice': {
+          if (parsedSolution?.questions) {
+            const questions =
+              parsedSolution.questions as MultipleChoiceQuestion[];
+            let correctCount = 0;
 
-          questions.forEach((question) => {
-            // Store wrong answers
-            if (userAnswers[question.id] !== question.correctIndex) {
-              newWrongAnswers[question.id] = true;
-            } else {
-              correctCount++;
-            }
-          });
+            questions.forEach((question) => {
+              // Store wrong answers
+              if (userAnswers[question.id] !== question.correctIndex) {
+                newWrongAnswers[question.id] = true;
+              } else {
+                correctCount++;
+              }
+            });
 
-          score = Math.round((correctCount / questions.length) * 100);
-          isCorrect = score >= 80;
-          feedbackMessage = isCorrect
-            ? 'Great job! You answered most questions correctly.'
-            : 'You might want to review some of your answers.';
+            score = Math.round((correctCount / questions.length) * 100);
+            isCorrect = score >= 80;
+            feedbackMessage = isCorrect
+              ? 'Great job! You answered most questions correctly.'
+              : 'You might want to review some of your answers.';
+          }
+          break;
         }
-        break;
-      }
 
-      case 'fill_blank': {
-        if (parsedSolution?.blanks) {
-          const blanks = parsedSolution.blanks as FillBlankQuestion[];
-          let correctCount = 0;
+        case 'fill_blank': {
+          if (parsedSolution?.blanks) {
+            const blanks = parsedSolution.blanks as FillBlankQuestion[];
+            let totalScore = 0;
+            let gradedCount = 0;
 
-          // TODO : Add AI scoring
-          blanks.forEach((blank) => {
-            const userAnswer =
-              userAnswers[blank.id]?.toLowerCase().trim() || '';
-            const correctAnswer = blank.corrected.toLowerCase();
+            // Use AI grading for each blank
+            for (const blank of blanks) {
+              const userAnswer = userAnswers[blank.id]?.trim() || '';
 
-            // Simple check - in a real app, you might want more sophisticated matching
-            if (correctAnswer.includes(userAnswer) && userAnswer.length > 0) {
-              correctCount++;
-            } else {
-              newWrongAnswers[blank.id] = true;
+              if (userAnswer.length > 0) {
+                // Get the question text from parsedContent
+                const question = parsedContent.questions.find(
+                  (q) => q.id === blank.id
+                );
+                const questionContext = question
+                  ? question.text
+                  : blank.original;
+
+                // Grade this specific blank with user's proficiency level
+                const result = await gradeFillBlankExercise(
+                  userAnswer,
+                  blank.corrected,
+                  questionContext,
+                  proficiencyLevel
+                );
+
+                // Store the detailed feedback
+                newDetailedFeedback[blank.id] = result.feedback;
+
+                // Add to total score
+                totalScore += result.score;
+                gradedCount++;
+
+                // Mark as wrong if score is below threshold
+                if (result.score < 90) {
+                  newWrongAnswers[blank.id] = true;
+                }
+              } else {
+                // Empty answer is automatically wrong
+                newWrongAnswers[blank.id] = true;
+                newDetailedFeedback[blank.id] = 'No answer provided.';
+              }
             }
-          });
 
-          score = Math.round((correctCount / blanks.length) * 100);
-          isCorrect = score >= 70;
-          feedbackMessage = isCorrect
-            ? 'Well done! Your answers are correct.'
-            : 'Some of your answers need improvement.';
+            // Calculate average score
+            score = gradedCount > 0 ? Math.round(totalScore / gradedCount) : 0;
+            isCorrect = score >= 70;
+            feedbackMessage = isCorrect
+              ? 'Well done! Your answers are correct.'
+              : 'Some of your answers need improvement.';
+          }
+          break;
         }
-        break;
-      }
 
-      case 'rewrite': {
-        // For rewrite exercises, we'll use a simplified scoring approach
-        // In a real app, you might want to use AI or more sophisticated text comparison
-        const userText = userAnswers['rewrite'] || '';
+        case 'rewrite': {
+          const userText = userAnswers['rewrite'] || '';
+          const rewriteSolution = parsedSolution as RewriteExercise;
 
-        // TODO : Add AI scoring
-        if (userText.length > 50) {
-          // Basic length check as a simple validation
-          score = Math.floor(Math.random() * 40) + 60; // Random score between 60-100 for demo
-          isCorrect = score >= 70;
-          feedbackMessage = isCorrect
-            ? 'Your rewrite shows good improvement in organization and flow.'
-            : 'Your rewrite could use more work on organization and clarity.';
+          if (userText.length > 0 && rewriteSolution) {
+            // Use AI to grade the rewrite with user's proficiency level
+            const result = await gradeRewriteExercise(
+              userText,
+              rewriteSolution.criteria || [],
+              rewriteSolution.example_solution || '',
+              exercise.content, // Use the exercise content as context
+              proficiencyLevel
+            );
 
-          if (!isCorrect) {
+            score = result.score;
+            feedbackMessage = result.feedback;
+            isCorrect = score >= 70;
+            newDetailedFeedback['rewrite'] = result.feedback;
+
+            if (!isCorrect) {
+              newWrongAnswers['rewrite'] = true;
+            }
+          } else {
+            score = 0;
+            isCorrect = false;
+            feedbackMessage = 'Please provide a more complete rewrite.';
             newWrongAnswers['rewrite'] = true;
           }
-        } else {
+          break;
+        }
+
+        case 'free_response': {
+          const userText = userAnswers['free_response'] || '';
+          const freeResponseSolution = parsedSolution as FreeResponseExercise;
+
+          if (userText.length > 0 && freeResponseSolution) {
+            // Use AI to grade the free response with user's proficiency level
+            const result = await gradeFreeResponseExercise(
+              userText,
+              freeResponseSolution.evaluation_criteria || [],
+              freeResponseSolution.example_solution || '',
+              exercise.content, // Use the exercise content as context
+              proficiencyLevel
+            );
+
+            score = result.score;
+            feedbackMessage = result.feedback;
+            isCorrect = score >= 90; // Consider 70+ as passing
+            newDetailedFeedback['free_response'] = result.feedback;
+
+            if (!isCorrect) {
+              newWrongAnswers['free_response'] = true;
+            }
+          } else {
+            score = 0;
+            isCorrect = false;
+            feedbackMessage = 'Please provide a more detailed response.';
+            newWrongAnswers['free_response'] = true;
+            newDetailedFeedback['free_response'] = 'No response provided.';
+          }
+          break;
+        }
+
+        default:
           score = 0;
-          isCorrect = false;
-          feedbackMessage = 'Please provide a more complete rewrite.';
-          newWrongAnswers['rewrite'] = true;
+          feedbackMessage = 'Unable to evaluate this exercise type.';
+          break;
+      }
+
+      setWrongAnswers(newWrongAnswers);
+      setDetailedFeedback(newDetailedFeedback);
+      setFeedback({
+        message: feedbackMessage,
+        isCorrect,
+      });
+
+      // Only call onComplete if there's a score (even if not passing)
+      // This ensures we track all attempts
+      if (onComplete) {
+        // Pass the exercise ID, score, and user answers to the parent component
+        onComplete(exercise.id, score, userAnswers);
+
+        // The parent component (LessonClient) will handle updating the UI
+        // based on whether the score meets the completion threshold (90%)
+        const isNowCompleted = score >= 90;
+
+        if (isNowCompleted && !isCompleted) {
+          // We could add some immediate visual feedback here
+          // but the parent will update the exercise prop on the next render
+          console.log(`Exercise ${exercise.id} completed with score: ${score}`);
         }
-        break;
       }
-
-      case 'free_response': {
-        // For free response, we'll also use a simplified approach
-        const userText = userAnswers['free_response'] || '';
-
-        // TODO : Add AI scoring
-        if (userText.length > 100) {
-          // Basic length check as a simple validation
-          score = Math.floor(Math.random() * 30) + 70; // Random score between 70-100 for demo
-          isCorrect = true;
-          feedbackMessage = 'Thank you for your thoughtful response!';
-        } else {
-          score = Math.floor(Math.random() * 50) + 20; // Random score between 20-70 for demo
-          isCorrect = false;
-          feedbackMessage =
-            'Your response could be more detailed and thorough.';
-          newWrongAnswers['free_response'] = true;
-        }
-        break;
-      }
-
-      default:
-        score = 0;
-        feedbackMessage = 'Unable to evaluate this exercise type.';
-        break;
-    }
-
-    setWrongAnswers(newWrongAnswers);
-    setFeedback({
-      message: feedbackMessage,
-      isCorrect,
-    });
-
-    // Only call onComplete if there's a score (even if not passing)
-    // This ensures we track all attempts
-    if (onComplete) {
-      // Pass the exercise ID, score, and user answers to the parent component
-      onComplete(exercise.id, score, userAnswers);
-
-      // The parent component (LessonClient) will handle updating the UI
-      // based on whether the score meets the completion threshold (90%)
-      const isNowCompleted = score >= 90;
-
-      if (isNowCompleted && !isCompleted) {
-        // We could add some immediate visual feedback here
-        // but the parent will update the exercise prop on the next render
-        console.log(`Exercise ${exercise.id} completed with score: ${score}`);
-      }
+    } catch (error) {
+      console.error('Error grading exercise:', error);
+      setFeedback({
+        message:
+          'There was an error grading your submission. Please try again.',
+        isCorrect: false,
+      });
+    } finally {
+      setIsGrading(false);
     }
   };
 
@@ -386,6 +479,7 @@ export function ExerciseItem({ exercise, onComplete }: ExerciseItemProps) {
     index: number
   ) => {
     const isWrong = isSubmitted && wrongAnswers[question.id];
+    const questionFeedback = detailedFeedback[question.id];
 
     return (
       <div
@@ -415,6 +509,15 @@ export function ExerciseItem({ exercise, onComplete }: ExerciseItemProps) {
           <div className='mt-3 flex items-start gap-2 rounded-md bg-red-50 p-2 text-sm text-red-700'>
             <XCircle className='mt-0.5 h-4 w-4 flex-shrink-0' />
             <p>Your answer needs improvement.</p>
+          </div>
+        )}
+
+        {isSubmitted && questionFeedback && (
+          <div
+            className={`mt-3 rounded-md p-2 text-sm ${isWrong ? 'bg-amber-50 text-amber-700' : 'bg-green-50 text-green-700'}`}
+          >
+            <p className='font-medium'>Feedback:</p>
+            <p>{questionFeedback}</p>
           </div>
         )}
 
@@ -470,6 +573,7 @@ export function ExerciseItem({ exercise, onComplete }: ExerciseItemProps) {
   const renderRewrite = () => {
     const rewriteSolution = parsedSolution as RewriteExercise;
     const isWrong = isSubmitted && wrongAnswers['rewrite'];
+    const rewriteFeedback = detailedFeedback['rewrite'];
 
     return (
       <div className='space-y-4'>
@@ -497,6 +601,15 @@ export function ExerciseItem({ exercise, onComplete }: ExerciseItemProps) {
           </div>
         )}
 
+        {isSubmitted && rewriteFeedback && (
+          <div
+            className={`rounded-md p-2 text-sm ${isWrong ? 'bg-amber-50 text-amber-700' : 'bg-green-50 text-green-700'}`}
+          >
+            <p className='font-medium'>Feedback:</p>
+            <p>{rewriteFeedback}</p>
+          </div>
+        )}
+
         {rewriteSolution?.criteria && (
           <div className='rounded-md bg-muted p-3'>
             <h3 className='mb-2 font-medium'>Evaluation Criteria:</h3>
@@ -521,6 +634,7 @@ export function ExerciseItem({ exercise, onComplete }: ExerciseItemProps) {
   const renderFreeResponse = () => {
     const freeResponseSolution = parsedSolution as FreeResponseExercise;
     const isWrong = isSubmitted && wrongAnswers['free_response'];
+    const responseFeedback = detailedFeedback['free_response'];
 
     return (
       <div className='space-y-4'>
@@ -545,6 +659,15 @@ export function ExerciseItem({ exercise, onComplete }: ExerciseItemProps) {
               Your response could be more detailed and thorough. Please review
               the criteria.
             </p>
+          </div>
+        )}
+
+        {isSubmitted && responseFeedback && (
+          <div
+            className={`rounded-md p-2 text-sm ${isWrong ? 'bg-amber-50 text-amber-700' : 'bg-green-50 text-green-700'}`}
+          >
+            <p className='font-medium'>Feedback:</p>
+            <p>{responseFeedback}</p>
           </div>
         )}
 
@@ -633,19 +756,6 @@ export function ExerciseItem({ exercise, onComplete }: ExerciseItemProps) {
             )}
 
             {renderExerciseContent()}
-
-            {feedback && (
-              <div
-                className={`rounded-md p-3 ${feedback.isCorrect ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}
-              >
-                {feedback.message}
-                {feedback.isCorrect && lastScore >= 90 && (
-                  <p className='mt-1 text-sm font-medium'>
-                    This exercise is now marked as completed!
-                  </p>
-                )}
-              </div>
-            )}
           </CardContent>
 
           <CardFooter className='flex justify-between'>
@@ -654,10 +764,19 @@ export function ExerciseItem({ exercise, onComplete }: ExerciseItemProps) {
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={isCompleted}
+              disabled={isCompleted || isGrading}
               variant={isCompleted ? 'outline' : 'default'}
             >
-              {isCompleted ? 'Already Completed' : 'Submit Answer'}
+              {isCompleted ? (
+                'Already Completed'
+              ) : isGrading ? (
+                <>
+                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  Grading...
+                </>
+              ) : (
+                'Submit Answer'
+              )}
             </Button>
           </CardFooter>
         </>
