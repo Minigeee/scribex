@@ -155,7 +155,7 @@ export function ProjectSidePanel({ userId, className }: ProjectSidePanelProps) {
                   <div>
                     <h3 className='font-medium'>No projects found</h3>
                     <p className='text-sm text-muted-foreground'>
-                      Get started by creating a new project.
+                      Get started by starting a new quest.
                     </p>
                   </div>
                 </div>

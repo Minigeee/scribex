@@ -18,7 +18,6 @@ import {
   Corner,
   Edge,
   MapConfig,
-  MapViewType,
 } from '@/types/map-types';
 import { generateMap } from '@/utils/map-generation';
 import { POI, POIGraph, generatePOIs } from '@/utils/poi-generation';
@@ -32,8 +31,11 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { toast } from 'sonner';
+import { createClient } from '@/lib/supabase/client';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2 } from 'lucide-react';
 
 export default function MapCreatePage() {
   const router = useRouter();
@@ -42,10 +44,13 @@ export default function MapCreatePage() {
   const [centers, setCenters] = useState<Center[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [corners, setCorners] = useState<Corner[]>([]);
-  const [view, setView] = useState<MapViewType>('biomes');
+  const view = 'stylized';
   const [poiGraph, setPoiGraph] = useState<POIGraph | null>(null);
   const [selectedPOI, setSelectedPOI] = useState<POI | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [statusText, setStatusText] = useState<string | null>(null);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const worldIdRef = useRef<string | null>(null);
 
   // Default configuration
   const [config, setConfig] = useState<MapConfig>({
@@ -126,6 +131,48 @@ export default function MapCreatePage() {
     }, 10);
   };
 
+  // Function to poll status updates from the server
+  const pollStatusUpdates = async () => {
+    if (!worldIdRef.current) return;
+    
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('worlds')
+        .select('status_text')
+        .eq('id', worldIdRef.current)
+        .single();
+      
+      if (error) {
+        console.error('Error polling status:', error);
+        return;
+      }
+      
+      if (data && data.status_text) {
+        setStatusText(data.status_text);
+        
+        // If status indicates completion, stop polling
+        if (data.status_text.includes('completed successfully')) {
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error in status polling:', error);
+    }
+  };
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, []);
+
   // Save the current map
   const handleSaveMap = async () => {
     if (!poiGraph?.nodes || centers.length === 0) {
@@ -134,7 +181,56 @@ export default function MapCreatePage() {
     }
 
     setIsSaving(true);
+    setStatusText('Initializing map save...');
+    
     try {
+      // Get current classroom info to find the world ID
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error('You must be logged in to save a map');
+        return;
+      }
+      
+      // Get classroom for teacher
+      /* TODO : (When we have teacher/student roles) const { data: classroom } = await supabase
+        .from('classrooms')
+        .select('id')
+        .eq('teacher_id', user.id)
+        .single(); */
+
+      const classroom = {
+        id: '10000000-0000-0000-0000-000000000001',
+      };
+
+      if (!classroom) {
+        toast.error('No classroom found for this account');
+        return;
+      }
+      
+      // Get world for classroom
+      const { data: world } = await supabase
+        .from('worlds')
+        .select('id')
+        .eq('classroom_id', classroom.id)
+        .single();
+      
+      if (!world) {
+        toast.error('No world found for classroom');
+        return;
+      }
+      
+      // Store world ID for polling
+      worldIdRef.current = world.id;
+      
+      // Start polling for status updates
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+      
+      pollingIntervalRef.current = setInterval(pollStatusUpdates, 1000);
+
       // Sanitize the map data to remove circular references
       // before sending to the API
       const { sanitizedCenters, sanitizedEdges, sanitizedCorners } =
@@ -187,27 +283,43 @@ export default function MapCreatePage() {
 
       if (result.success) {
         toast.success('Map saved successfully!');
+        // Stop polling
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
         // Navigate back to the map view
         router.push('/map');
       } else {
         toast.error(`Failed to save map: ${result.error}`);
+        // Stop polling on error
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
+        setStatusText(null);
       }
     } catch (error) {
       console.error('Error saving map:', error);
       toast.error('Failed to save map');
+      // Stop polling on error
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+      setStatusText(null);
     } finally {
-      setIsSaving(false);
+      // Note: we don't set isSaving to false here because we want to show
+      // the saving state until navigation happens or an error occurs
+      if (!pollingIntervalRef.current) {
+        setIsSaving(false);
+      }
     }
   };
 
   const handleSelectPOI = (poi: POI) => {
     setSelectedPOI(poi);
     setSheetOpen(true);
-  };
-
-  // Handle view change
-  const handleViewChange = (newView: MapViewType) => {
-    setView(newView);
   };
 
   // Download map as PNG
@@ -297,8 +409,6 @@ export default function MapCreatePage() {
               config={config}
               setConfig={setConfig}
               isGenerating={isGenerating}
-              view={view}
-              onViewChange={handleViewChange}
               onGenerate={handleGenerateMap}
               onDownload={downloadMap}
             />
@@ -376,6 +486,20 @@ export default function MapCreatePage() {
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Display save status */}
+      {isSaving && statusText && (
+        <div className="fixed bottom-4 left-4 right-4 z-50 max-w-md mx-auto">
+          <Alert>
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              <AlertDescription className="font-medium text-foreground">
+                {statusText}
+              </AlertDescription>
+            </div>
+          </Alert>
+        </div>
+      )}
     </div>
   );
 }

@@ -10,6 +10,7 @@ import { generateCompletion, systemMessage, userMessage } from '@/lib/utils/ai';
 import crypto from 'crypto';
 import { revalidatePath } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
+import { v4 as uuidv4 } from 'uuid';
 
 // Define types for sanitized map data
 type SanitizedCenter = {
@@ -165,12 +166,30 @@ function getTerrainFeatures(
   return features; // We don't need to deduplicate since we're using a Set for biomes
 }
 
+// Function to update the world's status text
+async function updateStatusText(
+  serviceClient: ReturnType<typeof createServiceClient>,
+  worldId: string, 
+  statusText: string
+) {
+  try {
+    await serviceClient
+      .from('worlds')
+      .update({ status_text: statusText })
+      .eq('id', worldId);
+  } catch (error) {
+    console.error('Error updating status text:', error);
+  }
+}
+
 // Enhanced version of generateWorldLocations that takes map context into account
 async function generateWorldLocationsWithContext(
   locations: SaveMapInput['locations'],
   centers: SanitizedCenter[],
   adjacencyLists: Record<string, string[]>,
-  existingLocationsByID: Record<string, SaveMapInput['locations'][0]> = {}
+  existingLocationsByID: Record<string, SaveMapInput['locations'][0]> = {},
+  serviceClient?: ReturnType<typeof createServiceClient>,
+  worldId?: string
 ): Promise<Record<string, GeneratedLocationInfo>> {
   // Group locations into smaller batches for context-aware generation
   // We'll use batches of 3 to allow more context per batch
@@ -187,6 +206,15 @@ async function generateWorldLocationsWithContext(
   for (let i = 0; i < batches.length; i++) {
     const batch = batches[i];
     console.log(`Processing batch ${i + 1} of ${batches.length}`);
+    
+    // Update status text if serviceClient and worldId are provided
+    if (serviceClient && worldId) {
+      await updateStatusText(
+        serviceClient,
+        worldId,
+        `Generating locations (batch ${i + 1}/${batches.length})...`
+      );
+    }
 
     // Convert to LocationGenerationInput format with enhanced context
     const inputs: Array<
@@ -530,13 +558,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get user's classroom
-    const { data: userClassrooms } = await supabase
-      .from('classroom_members')
-      .select('classroom_id')
-      .eq('user_id', user.id);
+    // Get classroom for user (teaching)
+    /* TODO : (When we have teacher/student roles) const { data: classroom } = await supabase
+      .from('classrooms')
+      .select('id')
+      .eq('teacher_id', user.id)
+      .single(); */
 
-    if (!userClassrooms || userClassrooms.length === 0) {
+    const classroom = {
+      id: '10000000-0000-0000-0000-000000000001',
+    };
+
+    if (!classroom) {
       return NextResponse.json(
         {
           success: false,
@@ -545,13 +578,15 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
-    const userClassroom = userClassrooms[0];
+
+    // Update status to indicate we're starting the process
+    await updateStatusText(serviceClient, classroom.id, 'Initializing map generation...');
 
     // Get world for classroom
     const { data: world } = await supabase
       .from('worlds')
       .select('id, description')
-      .eq('classroom_id', userClassroom.classroom_id)
+      .eq('classroom_id', classroom.id)
       .single();
 
     if (!world) {
@@ -564,7 +599,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Start a transaction to delete old data and save new data
+    // Delete old world locations for this world
+    await updateStatusText(serviceClient, world.id, 'Cleaning up old locations...');
     const { error: deleteError } = await serviceClient
       .from('world_locations')
       .delete()
@@ -580,10 +616,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create new UUIDs for each location and maintain a mapping
+    // Generate unique IDs for all locations
+    await updateStatusText(serviceClient, world.id, 'Creating new locations...');
     const idMapping: Record<string, string> = {};
     input.locations.forEach((loc) => {
-      idMapping[loc.id] = crypto.randomUUID();
+      idMapping[loc.id] = uuidv4();
     });
 
     // Convert edges to adjacency lists using the new UUIDs
@@ -627,7 +664,9 @@ export async function POST(request: NextRequest) {
       input.locations,
       input.centers,
       originalAdjacencyLists,
-      locationsById
+      locationsById,
+      serviceClient,
+      world.id
     );
 
     // Convert MapLocation array to world_locations format with new UUIDs
@@ -672,6 +711,7 @@ export async function POST(request: NextRequest) {
     );
 
     // Save new world locations
+    await updateStatusText(serviceClient, world.id, 'Saving new locations to database...');
     const { error: insertError } = await serviceClient
       .from('world_locations')
       .insert(worldLocations);
@@ -687,6 +727,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate and save quests for each location
+    await updateStatusText(serviceClient, world.id, 'Generating quests for locations...');
     const quests = await generateQuests(worldLocations, serviceClient);
 
     const { error: questsError } = await serviceClient
@@ -703,7 +744,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // The map data is already sanitized from the client
+    // Save map data
+    await updateStatusText(serviceClient, world.id, 'Saving map data...');
     const mapData = {
       centers: input.centers,
       edges: input.edges,
@@ -717,6 +759,7 @@ export async function POST(request: NextRequest) {
       .from('worlds')
       .update({
         data: mapData,
+        status_text: 'Map generation completed successfully!'
       })
       .eq('id', world.id);
 
@@ -1044,9 +1087,20 @@ async function generateQuests(
     }
   }
 
+  // Quest generation constants
+  const QUEST_MIN_PER_LOCATION = 1;
+  const QUEST_MAX_PER_LOCATION = 3;
+  const STARTING_AREA_MAX_DISTANCE = 1;
+  const STARTING_AREA_MIN_STAT_PREREQ = 0;
+  const STARTING_AREA_MAX_STAT_PREREQ = 1;
+  const MAX_STAT_PREREQ = 10;
+  const DIFFICULTY_RANDOM_VARIATION = 1; // ±1
+  const STAT_PREREQ_RANDOM_VARIATION = 1; // ±1
+  const HIGH_DIFFICULTY_THRESHOLD = 4;
+
   for (const location of locations) {
     // Generate 1-3 quests per location
-    const numQuests = Math.floor(Math.random() * 3) + 1;
+    const numQuests = Math.floor(Math.random() * (QUEST_MAX_PER_LOCATION - QUEST_MIN_PER_LOCATION + 1)) + QUEST_MIN_PER_LOCATION;
 
     // Extract location details to inform quest generation
     const locationDetails = parseLocationDescription(location.description);
@@ -1065,7 +1119,7 @@ async function generateQuests(
       const genreId = genreIndex + 1; // Use numeric IDs for genres
 
       // Calculate difficulty based on distance and some randomness
-      const randomFactor = Math.floor(Math.random() * 3) - 1; // -1, 0, or 1
+      const randomFactor = Math.floor(Math.random() * (DIFFICULTY_RANDOM_VARIATION * 2 + 1)) - DIFFICULTY_RANDOM_VARIATION;
       const difficulty = Math.min(
         Math.max(baseDifficultyByDistance + randomFactor, 1),
         5
@@ -1092,16 +1146,30 @@ async function generateQuests(
       // Get primary stats for this genre
       const primaryStats = genreToStatTypes[genreName] || ['composition'];
 
-      // Set requirements for primary stats
+      // Set requirements for primary stats based on distance from start
       primaryStats.forEach((statType) => {
-        // Base requirement is difficulty + some randomness (±1)
-        const baseRequirement = difficulty;
-        const randomVariation = Math.floor(Math.random() * 3) - 1; // -1, 0, or 1
-        statPrereqs[statType] = Math.max(baseRequirement + randomVariation, 1);
+        if (distanceFromStart <= STARTING_AREA_MAX_DISTANCE) {
+          // Starting town and adjacent areas have minimal requirements (0-1)
+          statPrereqs[statType] = Math.floor(Math.random() * 
+            (STARTING_AREA_MAX_STAT_PREREQ - STARTING_AREA_MIN_STAT_PREREQ + 1)) + 
+            STARTING_AREA_MIN_STAT_PREREQ;
+        } else {
+          // Scale requirements with distance and difficulty, capped at MAX_STAT_PREREQ
+          const baseRequirement = Math.min(
+            Math.floor((distanceFromStart * difficulty) / 2),
+            MAX_STAT_PREREQ
+          );
+          const randomVariation = Math.floor(Math.random() * 
+            (STAT_PREREQ_RANDOM_VARIATION * 2 + 1)) - STAT_PREREQ_RANDOM_VARIATION;
+          statPrereqs[statType] = Math.min(
+            Math.max(baseRequirement + randomVariation, 1),
+            MAX_STAT_PREREQ
+          );
+        }
       });
 
       // For difficult quests (4-5), add a random additional prerequisite
-      if (difficulty >= 4) {
+      if (difficulty >= HIGH_DIFFICULTY_THRESHOLD && distanceFromStart > STARTING_AREA_MAX_DISTANCE) {
         const allStats = [
           'composition',
           'analysis',
@@ -1115,8 +1183,11 @@ async function generateQuests(
         if (availableStats.length > 0) {
           const randomStat =
             availableStats[Math.floor(Math.random() * availableStats.length)];
-          // Lower requirement for secondary stat
-          statPrereqs[randomStat] = Math.max(Math.floor(difficulty / 2), 1);
+          // Lower requirement for secondary stat, but still scale with distance
+          statPrereqs[randomStat] = Math.min(
+            Math.max(Math.floor(distanceFromStart / 2), 1),
+            MAX_STAT_PREREQ
+          );
         }
       }
 

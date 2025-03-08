@@ -77,6 +77,7 @@ CREATE TABLE IF NOT EXISTS public.worlds (
     name VARCHAR(100) NOT NULL,
     description TEXT,
     data JSONB DEFAULT '{}'::jsonb,
+    status_text TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
 );

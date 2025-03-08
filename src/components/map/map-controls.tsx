@@ -14,8 +14,8 @@ type MapControlsProps = {
   config: MapConfig;
   setConfig: React.Dispatch<React.SetStateAction<MapConfig>>;
   isGenerating: boolean;
-  view: MapViewType;
-  onViewChange: (view: MapViewType) => void;
+  view?: MapViewType;
+  onViewChange?: (view: MapViewType) => void;
   onGenerate: () => void;
   onDownload: () => void;
 };
@@ -24,8 +24,6 @@ const MapControls = ({
   config,
   setConfig,
   isGenerating,
-  view,
-  onViewChange,
   onGenerate,
   onDownload,
 }: MapControlsProps) => {
@@ -466,21 +464,6 @@ const MapControls = ({
       </div>
 
       <Separator />
-
-      <div className="space-y-4">
-        <Label>Map View</Label>
-        <Tabs value={view} onValueChange={(v) => onViewChange(v as MapViewType)} className="w-full">
-          <TabsList className="grid grid-cols-4 w-full">
-            <TabsTrigger value="biomes">Biomes</TabsTrigger>
-            <TabsTrigger value="elevation">Height</TabsTrigger>
-            <TabsTrigger value="moisture">Moisture</TabsTrigger>
-            <TabsTrigger value="stylized">Stylized</TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        <BiomeLegend visible={view === 'biomes'} />
-        <StylizedLegend visible={view === 'stylized'} />
-      </div>
     </div>
   );
 };

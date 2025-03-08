@@ -17,6 +17,7 @@ import {
   QuestWithGenre,
   StatPrerequisite,
 } from '@/lib/types/database-extensions';
+import { capitalize } from 'lodash';
 import {
   AlertCircleIcon,
   CoinsIcon,
@@ -129,6 +130,7 @@ function StatPrerequisiteDisplay({
 }) {
   const isMet = currentValue >= prerequisite.value;
 
+  if (prerequisite.value === 0) return null;
   return (
     <div
       className={`flex items-center gap-1 rounded-md px-1.5 py-0.5 text-2xs font-medium ${
@@ -154,7 +156,7 @@ function StatPrerequisiteDisplay({
         <AlertCircleIcon className='h-3 w-3 flex-shrink-0' />
       )}
       <span className='truncate'>
-        {prerequisite.stat}: {currentValue}/{prerequisite.value}
+        {capitalize(prerequisite.stat)}: {currentValue}/{prerequisite.value}
       </span>
     </div>
   );

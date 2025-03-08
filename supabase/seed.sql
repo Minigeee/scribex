@@ -1437,7 +1437,8 @@ VALUES
    ]', 
    '/icons/skills/punctuation.svg'),
    
-  ('40000000-0000-0000-0000-000000000002', 'Subject-Verb Agreement', 'Master the rules of making subjects and verbs agree in your writing', 'lesson', 1, '40000000-0000-0000-0000-000000000001', 
+  ('40000000-0000-0000-0000-000000000002', 'Subject-Verb Agreement', 'Master the rules of making subjects and verbs agree in your writing', 'lesson', 1, '00000000-0000-0000-0000-000000000002', 
+   '{"40000000-0000-0000-0000-000000000001"}', 
    '[
      {"type": "experience", "value": 75},
      {"type": "currency", "value": 30},
@@ -1492,6 +1493,7 @@ VALUES
    '/icons/skills/audience.svg'),
    
   ('50000000-0000-0000-0000-000000000002', 'Developing Voice', 'Discover techniques to create a distinctive writing style', 'lesson', 3, '00000000-0000-0000-0000-000000000006', 
+   '{"50000000-0000-0000-0000-000000000001"}', 
    '[
      {"type": "experience", "value": 75},
      {"type": "currency", "value": 30},

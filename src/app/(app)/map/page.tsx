@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { Metadata } from 'next';
 import { WorldMapFlow } from './world-map-flow';
+import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'World Map | ScribeX',
@@ -156,8 +157,9 @@ export default async function MapPage() {
     .eq('classroom_id', classroomId)
     .single();
 
-  if (!world) {
-    return <div>No world found for classroom</div>;
+  // Redirect to create map page if no world exists or if world data is empty
+  if (!world || !world.data || (typeof world.data === 'object' && Object.keys(world.data).length === 0)) {
+    redirect('/map/create');
   }
 
   // Get world locations

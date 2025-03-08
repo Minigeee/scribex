@@ -3,7 +3,6 @@
 import { MapVectorBackground } from '@/components/map/map-vector-background';
 import { QuestCard } from '@/components/map/quest-card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -24,7 +23,6 @@ import {
   Handle,
   Node,
   NodeProps,
-  Panel,
   Position,
   ReactFlow,
   useEdgesState,
@@ -33,7 +31,6 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { motion } from 'framer-motion';
-import { FilterIcon, InfoIcon, MapIcon, MapPinIcon, XIcon } from 'lucide-react';
 import { memo, useEffect, useMemo, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 
@@ -412,20 +409,21 @@ export function WorldMapFlow({ locations, edges, mapData }: WorldMapFlowProps) {
 
   // Create nodes from locations
   const initialNodes: Node[] = useMemo(() => {
-    console.log(locations);
-    return locations.map((location) => ({
-      id: location.id,
-      type: 'location',
-      position: {
-        x: reconstructedMapData
-          ? location.position_x * (reconstructedMapData.width / 800) - 6
-          : 2 * location.position_x,
-        y: reconstructedMapData
-          ? location.position_y * (reconstructedMapData.height / 600) - 6
-          : 2 * location.position_y,
-      },
-      data: { location },
-    }));
+    return locations
+      .filter((location) => location.status !== 'locked')
+      .map((location) => ({
+        id: location.id,
+        type: 'location',
+        position: {
+          x: reconstructedMapData
+            ? location.position_x * (reconstructedMapData.width / 800) - 6
+            : 2 * location.position_x,
+          y: reconstructedMapData
+            ? location.position_y * (reconstructedMapData.height / 600) - 6
+            : 2 * location.position_y,
+        },
+        data: { location },
+      }));
   }, [locations, reconstructedMapData]);
 
   // Create edges from connections
@@ -448,48 +446,26 @@ export function WorldMapFlow({ locations, edges, mapData }: WorldMapFlowProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edgeList, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
-  // Filter nodes by status
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [typeFilter, setTypeFilter] = useState<string | null>(null);
-
-  // State for mobile panel visibility
-  const [showFiltersPanel, setShowFiltersPanel] = useState(!isMobile);
-  const [showLegendPanel, setShowLegendPanel] = useState(!isMobile);
-  const [showTypesPanel, setShowTypesPanel] = useState(!isMobile);
-
-  // Apply filters
+  // Update nodes when locations change
   useEffect(() => {
-    const filteredNodes = initialNodes.filter((node) => {
-      const location = node.data.location as LocationWithStatus;
-
-      // Apply status filter
-      if (statusFilter && location.status !== statusFilter) {
-        return false;
-      }
-
-      // Apply type filter
-      if (typeFilter && location.location_type !== typeFilter) {
-        return false;
-      }
-
-      return true;
-    });
-
-    setNodes(filteredNodes);
-  }, [statusFilter, typeFilter, initialNodes, setNodes]);
-
-  // Toggle mobile panel visibility when screen size changes
-  useEffect(() => {
-    if (!isMobile) {
-      setShowFiltersPanel(true);
-      setShowLegendPanel(true);
-      setShowTypesPanel(true);
-    } else {
-      setShowFiltersPanel(false);
-      setShowLegendPanel(false);
-      setShowTypesPanel(false);
-    }
-  }, [isMobile]);
+    setNodes(
+      locations
+        .filter((location) => location.status !== 'locked')
+        .map((location) => ({
+          id: location.id,
+          type: 'location',
+          position: {
+            x: reconstructedMapData
+              ? location.position_x * (reconstructedMapData.width / 800) - 6
+              : 2 * location.position_x,
+            y: reconstructedMapData
+              ? location.position_y * (reconstructedMapData.height / 600) - 6
+              : 2 * location.position_y,
+          },
+          data: { location },
+        }))
+    );
+  }, [locations, reconstructedMapData]);
 
   return (
     <ReactFlow
@@ -503,6 +479,9 @@ export function WorldMapFlow({ locations, edges, mapData }: WorldMapFlowProps) {
       maxZoom={10}
       defaultViewport={{ x: 0, y: 0, zoom: isMobile ? 0.7 : 1 }}
       fitView
+      fitViewOptions={{
+        maxZoom: 3,
+      }}
       nodesDraggable={false}
       elementsSelectable={false}
       proOptions={{ hideAttribution: true }}
@@ -520,101 +499,6 @@ export function WorldMapFlow({ locations, edges, mapData }: WorldMapFlowProps) {
           poiGraph={null}
           onSelectPOI={() => {}}
         />
-      )}
-
-      {/* Mobile Controls Panel */}
-      {isMobile && (
-        <Panel
-          position='top-center'
-          className='flex gap-2 rounded-lg bg-background/80 p-2 shadow-md backdrop-blur-sm'
-        >
-          <Button
-            size='sm'
-            variant='outline'
-            className='h-8 w-8 p-0'
-            onClick={() => setShowFiltersPanel(!showFiltersPanel)}
-          >
-            <FilterIcon className='h-4 w-4' />
-          </Button>
-          <Button
-            size='sm'
-            variant='outline'
-            className='h-8 w-8 p-0'
-            onClick={() => setShowTypesPanel(!showTypesPanel)}
-          >
-            <MapPinIcon className='h-4 w-4' />
-          </Button>
-          <Button
-            size='sm'
-            variant='outline'
-            className='h-8 w-8 p-0'
-            onClick={() => setShowLegendPanel(!showLegendPanel)}
-          >
-            <InfoIcon className='h-4 w-4' />
-          </Button>
-        </Panel>
-      )}
-
-      {/* Filter panel */}
-      {showFiltersPanel && (
-        <Panel
-          position='top-left'
-          className='rounded-lg bg-background/80 p-2 shadow-md backdrop-blur-sm'
-        >
-          {isMobile && (
-            <div className='mb-2 flex items-center justify-between'>
-              <span className='text-xs font-medium'>Status Filters</span>
-              <Button
-                size='sm'
-                variant='ghost'
-                className='h-6 w-6 p-0'
-                onClick={() => setShowFiltersPanel(false)}
-              >
-                <XIcon className='h-3 w-3' />
-              </Button>
-            </div>
-          )}
-          <div className='flex max-w-[90vw] flex-wrap gap-2'>
-            <Button
-              size='sm'
-              variant={statusFilter === null ? 'default' : 'outline'}
-              onClick={() => setStatusFilter(null)}
-              className={`text-xs ${isMobile ? 'px-2 py-1' : ''}`}
-            >
-              <MapIcon className={`${isMobile ? '' : 'mr-1'} h-3 w-3`} />
-              {!isMobile && 'All'}
-            </Button>
-
-            {Object.keys(statusStyles).map((status) => (
-              <Button
-                key={status}
-                size='sm'
-                variant={statusFilter === status ? 'default' : 'outline'}
-                onClick={() =>
-                  setStatusFilter(status === statusFilter ? null : status)
-                }
-                className={`text-xs ${statusFilter === status ? '' : `${statusStyles[status].textColor}`} ${isMobile ? 'px-2 py-1' : ''}`}
-              >
-                <div
-                  className={`mr-1 h-2 w-2 rounded-full ${statusStyles[status].bgColor}`}
-                ></div>
-                {!isMobile && status.charAt(0).toUpperCase() + status.slice(1)}
-                {isMobile && status.charAt(0).toUpperCase()}
-              </Button>
-            ))}
-
-            {typeFilter && (
-              <Button
-                size='sm'
-                variant='outline'
-                onClick={() => setTypeFilter(null)}
-                className={`ml-auto text-xs ${isMobile ? 'px-2 py-1' : ''}`}
-              >
-                {isMobile ? <XIcon className='h-3 w-3' /> : 'Clear Type'}
-              </Button>
-            )}
-          </div>
-        </Panel>
       )}
     </ReactFlow>
   );
