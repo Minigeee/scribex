@@ -1,11 +1,15 @@
-import { createServiceClient } from '@/lib/supabase/service';
-import { createClient } from '@/lib/supabase/server';
+import {
+  GeneratedLocationInfo,
+  LocationGenerationInput,
+} from '@/app/actions/generate-world-locations';
 import { Tables } from '@/lib/database.types';
+import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/service';
+import { Quest } from '@/lib/types/database-extensions';
+import { generateCompletion, systemMessage, userMessage } from '@/lib/utils/ai';
+import crypto from 'crypto';
 import { revalidatePath } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
-import { generateWorldLocations, LocationGenerationInput, GeneratedLocationInfo } from '@/app/actions/generate-world-locations';
-import { generateCompletion, systemMessage, userMessage } from '@/lib/utils/ai';
 
 // Define types for sanitized map data
 type SanitizedCenter = {
@@ -71,7 +75,7 @@ type SaveMapInput = {
     culture?: string;
   }[];
   // POI edges
-  poiEdges: { source: string; target: string; }[];
+  poiEdges: { source: string; target: string }[];
   // Map generation config
   config: {
     islandFactor: number;
@@ -100,62 +104,70 @@ export const config = {
 };
 
 // Find nearby biome for a location based on its position
-function findBiomeAtPosition(centers: SanitizedCenter[], position: { x: number; y: number }): string | null {
+function findBiomeAtPosition(
+  centers: SanitizedCenter[],
+  position: { x: number; y: number }
+): string | null {
   // Find the closest center to this position
   let closestCenter: SanitizedCenter | null = null;
   let minDistance = Infinity;
-  
+
   for (const center of centers) {
     const distance = Math.sqrt(
-      Math.pow(center.point.x - position.x, 2) + 
-      Math.pow(center.point.y - position.y, 2)
+      Math.pow(center.point.x - position.x, 2) +
+        Math.pow(center.point.y - position.y, 2)
     );
-    
+
     if (distance < minDistance) {
       minDistance = distance;
       closestCenter = center;
     }
   }
-  
+
   return closestCenter?.biome || null;
 }
 
 // Get terrain features based on biome and nearby centers
-function getTerrainFeatures(centers: SanitizedCenter[], position: { x: number; y: number }, radius: number): string[] {
+function getTerrainFeatures(
+  centers: SanitizedCenter[],
+  position: { x: number; y: number },
+  radius: number
+): string[] {
   const features: string[] = [];
   const nearbyBiomes = new Set<string>();
-  
+
   // Check for nearby water bodies, mountains, etc.
   for (const center of centers) {
     const distance = Math.sqrt(
-      Math.pow(center.point.x - position.x, 2) + 
-      Math.pow(center.point.y - position.y, 2)
+      Math.pow(center.point.x - position.x, 2) +
+        Math.pow(center.point.y - position.y, 2)
     );
-    
+
     if (distance < radius) {
       nearbyBiomes.add(center.biome);
-      
+
       if (center.water) features.push('water body');
       if (center.coast) features.push('coastline');
       if (center.ocean) features.push('ocean');
       if (center.elevation > 0.7) features.push('mountains');
-      if (center.elevation > 0.5 && center.elevation <= 0.7) features.push('hills');
+      if (center.elevation > 0.5 && center.elevation <= 0.7)
+        features.push('hills');
       // Check for river on edges instead of centers
     }
   }
-  
+
   // Add unique biomes as features - convert to array to avoid Set iteration issues
   const biomeArray = Array.from(nearbyBiomes);
   for (const biome of biomeArray) {
     features.push(biome);
   }
-  
+
   return features; // We don't need to deduplicate since we're using a Set for biomes
 }
 
 // Enhanced version of generateWorldLocations that takes map context into account
 async function generateWorldLocationsWithContext(
-  locations: SaveMapInput['locations'], 
+  locations: SaveMapInput['locations'],
   centers: SanitizedCenter[],
   adjacencyLists: Record<string, string[]>,
   existingLocationsByID: Record<string, SaveMapInput['locations'][0]> = {}
@@ -170,49 +182,61 @@ async function generateWorldLocationsWithContext(
   const generatedLocations: Record<string, GeneratedLocationInfo> = {};
   // Track used names to prevent duplicates
   const usedNames = new Set<string>();
-  
+
   // Process each batch
   for (let i = 0; i < batches.length; i++) {
     const batch = batches[i];
     console.log(`Processing batch ${i + 1} of ${batches.length}`);
 
     // Convert to LocationGenerationInput format with enhanced context
-    const inputs: Array<LocationGenerationInput & { 
-      id: string;
-      biome?: string; 
-      terrainFeatures?: string[];
-      nearbyLocations?: {
-        name: string;
-        type: string;
-        description?: string;
-      }[];
-    }> = batch.map(loc => {
+    const inputs: Array<
+      LocationGenerationInput & {
+        id: string;
+        biome?: string;
+        terrainFeatures?: string[];
+        nearbyLocations?: {
+          name: string;
+          type: string;
+          description?: string;
+        }[];
+      }
+    > = batch.map((loc) => {
       // Find biome and terrain features
       const biome = findBiomeAtPosition(centers, loc.position);
       const terrainFeatures = getTerrainFeatures(centers, loc.position, 100);
-      
+
       // Find nearby locations that have already been generated
-      const nearbyLocations: {name: string; type: string; description?: string}[] = [];
+      const nearbyLocations: {
+        name: string;
+        type: string;
+        description?: string;
+      }[] = [];
       const adjacentIDs = adjacencyLists[loc.id] || [];
-      
+
       for (const adjID of adjacentIDs) {
         // Use existing generated location if available, otherwise use input data
-        const adjacent = existingLocationsByID[adjID] || 
-          (generatedLocations[adjID] ? {
-            name: generatedLocations[adjID].name,
-            locationType: generatedLocations[adjID].locationType,
-            description: generatedLocations[adjID].description
-          } : null);
-        
+        const adjacent =
+          existingLocationsByID[adjID] ||
+          (generatedLocations[adjID]
+            ? {
+                name: generatedLocations[adjID].name,
+                locationType: generatedLocations[adjID].locationType,
+                description: generatedLocations[adjID].description,
+              }
+            : null);
+
         if (adjacent) {
           nearbyLocations.push({
             name: adjacent.name,
-            type: typeof adjacent.locationType === 'string' ? adjacent.locationType : '',
-            description: adjacent.description
+            type:
+              typeof adjacent.locationType === 'string'
+                ? adjacent.locationType
+                : '',
+            description: adjacent.description,
           });
         }
       }
-      
+
       return {
         id: loc.id,
         locationType: loc.locationType as any,
@@ -220,38 +244,42 @@ async function generateWorldLocationsWithContext(
         isInitialNode: loc.isInitialNode,
         biome: biome || undefined,
         terrainFeatures,
-        nearbyLocations: nearbyLocations.length > 0 ? nearbyLocations : undefined
+        nearbyLocations:
+          nearbyLocations.length > 0 ? nearbyLocations : undefined,
       };
     });
-    
+
     try {
       // Generate data with the enhanced context
-      const generated = await generateEnhancedLocations(inputs, Array.from(usedNames));
-      
+      const generated = await generateEnhancedLocations(
+        inputs,
+        Array.from(usedNames)
+      );
+
       // Store the results
       for (let i = 0; i < generated.length; i++) {
         const loc = generated[i];
         const originalInput = inputs[i];
-        
+
         if (originalInput) {
           // Ensure the name is unique before adding it
           let uniqueName = loc.name;
           let counter = 1;
-          
+
           // If the name is already used, append a number to make it unique
           while (usedNames.has(uniqueName.toLowerCase())) {
             uniqueName = `${loc.name} ${counter}`;
             counter++;
           }
-          
+
           // If we had to rename, update the location name
           if (uniqueName !== loc.name) {
             loc.name = uniqueName;
           }
-          
+
           // Add the name to our set of used names
           usedNames.add(uniqueName.toLowerCase());
-          
+
           // Store the generated location
           generatedLocations[originalInput.id] = loc;
         }
@@ -263,35 +291,38 @@ async function generateWorldLocationsWithContext(
         // Create a unique name for the fallback location
         let fallbackName = `${loc.locationType} ${Math.round(loc.position.x)},${Math.round(loc.position.y)}`;
         let counter = 1;
-        
+
         while (usedNames.has(fallbackName.toLowerCase())) {
           fallbackName = `${loc.locationType} ${Math.round(loc.position.x)},${Math.round(loc.position.y)} ${counter}`;
           counter++;
         }
-        
+
         usedNames.add(fallbackName.toLowerCase());
-        
+
         generatedLocations[loc.id] = {
           name: fallbackName,
           description: `A ${loc.locationType} area.`,
           locationType: loc.locationType as any,
-          appearance: loc.appearance || `Typical ${loc.locationType} appearance.`,
-          keyCharacteristics: loc.keyCharacteristics || `Standard ${loc.locationType} features.`,
+          appearance:
+            loc.appearance || `Typical ${loc.locationType} appearance.`,
+          keyCharacteristics:
+            loc.keyCharacteristics || `Standard ${loc.locationType} features.`,
           loreHistory: loc.loreHistory || `No known history.`,
-          culture: loc.culture || `Standard inhabitants of a ${loc.locationType}.`,
+          culture:
+            loc.culture || `Standard inhabitants of a ${loc.locationType}.`,
         };
       }
     }
   }
-  
+
   return generatedLocations;
 }
 
 // Generate enhanced locations with context-aware prompts
 async function generateEnhancedLocations(
-  enhancedInputs: (LocationGenerationInput & { 
+  enhancedInputs: (LocationGenerationInput & {
     id: string;
-    biome?: string; 
+    biome?: string;
     terrainFeatures?: string[];
     nearbyLocations?: {
       name: string;
@@ -302,24 +333,29 @@ async function generateEnhancedLocations(
   existingNames: string[] = []
 ): Promise<GeneratedLocationInfo[]> {
   // Convert the enhanced inputs to standard LocationGenerationInput
-  const standardInputs: LocationGenerationInput[] = enhancedInputs.map(input => ({
-    locationType: input.locationType,
-    position: input.position,
-    isInitialNode: input.isInitialNode
-  }));
-  
+  const standardInputs: LocationGenerationInput[] = enhancedInputs.map(
+    (input) => ({
+      locationType: input.locationType,
+      position: input.position,
+      isInitialNode: input.isInitialNode,
+    })
+  );
+
   // Create a custom prompt that includes the context information
   const customPrompt = createContextAwarePrompt(enhancedInputs, existingNames);
-  
+
   // Use the existing generation function but with a custom prompt
-  return await generateWorldLocationsWithCustomPrompt(standardInputs, customPrompt);
+  return await generateWorldLocationsWithCustomPrompt(
+    standardInputs,
+    customPrompt
+  );
 }
 
 // Create a context-aware prompt for location generation
 function createContextAwarePrompt(
-  enhancedInputs: (LocationGenerationInput & { 
+  enhancedInputs: (LocationGenerationInput & {
     id: string;
-    biome?: string; 
+    biome?: string;
     terrainFeatures?: string[];
     nearbyLocations?: {
       name: string;
@@ -332,17 +368,22 @@ function createContextAwarePrompt(
   const locationPrompts = enhancedInputs
     .map((loc, index) => {
       // Build terrain features string
-      const terrainStr = loc.terrainFeatures && loc.terrainFeatures.length > 0
-        ? `    - Terrain Features: ${loc.terrainFeatures.join(', ')}`
-        : '';
-      
+      const terrainStr =
+        loc.terrainFeatures && loc.terrainFeatures.length > 0
+          ? `    - Terrain Features: ${loc.terrainFeatures.join(', ')}`
+          : '';
+
       // Build nearby locations string
-      const nearbyStr = loc.nearbyLocations && loc.nearbyLocations.length > 0
-        ? `    - Nearby Locations: ${loc.nearbyLocations.map(nl => 
-            `${nl.name} (${nl.type})${nl.description ? ` - ${nl.description.split('.')[0]}.` : ''}`
-          ).join('; ')}`
-        : '';
-        
+      const nearbyStr =
+        loc.nearbyLocations && loc.nearbyLocations.length > 0
+          ? `    - Nearby Locations: ${loc.nearbyLocations
+              .map(
+                (nl) =>
+                  `${nl.name} (${nl.type})${nl.description ? ` - ${nl.description.split('.')[0]}.` : ''}`
+              )
+              .join('; ')}`
+          : '';
+
       // Combine all context
       return `Location ${index + 1}:
     - Type: ${loc.locationType}
@@ -358,7 +399,7 @@ ${nearbyStr}`;
   let existingNamesContext = '';
   if (existingNames.length > 0) {
     existingNamesContext = `\n\nIMPORTANT: The following location names are ALREADY IN USE and must NOT be repeated:
-${existingNames.map(name => `- ${name}`).join('\n')}
+${existingNames.map((name) => `- ${name}`).join('\n')}
 
 Each new location MUST have a name that is NOT in this list. Names should be distinctive and unique.`;
   }
@@ -424,9 +465,7 @@ async function generateWorldLocationsWithCustomPrompt(
         jsonText.match(/\`\`\`([\s\S]*)\n\`\`\`/);
       const cleanJson = jsonMatch ? jsonMatch[1] : jsonText;
 
-      const parsedLocations = JSON.parse(
-        cleanJson
-      ) as GeneratedLocationInfo[];
+      const parsedLocations = JSON.parse(cleanJson) as GeneratedLocationInfo[];
       results.push(...parsedLocations);
     } catch (error) {
       console.error('Error parsing AI response as JSON:', error);
@@ -447,7 +486,10 @@ async function generateWorldLocationsWithCustomPrompt(
 
     return results;
   } catch (error) {
-    console.error('Error generating world locations with custom prompt:', error);
+    console.error(
+      'Error generating world locations with custom prompt:',
+      error
+    );
     // Return basic locations as fallback
     return locations.map((loc) => ({
       name: `${capitalizeFirstLetter(loc.locationType as string)} ${loc.position.x},${loc.position.y}`,
@@ -479,10 +521,13 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Not authenticated' 
-      }, { status: 401 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Not authenticated',
+        },
+        { status: 401 }
+      );
     }
 
     // Get user's classroom
@@ -492,10 +537,13 @@ export async function POST(request: NextRequest) {
       .eq('user_id', user.id);
 
     if (!userClassrooms || userClassrooms.length === 0) {
-      return NextResponse.json({ 
-        success: false,
-        error: 'No classroom found for user'
-      }, { status: 404 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'No classroom found for user',
+        },
+        { status: 404 }
+      );
     }
     const userClassroom = userClassrooms[0];
 
@@ -507,40 +555,47 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (!world) {
-      return NextResponse.json({ 
-        success: false,
-        error: 'No world found for classroom'
-      }, { status: 404 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'No world found for classroom',
+        },
+        { status: 404 }
+      );
     }
 
     // Start a transaction to delete old data and save new data
-    const { error: deleteError } = await serviceClient.from('world_locations')
+    const { error: deleteError } = await serviceClient
+      .from('world_locations')
       .delete()
       .eq('world_id', world.id);
 
     if (deleteError) {
-      return NextResponse.json({
-        success: false,
-        error: `Error deleting old world locations: ${deleteError.message}`
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Error deleting old world locations: ${deleteError.message}`,
+        },
+        { status: 500 }
+      );
     }
 
     // Create new UUIDs for each location and maintain a mapping
     const idMapping: Record<string, string> = {};
-    input.locations.forEach(loc => {
+    input.locations.forEach((loc) => {
       idMapping[loc.id] = crypto.randomUUID();
     });
 
     // Convert edges to adjacency lists using the new UUIDs
     const adjacencyLists: Record<string, string[]> = {};
-    input.poiEdges.forEach(edge => {
+    input.poiEdges.forEach((edge) => {
       const sourceId = idMapping[edge.source];
       const targetId = idMapping[edge.target];
-      
+
       // Initialize arrays if they don't exist
       if (!adjacencyLists[sourceId]) adjacencyLists[sourceId] = [];
       if (!adjacencyLists[targetId]) adjacencyLists[targetId] = [];
-      
+
       // Add bidirectional connections
       adjacencyLists[sourceId].push(targetId);
       adjacencyLists[targetId].push(sourceId);
@@ -548,7 +603,7 @@ export async function POST(request: NextRequest) {
 
     // Create a mapping of original location IDs to the location objects
     const locationsById: Record<string, SaveMapInput['locations'][0]> = {};
-    input.locations.forEach(loc => {
+    input.locations.forEach((loc) => {
       locationsById[loc.id] = loc;
     });
 
@@ -562,7 +617,9 @@ export async function POST(request: NextRequest) {
     const originalAdjacencyLists: Record<string, string[]> = {};
     Object.entries(adjacencyLists).forEach(([newId, adjacentNewIds]) => {
       const originalId = reverseIdMapping[newId];
-      originalAdjacencyLists[originalId] = adjacentNewIds.map(adjNewId => reverseIdMapping[adjNewId]);
+      originalAdjacencyLists[originalId] = adjacentNewIds.map(
+        (adjNewId) => reverseIdMapping[adjNewId]
+      );
     });
 
     // Generate location details with context
@@ -574,43 +631,45 @@ export async function POST(request: NextRequest) {
     );
 
     // Convert MapLocation array to world_locations format with new UUIDs
-    const worldLocations: Tables<'world_locations'>[] = input.locations.map((loc) => {
-      const generatedLoc = generatedLocations[loc.id] || {
-        name: loc.name,
-        description: loc.description,
-        appearance: loc.appearance || '',
-        keyCharacteristics: loc.keyCharacteristics || '',
-        loreHistory: loc.loreHistory || '',
-        culture: loc.culture || '',
-        locationType: loc.locationType as any
-      };
+    const worldLocations: Tables<'world_locations'>[] = input.locations.map(
+      (loc) => {
+        const generatedLoc = generatedLocations[loc.id] || {
+          name: loc.name,
+          description: loc.description,
+          appearance: loc.appearance || '',
+          keyCharacteristics: loc.keyCharacteristics || '',
+          loreHistory: loc.loreHistory || '',
+          culture: loc.culture || '',
+          locationType: loc.locationType as any,
+        };
 
-      // Create rich description from generated data
-      const richDescription = createRichDescription({
-        ...loc,
-        name: generatedLoc.name,
-        description: generatedLoc.description,
-        appearance: generatedLoc.appearance,
-        keyCharacteristics: generatedLoc.keyCharacteristics,
-        loreHistory: generatedLoc.loreHistory,
-        culture: generatedLoc.culture
-      });
+        // Create rich description from generated data
+        const richDescription = createRichDescription({
+          ...loc,
+          name: generatedLoc.name,
+          description: generatedLoc.description,
+          appearance: generatedLoc.appearance,
+          keyCharacteristics: generatedLoc.keyCharacteristics,
+          loreHistory: generatedLoc.loreHistory,
+          culture: generatedLoc.culture,
+        });
 
-      return {
-        id: idMapping[loc.id],
-        world_id: world.id,
-        name: generatedLoc.name,
-        description: richDescription,
-        location_type: loc.locationType,
-        position_x: Math.round(loc.position.x),
-        position_y: Math.round(loc.position.y),
-        adjacent_locations: adjacencyLists[idMapping[loc.id]] || [],
-        initial_node: loc.isInitialNode,
-        icon_url: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-    });
+        return {
+          id: idMapping[loc.id],
+          world_id: world.id,
+          name: generatedLoc.name,
+          description: richDescription,
+          location_type: loc.locationType,
+          position_x: Math.round(loc.position.x),
+          position_y: Math.round(loc.position.y),
+          adjacent_locations: adjacencyLists[idMapping[loc.id]] || [],
+          initial_node: loc.isInitialNode,
+          icon_url: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+      }
+    );
 
     // Save new world locations
     const { error: insertError } = await serviceClient
@@ -618,24 +677,30 @@ export async function POST(request: NextRequest) {
       .insert(worldLocations);
 
     if (insertError) {
-      return NextResponse.json({
-        success: false,
-        error: `Error inserting world locations: ${insertError.message}`
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Error inserting world locations: ${insertError.message}`,
+        },
+        { status: 500 }
+      );
     }
 
     // Generate and save quests for each location
     const quests = await generateQuests(worldLocations, serviceClient);
-    
+
     const { error: questsError } = await serviceClient
       .from('quests')
       .insert(quests);
 
     if (questsError) {
-      return NextResponse.json({
-        success: false,
-        error: `Error inserting quests: ${questsError.message}`
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Error inserting quests: ${questsError.message}`,
+        },
+        { status: 500 }
+      );
     }
 
     // The map data is already sanitized from the client
@@ -656,10 +721,13 @@ export async function POST(request: NextRequest) {
       .eq('id', world.id);
 
     if (updateError) {
-      return NextResponse.json({
-        success: false,
-        error: `Error updating world map data: ${updateError.message}`
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Error updating world map data: ${updateError.message}`,
+        },
+        { status: 500 }
+      );
     }
 
     // Revalidate the map page to show new data
@@ -668,10 +736,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error saving map:', error);
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error:
+          error instanceof Error ? error.message : 'Unknown error occurred',
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -679,7 +751,9 @@ function createRichDescription(location: SaveMapInput['locations'][0]): string {
   const parts = [
     location.description,
     location.appearance ? `**Appearance:** ${location.appearance}` : null,
-    location.keyCharacteristics ? `**Key Characteristics:** ${location.keyCharacteristics}` : null,
+    location.keyCharacteristics
+      ? `**Key Characteristics:** ${location.keyCharacteristics}`
+      : null,
     location.loreHistory ? `**History:** ${location.loreHistory}` : null,
     location.culture ? `**Culture:** ${location.culture}` : null,
   ];
@@ -690,7 +764,7 @@ function createRichDescription(location: SaveMapInput['locations'][0]): string {
 // Define reward types
 type RewardItem =
   | {
-      type: string;
+      type: 'experience' | 'currency' | 'points' | 'stat';
       value: number;
     }
   | {
@@ -699,16 +773,26 @@ type RewardItem =
       value: number;
     };
 
-type Quest = Tables<'quests'>;
-
 /**
  * Generates quest rewards based on location and difficulty
  */
 async function generateQuestRewards(
   location: Tables<'world_locations'>,
   difficulty: number,
-  serviceClient: ReturnType<typeof createServiceClient>
+  serviceClient: ReturnType<typeof createServiceClient>,
+  genreName?: string  // Add genreName parameter
 ): Promise<RewardItem[]> {
+  // Define genre multipliers for leaderboard points
+  const genreMultipliers: Record<string, number> = {
+    'Narrative': 1.2,
+    'Persuasive': 1.5,
+    'Informative': 1.3,
+    'Poetry': 1.4,
+    'Journalism': 1.6,
+    'Creative Writing': 1.1,
+    'default': 1.0
+  };
+
   // Fetch all item templates from the database
   const { data: itemTemplates, error } = await serviceClient
     .from('item_templates')
@@ -720,13 +804,21 @@ async function generateQuestRewards(
     return [
       { type: 'experience', value: difficulty * 50 },
       { type: 'currency', value: difficulty * 10 },
+      { type: 'points', value: Math.floor(difficulty * (genreMultipliers['default'] || 1.0) * 10) }
     ];
   }
+
+  // Get the genre multiplier
+  const multiplier = genreName ? (genreMultipliers[genreName] || genreMultipliers['default']) : genreMultipliers['default'];
+  
+  // Calculate leaderboard points: difficulty * genre multiplier * base points (10)
+  const leaderboardPoints = Math.floor(difficulty * multiplier * 10);
 
   // Initialize rewards array with base rewards
   const rewards: RewardItem[] = [
     { type: 'experience', value: difficulty * 50 },
     { type: 'currency', value: difficulty * 10 },
+    { type: 'points', value: leaderboardPoints }
   ];
 
   // Group items by rarity
@@ -771,7 +863,10 @@ async function generateQuestRewards(
     }
   } else if (difficulty <= 4) {
     // For medium difficulty, use first two rarity options if available
-    selectedRarities = locationRarities.slice(0, Math.min(2, locationRarities.length));
+    selectedRarities = locationRarities.slice(
+      0,
+      Math.min(2, locationRarities.length)
+    );
   } else {
     // For high difficulty, use all available rarities
     selectedRarities = [...locationRarities];
@@ -783,14 +878,16 @@ async function generateQuestRewards(
   // Add items to rewards
   for (let i = 0; i < numItems; i++) {
     // Select a random rarity from the available options
-    const rarity = selectedRarities[Math.floor(Math.random() * selectedRarities.length)];
+    const rarity =
+      selectedRarities[Math.floor(Math.random() * selectedRarities.length)];
 
     // Get items for this rarity
     const availableItems = itemsByRarity[rarity] || [];
 
     if (availableItems.length > 0) {
       // Select a random item from this rarity
-      const itemId = availableItems[Math.floor(Math.random() * availableItems.length)];
+      const itemId =
+        availableItems[Math.floor(Math.random() * availableItems.length)];
 
       // Add to rewards with random quantity (1-3)
       const quantity = Math.floor(Math.random() * 3) + 1;
@@ -804,7 +901,9 @@ async function generateQuestRewards(
 /**
  * Extracts structured details from a location description
  */
-function parseLocationDescription(description: string | null): Record<string, string> {
+function parseLocationDescription(
+  description: string | null
+): Record<string, string> {
   const details: Record<string, string> = {
     appearance: '',
     keyCharacteristics: '',
@@ -830,7 +929,9 @@ function parseLocationDescription(description: string | null): Record<string, st
     if (section.startsWith('**Appearance:**')) {
       details.appearance = section.replace('**Appearance:**', '').trim();
     } else if (section.startsWith('**Key Characteristics:**')) {
-      details.keyCharacteristics = section.replace('**Key Characteristics:**', '').trim();
+      details.keyCharacteristics = section
+        .replace('**Key Characteristics:**', '')
+        .trim();
     } else if (section.startsWith('**History:**')) {
       details.history = section.replace('**History:**', '').trim();
     } else if (section.startsWith('**Culture:**')) {
@@ -903,6 +1004,46 @@ async function generateQuests(
   const difficulties = [1, 2, 3, 4, 5];
   const quests: Quest[] = [];
 
+  // Map genres to primary stat types
+  const genreToStatTypes: Record<string, string[]> = {
+    Narrative: ['composition', 'creativity'],
+    Persuasive: ['persuasion', 'analysis'],
+    Informative: ['analysis', 'composition'],
+    Poetry: ['creativity', 'composition'],
+    Journalism: ['analysis', 'persuasion'],
+    'Creative Writing': ['creativity', 'composition'],
+  };
+
+  // Find starting location (initial node)
+  const startingLocation = locations.find((loc) => loc.initial_node);
+
+  // Create a map of location distances from start
+  const locationDistances: Record<string, number> = {};
+
+  // Initialize with starting location
+  if (startingLocation) {
+    locationDistances[startingLocation.id] = 0;
+
+    // Simple breadth-first traversal to calculate distances
+    const queue: [string, number][] = [[startingLocation.id, 0]];
+    const visited = new Set<string>([startingLocation.id]);
+
+    while (queue.length > 0) {
+      const [currentId, distance] = queue.shift()!;
+      const current = locations.find((loc) => loc.id === currentId);
+
+      if (current && current.adjacent_locations) {
+        for (const adjacentId of current.adjacent_locations) {
+          if (!visited.has(adjacentId)) {
+            visited.add(adjacentId);
+            locationDistances[adjacentId] = distance + 1;
+            queue.push([adjacentId, distance + 1]);
+          }
+        }
+      }
+    }
+  }
+
   for (const location of locations) {
     // Generate 1-3 quests per location
     const numQuests = Math.floor(Math.random() * 3) + 1;
@@ -910,18 +1051,74 @@ async function generateQuests(
     // Extract location details to inform quest generation
     const locationDetails = parseLocationDescription(location.description);
 
+    // Base difficulty on location distance from starting point (with fallback)
+    const distanceFromStart = locationDistances[location.id] || 0;
+    // Add randomness to difficulty (±1), but keep within 1-5 range
+    const baseDifficultyByDistance = Math.min(
+      Math.max(Math.floor(distanceFromStart / 2) + 1, 1),
+      5
+    );
+
     for (let i = 0; i < numQuests; i++) {
       const genreIndex = Math.floor(Math.random() * genres.length);
-      const genre = genres[genreIndex];
+      const genreName = genres[genreIndex];
       const genreId = genreIndex + 1; // Use numeric IDs for genres
-      const difficulty = difficulties[Math.floor(Math.random() * difficulties.length)];
+
+      // Calculate difficulty based on distance and some randomness
+      const randomFactor = Math.floor(Math.random() * 3) - 1; // -1, 0, or 1
+      const difficulty = Math.min(
+        Math.max(baseDifficultyByDistance + randomFactor, 1),
+        5
+      );
 
       // Create a more detailed quest based on location information
       const questTitle = createQuestTitle(location.name, locationDetails, i);
-      const questDescription = createQuestDescription(location, locationDetails);
+      const questDescription = createQuestDescription(
+        location,
+        locationDetails
+      );
 
       // Generate rewards based on location and difficulty
-      const rewards = await generateQuestRewards(location, difficulty, serviceClient);
+      const rewards = await generateQuestRewards(
+        location,
+        difficulty,
+        serviceClient,
+        genreName
+      );
+
+      // Determine stat prerequisites based on genre and difficulty
+      const statPrereqs: Record<string, number> = {};
+
+      // Get primary stats for this genre
+      const primaryStats = genreToStatTypes[genreName] || ['composition'];
+
+      // Set requirements for primary stats
+      primaryStats.forEach((statType) => {
+        // Base requirement is difficulty + some randomness (±1)
+        const baseRequirement = difficulty;
+        const randomVariation = Math.floor(Math.random() * 3) - 1; // -1, 0, or 1
+        statPrereqs[statType] = Math.max(baseRequirement + randomVariation, 1);
+      });
+
+      // For difficult quests (4-5), add a random additional prerequisite
+      if (difficulty >= 4) {
+        const allStats = [
+          'composition',
+          'analysis',
+          'creativity',
+          'persuasion',
+        ];
+        const availableStats = allStats.filter(
+          (stat) => !primaryStats.includes(stat)
+        );
+
+        if (availableStats.length > 0) {
+          const randomStat =
+            availableStats[Math.floor(Math.random() * availableStats.length)];
+          // Lower requirement for secondary stat
+          statPrereqs[randomStat] = Math.max(Math.floor(difficulty / 2), 1);
+        }
+      }
 
       quests.push({
         id: crypto.randomUUID(),
@@ -933,15 +1130,18 @@ async function generateQuests(
         is_daily_quest: false,
         prompt: null, // Keep prompt null as they get generated on the fly
         prompt_expires_at: null,
-        rewards,
+        prerequisite_quests: null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         available_from: null,
         available_until: null,
-        prerequisite_quests: null,
+        // Store stat prerequisites in the dedicated prerequisite_stats field
+        prerequisite_stats: statPrereqs,
+        // Keep the original rewards field
+        rewards,
       });
     }
   }
 
   return quests;
-} 
+}

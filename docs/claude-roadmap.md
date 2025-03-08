@@ -2,10 +2,31 @@
 
 ## Personal To Do List
 
-- [ ] Look into map / canvas solutions
-- [ ] Research peer review systems
-- [ ] Explore daily quest mechanics
-- [ ] Add basic trees to REDI 1 + 3
+- [X] Look into map / canvas solutions
+- [X] Add basic trees to REDI 1 + 3
+- [X] Add quest stat prereqs
+  - Difficulty determined by distance from starting town
+  - Stats (types) required determined by genre (maps to a set of one or two types + chance for random additional stat)
+  - Stat points required determined by difficulty
+- [ ] Add leaderboard points `points` to reward generation
+  - [ ] REDI
+  - [ ] OWL
+- [ ] Test quest completion by adding a "[TEST] Complete Quest" button
+- [ ] Implement leaderboard
+
+Do if have time:
+- [ ] Add AI grading
+  - [ ] REDI
+  - [ ] OWL
+
+## Ideas
+- What can stat points be used for? It can be used to gate harder/more specialized quests
+- How will leaderboard + factions work? What incentive is there to do well?
+  - In terms of personal incentives, a cool looking avatar can be a good incentive for some
+  - For leaderboard, a small reward incentive can be given to top `x` writers (currency, exclusive items consumables trophies cosmetics)
+  - For faction leaderboard (exclusive trophy, some proxy to "power" [faction trophies, badges], bragging rights, irl reward?)
+- What will currency be used for? There can be a shop for common items, consumables, cosmetics
+- What can items + consumables be used for? They can be used for stat bonuses, reward bonuses, etc.
 
 ## Phase 1: Foundation (3-4 weeks)
 
@@ -33,11 +54,12 @@
   - [X] Add rewards section
 - [X] Design simple world map system
   - [ ] Clean up world map creation screen
+  - [ ] Hide locked locations
 - [ ] Implement character profile system
   - [ ] Implement level updating system (rn only xp is added but new levels are not calculated)
-- [ ] Create basic inventory system
-- [ ] Build quest tracking system
-- [ ] Implement reward distribution mechanics
+- [X] Create basic inventory system
+- [X] Build quest tracking system
+- [X] Implement reward distribution mechanics
 - [ ] Create daily quest system
 
 ## Phase 4: Social & Engagement Features (3-4 weeks)

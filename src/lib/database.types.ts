@@ -318,41 +318,6 @@ export type Database = {
           },
         ]
       }
-      character_stats: {
-        Row: {
-          character_id: string
-          created_at: string
-          id: string
-          stat_name: string
-          stat_value: number
-          updated_at: string
-        }
-        Insert: {
-          character_id: string
-          created_at?: string
-          id?: string
-          stat_name: string
-          stat_value?: number
-          updated_at?: string
-        }
-        Update: {
-          character_id?: string
-          created_at?: string
-          id?: string
-          stat_name?: string
-          stat_value?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "character_stats_character_id_fkey"
-            columns: ["character_id"]
-            isOneToOne: false
-            referencedRelation: "character_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       classroom_members: {
         Row: {
           classroom_id: string
@@ -729,6 +694,44 @@ export type Database = {
         }
         Relationships: []
       }
+      leaderboards: {
+        Row: {
+          character_id: string
+          created_at: string
+          end_time: string
+          id: string
+          points: number
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          character_id: string
+          created_at?: string
+          end_time: string
+          id?: string
+          points?: number
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          character_id?: string
+          created_at?: string
+          end_time?: string
+          id?: string
+          points?: number
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leaderboards_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "character_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_article_reads: {
         Row: {
           completed: boolean | null
@@ -1003,6 +1006,7 @@ export type Database = {
           is_daily_quest: boolean
           location_id: string | null
           prerequisite_quests: string[] | null
+          prerequisite_stats: Json | null
           prompt: string | null
           prompt_expires_at: string | null
           rewards: Json | null
@@ -1020,6 +1024,7 @@ export type Database = {
           is_daily_quest?: boolean
           location_id?: string | null
           prerequisite_quests?: string[] | null
+          prerequisite_stats?: Json | null
           prompt?: string | null
           prompt_expires_at?: string | null
           rewards?: Json | null
@@ -1037,6 +1042,7 @@ export type Database = {
           is_daily_quest?: boolean
           location_id?: string | null
           prerequisite_quests?: string[] | null
+          prerequisite_stats?: Json | null
           prompt?: string | null
           prompt_expires_at?: string | null
           rewards?: Json | null
@@ -1379,6 +1385,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      allocate_stats: {
+        Args: {
+          p_character_id: string
+          p_stat_changes: Json
+        }
+        Returns: boolean
+      }
       can_view_project: {
         Args: {
           project_id: string

@@ -8,8 +8,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { ItemReward } from '@/components/ui/item-reward';
 import { Tables } from '@/lib/database.types';
 import { useBreakpoint } from '@/lib/hooks/use-breakpoint';
+import { getLayoutedElements } from '@/lib/utils/node-layout';
 import { User } from '@supabase/supabase-js';
 import {
   Background,
@@ -23,14 +25,11 @@ import {
   useNodesState,
   useReactFlow,
 } from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
 import { motion } from 'framer-motion';
+import { ChartBarIcon, CoinsIcon, TrophyIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { getLayoutedElements } from '@/lib/utils/node-layout';
-import '@xyflow/react/dist/style.css';
-import { CoinsIcon, TrophyIcon } from 'lucide-react';
-import { useItem, useItems } from '@/lib/hooks/use-item';
-import { ItemReward } from '@/components/ui/item-reward';
 
 type ContentLayer = Tables<'content_layers'>;
 type SkillTreeNode = Tables<'skill_tree_nodes'> & {
@@ -72,7 +71,7 @@ interface SkillTreeFlowProps {
 }
 
 // Define reward types
-type RewardType = 'experience' | 'currency' | 'stat' | 'item';
+type RewardType = 'experience' | 'currency' | 'stat' | 'item' | 'points';
 
 interface Reward {
   type: RewardType;
@@ -100,6 +99,13 @@ function RewardDisplay({ reward }: { reward: Reward & { itemName?: string } }) {
           <span className='truncate'>+{reward.value} Coins</span>
         </div>
       );
+    case 'points':
+      return (
+        <div className={`${baseClasses} bg-indigo-50 text-indigo-700`}>
+          <ChartBarIcon className='h-3 w-3 flex-shrink-0' />
+          <span className='truncate'>+{reward.value} Points</span>
+        </div>
+      );
     case 'stat':
       return (
         <div className={`${baseClasses} bg-blue-50 text-blue-700`}>
@@ -122,15 +128,22 @@ function RewardDisplay({ reward }: { reward: Reward & { itemName?: string } }) {
             <path d='M10 9H8' />
           </svg>
           <span className='truncate'>
-            +{reward.value} {reward.key || `Stat Point${reward.value > 1 ? 's' : ''}`}
+            +{reward.value}{' '}
+            {reward.key || `Stat Point${reward.value > 1 ? 's' : ''}`}
           </span>
         </div>
       );
     case 'item':
       if (!reward.key) return null;
-      
+
       // Use the new ItemReward component
-      return <ItemReward itemId={reward.key} quantity={reward.value} className='pointer-events-auto' />;
+      return (
+        <ItemReward
+          itemId={reward.key}
+          quantity={reward.value}
+          className='pointer-events-auto'
+        />
+      );
     default:
       return null;
   }
@@ -193,7 +206,9 @@ function SkillTreeNodeComponent({ data }: { data: any }) {
       >
         <Card
           className={`flex h-full w-[220px] flex-col overflow-hidden transition-all sm:w-[250px] ${
-            isCompleted ? 'border-green-500/50 bg-green-50 dark:bg-green-900/50' : ''
+            isCompleted
+              ? 'border-green-500/50 bg-green-50 dark:bg-green-900/50'
+              : ''
           } ${isUnlocked ? 'border-primary/50 bg-card shadow-md' : ''} ${
             isLocked ? 'opacity-70 saturate-50' : ''
           }`}
@@ -224,7 +239,7 @@ function SkillTreeNodeComponent({ data }: { data: any }) {
               )}
             </div>
             <CardTitle className='mt-2 text-base'>{node.title}</CardTitle>
-            <CardDescription className='line-clamp-3 mt-1 text-xs'>
+            <CardDescription className='mt-1 line-clamp-3 text-xs'>
               {node.description}
             </CardDescription>
 
@@ -241,8 +256,10 @@ function SkillTreeNodeComponent({ data }: { data: any }) {
           <CardFooter className='border-t bg-card/50 p-2'>
             <Button
               size='sm'
-              variant={isCompleted ? 'outline' : isUnlocked ? 'default' : 'secondary'}
-              className={`w-full pointer-events-auto ${
+              variant={
+                isCompleted ? 'outline' : isUnlocked ? 'default' : 'secondary'
+              }
+              className={`pointer-events-auto w-full ${
                 isLocked ? 'cursor-not-allowed opacity-50' : ''
               }`}
               disabled={isLocked}

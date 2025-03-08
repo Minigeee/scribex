@@ -11,21 +11,27 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { ItemReward } from '@/components/ui/item-reward';
-import { Tables } from '@/lib/database.types';
+import { useCharacterStats } from '@/lib/hooks/use-character-stats';
 import { useQuestPrompt } from '@/lib/hooks/use-quest-prompt';
-import { CoinsIcon, Loader2Icon, ScrollIcon, TrophyIcon } from 'lucide-react';
+import {
+  QuestWithGenre,
+  StatPrerequisite,
+} from '@/lib/types/database-extensions';
+import {
+  AlertCircleIcon,
+  CoinsIcon,
+  ChartBarIcon,
+  Loader2Icon,
+  ScrollIcon,
+  TrophyIcon,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
 
-// Define types and styles
-type Quest = Tables<'quests'> & {
-  genres: Tables<'genres'> | null;
-};
-
 // Define reward types
-type RewardType = 'experience' | 'currency' | 'stat' | 'item';
+type RewardType = 'experience' | 'currency' | 'stat' | 'item' | 'points';
 
 interface Reward {
   type: RewardType;
@@ -61,6 +67,13 @@ function RewardDisplay({ reward }: { reward: Reward & { itemName?: string } }) {
         <div className={`${baseClasses} bg-yellow-50 text-yellow-700`}>
           <CoinsIcon className='h-3 w-3 flex-shrink-0' />
           <span className='truncate'>+{reward.value} Coins</span>
+        </div>
+      );
+    case 'points':
+      return (
+        <div className={`${baseClasses} bg-indigo-50 text-indigo-700`}>
+          <ChartBarIcon className='h-3 w-3 flex-shrink-0' />
+          <span className='truncate'>+{reward.value} Points</span>
         </div>
       );
     case 'stat':
@@ -106,24 +119,90 @@ function RewardDisplay({ reward }: { reward: Reward & { itemName?: string } }) {
   }
 }
 
+// Component to display stat prerequisites
+function StatPrerequisiteDisplay({
+  prerequisite,
+  currentValue,
+}: {
+  prerequisite: StatPrerequisite;
+  currentValue: number;
+}) {
+  const isMet = currentValue >= prerequisite.value;
+
+  return (
+    <div
+      className={`flex items-center gap-1 rounded-md px-1.5 py-0.5 text-2xs font-medium ${
+        isMet ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+      }`}
+    >
+      {isMet ? (
+        <svg
+          xmlns='http://www.w3.org/2000/svg'
+          width='10'
+          height='10'
+          viewBox='0 0 24 24'
+          fill='none'
+          stroke='currentColor'
+          strokeWidth='2'
+          strokeLinecap='round'
+          strokeLinejoin='round'
+          className='flex-shrink-0'
+        >
+          <path d='M20 6L9 17l-5-5' />
+        </svg>
+      ) : (
+        <AlertCircleIcon className='h-3 w-3 flex-shrink-0' />
+      )}
+      <span className='truncate'>
+        {prerequisite.stat}: {currentValue}/{prerequisite.value}
+      </span>
+    </div>
+  );
+}
+
 interface QuestCardProps {
-  quest: Quest;
+  quest: QuestWithGenre;
 }
 
 export function QuestCard({ quest }: QuestCardProps) {
-  const [isStarting, setIsStarting] = useState(false);
   const router = useRouter();
+  const [isStarting, setIsStarting] = useState(false);
+  const { questData, isLoading: isLoadingPrompt } = useQuestPrompt(quest.id);
+  const { characterStats, isLoading: isLoadingStats } = useCharacterStats();
 
-  // Use the React Query hook for the quest prompt
-  const { questData, isLoading } = useQuestPrompt(quest.id);
   const questPrompt = questData?.quest.prompt;
+
+  // Get stat prerequisites from quest prerequisite_stats field
+  const prerequisiteStatsObj =
+    (quest.prerequisite_stats as Record<string, number>) || {};
+
+  // Convert prerequisite_stats object to array of StatPrerequisite objects
+  const statPrerequisites = Object.entries(prerequisiteStatsObj).map(
+    ([stat, value]) => ({ stat, value })
+  );
+
+  // Check if all prerequisites are met
+  const allPrerequisitesMet = statPrerequisites.every(
+    (prereq) => (characterStats[prereq.stat] || 0) >= prereq.value
+  );
 
   // Handle the start quest action
   const handleStartQuest = async () => {
     try {
       setIsStarting(true);
       const result = await startQuest(quest.id);
-      if (result && result.projectId) {
+
+      if (
+        result &&
+        'error' in result &&
+        result.error === 'PREREQUISITES_NOT_MET'
+      ) {
+        toast.error(result.message);
+        setIsStarting(false);
+        return;
+      }
+
+      if (result && 'projectId' in result) {
         toast.success('Quest started! You can now begin writing.');
         router.push(`/writing/${result.projectId}`);
       } else {
@@ -155,7 +234,7 @@ export function QuestCard({ quest }: QuestCardProps) {
         <CardTitle className='text-base'>{quest.title}</CardTitle>
       </CardHeader>
       <CardContent className='space-y-2 pb-2'>
-        {isLoading ? (
+        {isLoadingPrompt ? (
           <div className='flex items-center justify-center rounded-md bg-muted p-3'>
             <Loader2Icon className='h-4 w-4 animate-spin text-muted-foreground' />
             <span className='ml-2 text-xs text-muted-foreground'>
@@ -178,6 +257,29 @@ export function QuestCard({ quest }: QuestCardProps) {
           </div>
         )}
 
+        {/* Stat prerequisites section */}
+        {statPrerequisites.length > 0 && (
+          <div className='mt-2'>
+            <h4 className='mb-1 text-xs font-medium'>Requirements:</h4>
+            <div className='flex flex-wrap gap-1.5'>
+              {isLoadingStats ? (
+                <div className='flex items-center gap-1 rounded-md bg-gray-50 px-1.5 py-0.5 text-2xs font-medium text-gray-700'>
+                  <Loader2Icon className='h-3 w-3 animate-spin' />
+                  <span>Loading requirements...</span>
+                </div>
+              ) : (
+                statPrerequisites.map((prerequisite, index) => (
+                  <StatPrerequisiteDisplay
+                    key={`${prerequisite.stat}-${index}`}
+                    prerequisite={prerequisite}
+                    currentValue={characterStats[prerequisite.stat] || 0}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Rewards section */}
         {rewards && rewards.length > 0 && (
           <div className='mt-2'>
@@ -197,12 +299,21 @@ export function QuestCard({ quest }: QuestCardProps) {
         <Button
           className='w-full'
           onClick={handleStartQuest}
-          disabled={isStarting}
+          disabled={
+            isStarting ||
+            isLoadingStats ||
+            (statPrerequisites.length > 0 && !allPrerequisitesMet)
+          }
         >
           {isStarting ? (
             <>
               <Loader2Icon className='mr-2 h-4 w-4 animate-spin' />
               Starting Quest...
+            </>
+          ) : statPrerequisites.length > 0 && !allPrerequisitesMet ? (
+            <>
+              <AlertCircleIcon className='mr-2 h-4 w-4' />
+              Requirements Not Met
             </>
           ) : (
             <>

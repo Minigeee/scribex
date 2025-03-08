@@ -148,6 +148,30 @@ BEGIN
                         WHERE id = p_character_id;
                     END IF;
                     
+                WHEN 'points' THEN
+                    -- Award points to current leaderboard
+                    UPDATE public.leaderboards
+                    SET points = points + (v_reward->>'value')::INTEGER,
+                        updated_at = now()
+                    WHERE character_id = p_character_id
+                    AND start_time <= now()
+                    AND end_time > now();
+                    
+                    -- If no active leaderboard exists, create one for the current week
+                    IF NOT FOUND THEN
+                        INSERT INTO public.leaderboards (
+                            character_id,
+                            points,
+                            start_time,
+                            end_time
+                        ) VALUES (
+                            p_character_id,
+                            (v_reward->>'value')::INTEGER,
+                            date_trunc('week', now()),
+                            date_trunc('week', now()) + interval '1 week'
+                        );
+                    END IF;
+
                 WHEN 'item' THEN
                     -- Award item
                     IF v_reward->>'key' IS NOT NULL THEN
@@ -195,7 +219,6 @@ BEGIN
                     END IF;
                 ELSE
                     -- Handle custom reward types
-                    -- The JSON structure allows for custom reward types to be processed here
                     NULL;
             END CASE;
         END LOOP;

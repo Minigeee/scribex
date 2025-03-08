@@ -14,6 +14,7 @@ import {
 import { Json, Tables } from '@/lib/database.types';
 import { useBreakpoint } from '@/lib/hooks/use-breakpoint';
 import { reconstructMapData, SanitizedMapData } from '@/lib/map-utils';
+import { QuestWithGenre } from '@/lib/types/database-extensions';
 import { User } from '@supabase/supabase-js';
 import {
   BaseEdge,
@@ -178,7 +179,7 @@ function WorldLocationNode({ data }: NodeProps) {
   return (
     <>
       <motion.div
-        className='group relative pointer-events-auto'
+        className='group pointer-events-auto relative'
         initial='initial'
         animate='animate'
         variants={nodeVariants}
@@ -271,7 +272,7 @@ function WorldLocationNode({ data }: NodeProps) {
               ) : (
                 <div className='grid gap-4 sm:grid-cols-1'>
                   {location.quests.map((quest) => (
-                    <QuestCard key={quest.id} quest={quest} />
+                    <QuestCard key={quest.id} quest={quest as QuestWithGenre} />
                   ))}
                 </div>
               )}
@@ -365,7 +366,7 @@ function WorldMapStraightEdge({ source, target, style }: EdgeProps) {
   }
 
   const { sx, sy, tx, ty } = getEdgeParams(sourceNode, targetNode);
-  
+
   const [edgePath] = getStraightPath({
     sourceX: sx,
     sourceY: sy,

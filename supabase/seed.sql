@@ -1259,7 +1259,8 @@ VALUES
    '[
      {"type": "experience", "value": 50},
      {"type": "currency", "value": 25},
-     {"type": "stat", "value": 1}
+     {"type": "stat", "value": 1},
+     {"type": "points", "value": 10}
    ]', 
    '/icons/skills/paragraph.svg'),
    
@@ -1268,7 +1269,8 @@ VALUES
    '[
      {"type": "experience", "value": 75},
      {"type": "currency", "value": 30},
-     {"type": "stat", "value": 1}
+     {"type": "stat", "value": 1},
+     {"type": "points", "value": 15}
    ]', 
    '/icons/skills/topic.svg'),
    
@@ -1277,7 +1279,8 @@ VALUES
    '[
      {"type": "experience", "value": 75},
      {"type": "currency", "value": 30},
-     {"type": "stat", "value": 1}
+     {"type": "stat", "value": 1},
+     {"type": "points", "value": 15}
    ]', 
    '/icons/skills/details.svg'),
    
@@ -1286,7 +1289,8 @@ VALUES
    '[
      {"type": "experience", "value": 75},
      {"type": "currency", "value": 30},
-     {"type": "stat", "value": 1}
+     {"type": "stat", "value": 1},
+     {"type": "points", "value": 15}
    ]', 
    '/icons/skills/conclusion.svg'),
    
@@ -1297,6 +1301,7 @@ VALUES
      {"type": "experience", "value": 100},
      {"type": "currency", "value": 50},
      {"type": "stat", "value": 2},
+     {"type": "points", "value": 25},
      {"type": "item", "key": "tied_scroll", "value": 1}
    ]', 
    '/icons/skills/thesis.svg'),
@@ -1307,7 +1312,8 @@ VALUES
    '[
      {"type": "experience", "value": 150},
      {"type": "currency", "value": 75},
-     {"type": "stat", "value": 3}
+     {"type": "stat", "value": 3},
+     {"type": "points", "value": 35}
    ]', 
    '/icons/skills/argument.svg'),
    
@@ -1317,6 +1323,7 @@ VALUES
      {"type": "experience", "value": 200},
      {"type": "currency", "value": 100},
      {"type": "stat", "value": 2},
+     {"type": "points", "value": 50},
      {"type": "item", "key": "tied_scroll", "value": 1}
    ]', 
    '/icons/skills/fallacies.svg'),
@@ -1327,6 +1334,7 @@ VALUES
      {"type": "experience", "value": 300},
      {"type": "currency", "value": 150},
      {"type": "stat", "value": 5},
+     {"type": "points", "value": 75},
      {"type": "item", "key": "orb_1", "value": 1}
    ]', 
    '/icons/skills/synthesis.svg');
@@ -1424,16 +1432,17 @@ VALUES
    '[
      {"type": "experience", "value": 50},
      {"type": "currency", "value": 25},
-     {"type": "stat", "value": 1}
+     {"type": "stat", "value": 1},
+     {"type": "points", "value": 10}
    ]', 
    '/icons/skills/punctuation.svg'),
    
-  ('40000000-0000-0000-0000-000000000002', 'Subject-Verb Agreement', 'Master the rules of making subjects and verbs agree in your writing', 'lesson', 1, '00000000-0000-0000-0000-000000000002', 
-   '{"40000000-0000-0000-0000-000000000001"}', 
+  ('40000000-0000-0000-0000-000000000002', 'Subject-Verb Agreement', 'Master the rules of making subjects and verbs agree in your writing', 'lesson', 1, '40000000-0000-0000-0000-000000000001', 
    '[
      {"type": "experience", "value": 75},
      {"type": "currency", "value": 30},
-     {"type": "stat", "value": 2}
+     {"type": "stat", "value": 2},
+     {"type": "points", "value": 15}
    ]', 
    '/icons/skills/grammar.svg'),
    
@@ -1443,7 +1452,8 @@ VALUES
    '[
      {"type": "experience", "value": 100},
      {"type": "currency", "value": 40},
-     {"type": "stat", "value": 2}
+     {"type": "stat", "value": 2},
+     {"type": "points", "value": 25}
    ]', 
    '/icons/skills/sentence.svg'),
    
@@ -1452,7 +1462,8 @@ VALUES
    '[
      {"type": "experience", "value": 75},
      {"type": "currency", "value": 30},
-     {"type": "stat", "value": 1}
+     {"type": "stat", "value": 1},
+     {"type": "points", "value": 15}
    ]', 
    '/icons/skills/parts-speech.svg'),
    
@@ -1462,6 +1473,7 @@ VALUES
      {"type": "experience", "value": 150},
      {"type": "currency", "value": 75},
      {"type": "stat", "value": 3},
+     {"type": "points", "value": 35},
      {"type": "item", "key": "grammar_tome", "value": 1}
    ]', 
    '/icons/skills/advanced-grammar.svg');
@@ -1474,16 +1486,17 @@ VALUES
    '[
      {"type": "experience", "value": 50},
      {"type": "currency", "value": 25},
-     {"type": "stat", "value": 1}
+     {"type": "stat", "value": 1},
+     {"type": "points", "value": 10}
    ]', 
    '/icons/skills/audience.svg'),
    
   ('50000000-0000-0000-0000-000000000002', 'Developing Voice', 'Discover techniques to create a distinctive writing style', 'lesson', 3, '00000000-0000-0000-0000-000000000006', 
-   '{"50000000-0000-0000-0000-000000000001"}', 
    '[
      {"type": "experience", "value": 75},
      {"type": "currency", "value": 30},
-     {"type": "stat", "value": 2}
+     {"type": "stat", "value": 2},
+     {"type": "points", "value": 15}
    ]', 
    '/icons/skills/voice.svg'),
    
@@ -1493,7 +1506,8 @@ VALUES
    '[
      {"type": "experience", "value": 100},
      {"type": "currency", "value": 40},
-     {"type": "stat", "value": 2}
+     {"type": "stat", "value": 2},
+     {"type": "points", "value": 25}
    ]', 
    '/icons/skills/persuasion.svg'),
    
@@ -1502,7 +1516,8 @@ VALUES
    '[
      {"type": "experience", "value": 100},
      {"type": "currency", "value": 40},
-     {"type": "stat", "value": 2}
+     {"type": "stat", "value": 2},
+     {"type": "points", "value": 25}
    ]', 
    '/icons/skills/rhetoric.svg'),
    
@@ -1512,6 +1527,7 @@ VALUES
      {"type": "experience", "value": 150},
      {"type": "currency", "value": 75},
      {"type": "stat", "value": 3},
+     {"type": "points", "value": 35},
      {"type": "item", "key": "rhetoric_orb", "value": 1}
    ]', 
    '/icons/skills/style.svg');

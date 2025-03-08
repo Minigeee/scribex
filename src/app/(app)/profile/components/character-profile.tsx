@@ -7,13 +7,16 @@ import {
 } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Tables } from '@/lib/database.types';
+import { CharacterStats } from '@/lib/types/character-stats';
 import { capitalize } from 'lodash';
 import { CoinsIcon } from 'lucide-react';
 import Image from 'next/image';
 
 interface CharacterProfileProps {
   profile: Tables<'profiles'>;
-  characterProfile: Tables<'character_profiles'>;
+  characterProfile: Omit<Tables<'character_profiles'>, 'stats'> & {
+    stats: CharacterStats;
+  };
 }
 
 export function CharacterProfile({
@@ -28,7 +31,6 @@ export function CharacterProfile({
   const progressPercentage = Math.floor(
     (xpForCurrentLevel / xpRequiredForNextLevel) * 100
   );
-  console.log(characterProfile.level, characterProfile.experience_points, currentLevelXP, nextLevelXP);
 
   return (
     <Card className='h-full'>
@@ -115,6 +117,6 @@ export function CharacterProfile({
 // Helper function to calculate XP required for a level
 function calculateLevelXP(level: number): number {
   if (level <= 1) return 0;
-  // Simple formula: 100 * level^2
+  // Simple formula: 10 * level^2
   return 10 * Math.pow(level, 2);
 }

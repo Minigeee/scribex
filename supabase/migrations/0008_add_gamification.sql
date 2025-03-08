@@ -2,7 +2,7 @@
 -- Adds tables and functions for the gamification features in the MVP
 
 -- Create a custom type for reward schema
-CREATE TYPE public.reward_type AS ENUM ('experience', 'currency', 'stat', 'item');
+CREATE TYPE public.reward_type AS ENUM ('experience', 'currency', 'stat', 'item', 'points');
 
 -- Create a general reward schema using JSONB for flexibility
 CREATE TABLE IF NOT EXISTS public.reward_definitions (
@@ -26,17 +26,6 @@ CREATE TABLE IF NOT EXISTS public.character_profiles (
     stats JSONB NOT NULL DEFAULT '{}'::jsonb, -- Character stats stored as JSON
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
-);
-
--- Character stats
-CREATE TABLE IF NOT EXISTS public.character_stats (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    character_id UUID NOT NULL REFERENCES public.character_profiles(id) ON DELETE CASCADE,
-    stat_name VARCHAR(50) NOT NULL,
-    stat_value INTEGER NOT NULL DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
-    UNIQUE(character_id, stat_name)
 );
 
 -- Skill tree nodes
@@ -133,6 +122,7 @@ CREATE TABLE IF NOT EXISTS public.quests (
     prompt TEXT,
     prompt_expires_at TIMESTAMP WITH TIME ZONE,
     rewards JSONB DEFAULT '[]'::jsonb, -- Direct JSON array of rewards
+    prerequisite_stats JSONB DEFAULT '{}'::jsonb,
     prerequisite_quests UUID[] DEFAULT '{}',
     available_from TIMESTAMP WITH TIME ZONE,
     available_until TIMESTAMP WITH TIME ZONE,
@@ -218,12 +208,7 @@ BEGIN
     ) VALUES (
         user_id,
         character_class,
-        '{
-            "clarity": 1,
-            "creativity": 1,
-            "persuasion": 1,
-            "vocabulary": 1
-        }'::jsonb
+        '{}'::jsonb
     )
     RETURNING id INTO character_id;
     
@@ -370,6 +355,30 @@ BEGIN
                         WHERE id = p_character_id;
                     END IF;
                     
+                WHEN 'points' THEN
+                    -- Award points to current leaderboard
+                    UPDATE public.leaderboards
+                    SET points = points + (v_reward->>'value')::INTEGER,
+                        updated_at = now()
+                    WHERE character_id = p_character_id
+                    AND start_time <= now()
+                    AND end_time > now();
+                    
+                    -- If no active leaderboard exists, create one for the current week
+                    IF NOT FOUND THEN
+                        INSERT INTO public.leaderboards (
+                            character_id,
+                            points,
+                            start_time,
+                            end_time
+                        ) VALUES (
+                            p_character_id,
+                            (v_reward->>'value')::INTEGER,
+                            date_trunc('week', now()),
+                            date_trunc('week', now()) + interval '1 week'
+                        );
+                    END IF;
+
                 WHEN 'item' THEN
                     -- Award item
                     IF v_reward->>'key' IS NOT NULL THEN
@@ -389,7 +398,6 @@ BEGIN
                     END IF;
                 ELSE
                     -- Handle custom reward types
-                    -- The JSON structure allows for custom reward types to be processed here
                     NULL;
             END CASE;
         END LOOP;
@@ -558,7 +566,6 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Add RLS policies for the new tables
 ALTER TABLE public.reward_definitions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.character_profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.character_stats ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.skill_tree_nodes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.item_templates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.character_inventory ENABLE ROW LEVEL SECURITY;
@@ -585,12 +592,6 @@ CREATE POLICY "Users can update their own character profile"
 ON public.character_profiles FOR UPDATE
 TO authenticated
 USING (id = auth.uid());
-
--- Character stats policies
-CREATE POLICY "Users can view their own character stats"
-ON public.character_stats FOR SELECT
-TO authenticated
-USING (character_id = auth.uid());
 
 -- Skill tree nodes policies
 CREATE POLICY "Anyone can view skill tree nodes"
@@ -667,10 +668,6 @@ FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 CREATE TRIGGER update_character_profiles_updated_at
 BEFORE UPDATE ON public.character_profiles
-FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
-CREATE TRIGGER update_character_stats_updated_at
-BEFORE UPDATE ON public.character_stats
 FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 CREATE TRIGGER update_skill_tree_nodes_updated_at
