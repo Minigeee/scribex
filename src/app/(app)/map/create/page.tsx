@@ -360,7 +360,7 @@ export default function MapCreatePage() {
   const reactFlowEdges: ReactFlowEdge[] = [];
 
   return (
-    <div className='relative h-screen w-full'>
+    <div className='relative h-screen w-full bg-background text-foreground'>
       <ReactFlowProvider>
         <Flow
           nodes={nodes}
@@ -391,7 +391,7 @@ export default function MapCreatePage() {
 
           <Panel
             position='top-left'
-            className='rounded-md bg-white/90 p-2 text-xs text-gray-500 shadow-sm backdrop-blur-sm'
+            className='rounded-md bg-background/90 p-2 text-xs text-muted-foreground shadow-sm backdrop-blur-sm'
           >
             Use mouse wheel to zoom and drag to pan
           </Panel>
@@ -399,7 +399,7 @@ export default function MapCreatePage() {
           {/* Map Controls Panel */}
           <Panel
             position='top-right'
-            className='max-h-[90vh] w-80 overflow-y-auto rounded-md bg-white/95 p-4 shadow-md backdrop-blur-sm'
+            className='max-h-[90vh] w-80 overflow-y-auto rounded-md bg-background/95 p-4 shadow-md backdrop-blur-sm'
           >
             <h2 className='mb-4 text-lg font-semibold'>Map Controls</h2>
             <MapControls
@@ -429,12 +429,12 @@ export default function MapCreatePage() {
 
       {/* POI Details Sheet */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent>
+        <SheetContent className="bg-background text-foreground">
           {selectedPOI && (
             <>
               <SheetHeader>
                 <SheetTitle>{selectedPOI.name}</SheetTitle>
-                <SheetDescription>
+                <SheetDescription className="text-muted-foreground">
                   <Badge variant='outline'>{selectedPOI.locationType}</Badge>
                 </SheetDescription>
               </SheetHeader>
@@ -487,7 +487,7 @@ export default function MapCreatePage() {
       {/* Display save status */}
       {isSaving && statusText && (
         <div className='fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-md'>
-          <Alert>
+          <Alert variant="default" className="border bg-background">
             <div className='flex items-center gap-2'>
               <Loader2 className='h-4 w-4 animate-spin text-primary' />
               <AlertDescription className='font-medium text-foreground'>

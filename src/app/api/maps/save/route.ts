@@ -185,11 +185,13 @@ async function generateWorldLocationsWithContext(
   serviceClient?: ReturnType<typeof createServiceClient>,
   worldId?: string
 ): Promise<Record<string, GeneratedLocationInfo>> {
+  const BATCH_SIZE = 5;
+
   // Group locations into smaller batches for context-aware generation
   // We'll use batches of 3 to allow more context per batch
   const batches: SaveMapInput['locations'][] = [];
-  for (let i = 0; i < locations.length; i += 3) {
-    batches.push(locations.slice(i, i + 3));
+  for (let i = 0; i < locations.length; i += BATCH_SIZE) {
+    batches.push(locations.slice(i, i + BATCH_SIZE));
   }
 
   const generatedLocations: Record<string, GeneratedLocationInfo> = {};

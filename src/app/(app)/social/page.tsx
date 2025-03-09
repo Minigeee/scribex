@@ -348,11 +348,11 @@ export default function SocialPage() {
       key={user.id}
       className={`flex items-center justify-between rounded-lg p-3 ${
         index === 0
-          ? 'bg-amber-100'
+          ? 'bg-amber-100 dark:bg-amber-950/50 dark:text-amber-100'
           : index === 1
-            ? 'bg-slate-100'
+            ? 'bg-slate-100 dark:bg-slate-800/60 dark:text-slate-100'
             : index === 2
-              ? 'bg-orange-100'
+              ? 'bg-orange-100 dark:bg-orange-950/50 dark:text-orange-100'
               : 'bg-background'
       }`}
     >
