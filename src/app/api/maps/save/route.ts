@@ -95,7 +95,7 @@ type SaveMapInput = {
 // Configure a higher limit for the API route
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 300; // 5 minutes
+export const maxDuration = 60; // 1 minute
 export const fetchCache = 'force-no-store';
 
 // Find nearby biome for a location based on its position
