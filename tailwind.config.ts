@@ -69,14 +69,18 @@ const config: Config = {
       },
       // Synthwave/Cyberpunk effects
       boxShadow: {
-        'neon-purple': '0 0 5px hsl(var(--primary)), 0 0 20px hsl(var(--primary))',
-        'neon-blue': '0 0 5px hsl(var(--secondary)), 0 0 20px hsl(var(--secondary))',
+        'neon-purple':
+          '0 0 5px hsl(var(--primary)), 0 0 20px hsl(var(--primary))',
+        'neon-blue':
+          '0 0 5px hsl(var(--secondary)), 0 0 20px hsl(var(--secondary))',
         'neon-green': '0 0 5px hsl(var(--accent)), 0 0 20px hsl(var(--accent))',
-        'neon-pink': '0 0 5px hsl(var(--destructive)), 0 0 20px hsl(var(--destructive))',
+        'neon-pink':
+          '0 0 5px hsl(var(--destructive)), 0 0 20px hsl(var(--destructive))',
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'cyber-grid': 'linear-gradient(rgba(0, 194, 255, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 194, 255, 0.1) 1px, transparent 1px)',
+        'cyber-grid':
+          'linear-gradient(rgba(0, 194, 255, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 194, 255, 0.1) 1px, transparent 1px)',
       },
       backgroundSize: {
         'cyber-grid': '20px 20px',

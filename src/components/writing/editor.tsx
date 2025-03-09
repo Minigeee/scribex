@@ -17,9 +17,9 @@ import {
 import { useBreakpoint } from '@/lib/hooks/use-breakpoint';
 import { cn } from '@/lib/utils';
 import sanitizeHtml from '@/lib/utils/sanitize-html';
+import Placeholder from '@tiptap/extension-placeholder';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Placeholder from '@tiptap/extension-placeholder';
 import {
   Bold,
   Code,
@@ -289,9 +289,11 @@ export function Editor({
         ),
       },
     },
-    extensions: [StarterKit, Placeholder.configure({
-      placeholder: 'Start writing...',
-    }),
+    extensions: [
+      StarterKit,
+      Placeholder.configure({
+        placeholder: 'Start writing...',
+      }),
     ],
     content: initialContent,
     editable,

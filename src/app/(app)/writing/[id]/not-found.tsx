@@ -12,8 +12,7 @@ export default function ProjectNotFound() {
         Project Not Found
       </h1>
       <p className='mb-8 max-w-md text-muted-foreground'>
-        The writing project you're looking for doesn't exist or you don't have
-        permission to view it.
+        {`The writing project you're looking for doesn't exist or you don't have permission to view it.`}
       </p>
       <Button asChild>
         <Link href='/writing'>Return to Projects</Link>

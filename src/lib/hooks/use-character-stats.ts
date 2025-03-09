@@ -1,6 +1,5 @@
 'use client';
 
-import { Tables } from '@/lib/database.types';
 import { createClient } from '@/lib/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 
@@ -13,21 +12,23 @@ export function useCharacterStats() {
     queryKey: ['character-stats'],
     queryFn: async () => {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) {
         return null;
       }
-      
+
       const { data: characterProfile } = await supabase
         .from('character_profiles')
         .select('stats')
         .eq('id', user.id)
         .single();
-      
-      return characterProfile ? 
-        (characterProfile.stats as Record<string, number> || {}) : 
-        {};
+
+      return characterProfile
+        ? (characterProfile.stats as Record<string, number>) || {}
+        : {};
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -37,4 +38,4 @@ export function useCharacterStats() {
     isLoading,
     error,
   };
-} 
+}

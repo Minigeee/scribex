@@ -1,8 +1,8 @@
 import { ItemIcon } from '@/components/ui/item-icon';
+import { ItemPopover } from '@/components/ui/item-popover';
 import { getRarityColor, type Rarity } from '@/components/ui/rarity';
 import { useItem } from '@/lib/hooks/use-item';
 import { cn } from '@/lib/utils';
-import { ItemPopover } from '@/components/ui/item-popover';
 
 interface ItemRewardProps {
   itemId: string;
@@ -23,7 +23,7 @@ export function ItemReward({
   const content = (
     <div
       className={cn(
-        'flex items-center gap-1 rounded-md px-1.5 py-0.5 text-2xs font-medium cursor-default',
+        'flex cursor-default items-center gap-1 rounded-md px-1.5 py-0.5 text-2xs font-medium',
         item?.rarity && getRarityColor(item.rarity as Rarity),
         className
       )}

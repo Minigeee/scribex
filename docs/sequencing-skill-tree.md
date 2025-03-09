@@ -12,19 +12,19 @@ graph TD
     A[Basic Paragraph Structure] --> B[Topic Sentences]
     A --> C[Supporting Details]
     A --> D[Concluding Sentences]
-    
+
     %% Topic Sentence branch
     B --> E[Thesis Statements]
     B --> F[Main Idea Identification]
-    
+
     %% Supporting Details branch
     C --> G[Evidence Types]
     C --> H[Elaboration Techniques]
-    
+
     %% Concluding Sentences branch
     D --> I[Summary Techniques]
     D --> J[Closing Thoughts]
-    
+
     %% Mid-level connections
     E --> K[Argumentative Structure]
     F --> K
@@ -32,7 +32,7 @@ graph TD
     H --> L
     I --> M[Cohesion & Transitions]
     J --> M
-    
+
     %% Higher-level skills
     K --> N[Logical Fallacies]
     K --> O[Counterarguments]
@@ -40,7 +40,7 @@ graph TD
     L --> Q[Citation & Attribution]
     M --> R[Flow & Rhythm]
     M --> S[Organizational Patterns]
-    
+
     %% Advanced skills
     N --> T[Advanced Argumentation]
     O --> T
@@ -48,12 +48,12 @@ graph TD
     Q --> U
     R --> V[Structural Coherence]
     S --> V
-    
+
     %% Mastery level
     T --> W[Persuasive Writing Mastery]
     U --> X[Analytical Writing Mastery]
     V --> Y[Narrative Structure Mastery]
-    
+
     %% Cross-connections
     K --> P
     R --> O

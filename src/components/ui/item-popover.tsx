@@ -1,16 +1,20 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ItemIcon } from '@/components/ui/item-icon';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { ItemIcon } from '@/components/ui/item-icon';
-import { RarityBadge, getRarityColor, type Rarity } from '@/components/ui/rarity';
+import {
+  RarityBadge,
+  getRarityColor,
+  type Rarity,
+} from '@/components/ui/rarity';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { ReactNode, useState } from 'react';
 
 export interface ItemDetails {
   id: string;
@@ -89,8 +93,14 @@ export function ItemPopover({
                       className='flex items-center gap-1 text-2xs'
                     >
                       <span className='capitalize'>{stat}:</span>
-                      <span className={cn('font-medium', value > 0 ? 'text-green-600' : 'text-red-600')}>
-                        {value > 0 ? '+' : ''}{value}
+                      <span
+                        className={cn(
+                          'font-medium',
+                          value > 0 ? 'text-green-600' : 'text-red-600'
+                        )}
+                      >
+                        {value > 0 ? '+' : ''}
+                        {value}
                       </span>
                     </div>
                   ))}
@@ -101,14 +111,18 @@ export function ItemPopover({
               <span className='capitalize'>{item.item_type}</span>
               {quantity > 1 && <span>Quantity: {quantity}</span>}
             </div>
-            
+
             {showEquipButton && (
               <div className='mt-3 flex items-center justify-between'>
-                {equipped && <Badge variant="outline" className="text-xs">Equipped</Badge>}
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-7 text-xs ml-auto"
+                {equipped && (
+                  <Badge variant='outline' className='text-xs'>
+                    Equipped
+                  </Badge>
+                )}
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  className='ml-auto h-7 text-xs'
                   onClick={(e) => {
                     e.stopPropagation();
                     onEquipToggle?.();
@@ -123,4 +137,4 @@ export function ItemPopover({
       </PopoverContent>
     </Popover>
   );
-} 
+}

@@ -1,7 +1,14 @@
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
-export type Rarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic' | 'divine';
+export type Rarity =
+  | 'common'
+  | 'uncommon'
+  | 'rare'
+  | 'epic'
+  | 'legendary'
+  | 'mythic'
+  | 'divine';
 
 export const RARITY_COLORS = {
   common: 'bg-gray-50 text-gray-700',
@@ -22,11 +29,7 @@ export function RarityBadge({ rarity, className }: RarityBadgeProps) {
   return (
     <Badge
       variant='default'
-      className={cn(
-        'text-2xs capitalize',
-        RARITY_COLORS[rarity],
-        className
-      )}
+      className={cn('text-2xs capitalize', RARITY_COLORS[rarity], className)}
     >
       {rarity}
     </Badge>
@@ -35,4 +38,4 @@ export function RarityBadge({ rarity, className }: RarityBadgeProps) {
 
 export function getRarityColor(rarity: Rarity) {
   return RARITY_COLORS[rarity];
-} 
+}

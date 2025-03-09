@@ -10,7 +10,7 @@ export type Quest = Tables<'quests'> & {
 export interface StatPrerequisite {
   stat: string;
   value: number;
-} 
+}
 
 // Extend the Quest type to include genres which is in the database schema
 export type QuestWithGenre = Quest & {

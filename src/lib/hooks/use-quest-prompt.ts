@@ -31,4 +31,4 @@ export function useQuestPrompt(questId: string | null) {
     isLoading,
     error,
   };
-} 
+}

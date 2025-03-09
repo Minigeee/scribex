@@ -404,6 +404,7 @@ export function createModelConfig(
   try {
     env = envSchema.parse(process.env);
   } catch (error) {
+    console.error(error);
     console.warn('Failed to parse environment variables for AI configuration');
     env = {
       DEFAULT_AI_PROVIDER: 'google' as AIModelProvider,

@@ -13,105 +13,105 @@
     /* Base */
     --background: 240 15% 98%;
     --foreground: 240 10% 10%;
-    
+
     /* Card/Container Elements */
     --card: 240 15% 98%;
     --card-foreground: 240 10% 10%;
     --popover: 240 15% 98%;
     --popover-foreground: 240 10% 10%;
-    
+
     /* Primary - Fuchsia Purple (matching icon gradients) */
     --primary: 270 76% 53%;
     --primary-foreground: 240 15% 98%;
-    
+
     /* Secondary - Electric Blue */
     --secondary: 196 100% 50%;
     --secondary-foreground: 240 15% 98%;
-    
+
     /* Muted - Metallic Gray (lighter for light mode) */
     --muted: 240 10% 85%;
     --muted-foreground: 240 5% 30%;
-    
+
     /* Accent - Muted Slate (replacing bright green) */
     --accent: 240 15% 70%;
     --accent-foreground: 240 15% 98%;
-    
+
     /* Destructive - Neon Pink */
     --destructive: 341 100% 58%;
     --destructive-foreground: 240 15% 98%;
-    
+
     /* UI Elements */
     --border: 240 10% 90%;
     --input: 240 10% 80%;
     --ring: 270 76% 53%;
-    
+
     /* Chart Colors */
     --chart-1: 270 76% 53%; /* Fuchsia Purple */
     --chart-2: 196 100% 50%; /* Electric Blue */
     --chart-3: 240 15% 60%; /* Muted Slate */
     --chart-4: 341 100% 58%; /* Neon Pink */
     --chart-5: 28 100% 70%; /* Sunset Orange */
-    
+
     /* Additional Theme Colors */
     --digital-teal: 158 100% 51%;
     --sunset-orange: 28 100% 70%;
-    
+
     /* Cyberpunk Theme Colors */
     --fuchsia-glow: 277 93% 57%;
     --cyan-glow: 196 100% 50%;
     --purple-dark: 270 50% 20%;
     --indigo-dark: 240 50% 20%;
-    
+
     --radius: 0.5rem;
   }
-  
+
   .dark {
     /* Base */
     --background: 240 20% 12%;
     --foreground: 240 15% 98%;
-    
+
     /* Card/Container Elements */
     --card: 240 25% 15%;
     --card-foreground: 240 15% 98%;
     --popover: 240 25% 15%;
     --popover-foreground: 240 15% 98%;
-    
+
     /* Primary - Fuchsia Purple (matching icon gradients) */
     --primary: 270 76% 53%;
     --primary-foreground: 240 15% 98%;
-    
+
     /* Secondary - Electric Blue */
     --secondary: 196 100% 50%;
     --secondary-foreground: 240 15% 98%;
-    
+
     /* Muted - Metallic Gray (darker for dark mode) */
     --muted: 240 15% 20%;
     --muted-foreground: 240 10% 70%;
-    
+
     /* Accent - Muted Slate (replacing bright green) */
     --accent: 240 15% 60%;
     --accent-foreground: 240 15% 98%;
-    
+
     /* Destructive - Neon Pink */
     --destructive: 341 100% 58%;
     --destructive-foreground: 240 15% 98%;
-    
+
     /* UI Elements */
     --border: 240 20% 25%;
     --input: 240 20% 25%;
     --ring: 270 76% 53%;
-    
+
     /* Chart Colors */
     --chart-1: 270 76% 53%; /* Fuchsia Purple */
     --chart-2: 196 100% 50%; /* Electric Blue */
     --chart-3: 240 15% 60%; /* Muted Slate */
     --chart-4: 341 100% 58%; /* Neon Pink */
     --chart-5: 28 100% 70%; /* Sunset Orange */
-    
+
     /* Additional Theme Colors */
     --digital-teal: 158 100% 51%;
     --sunset-orange: 28 100% 70%;
-    
+
     /* Cyberpunk Theme Colors */
     --fuchsia-glow: 277 93% 57%;
     --cyan-glow: 196 100% 50%;
@@ -134,95 +134,95 @@
   .neon-glow {
     @apply relative;
   }
-  
+
   .neon-glow::after {
-    content: "";
-    @apply absolute inset-0 opacity-50 blur-sm -z-10;
+    content: '';
+    @apply absolute inset-0 -z-10 opacity-50 blur-sm;
     background: inherit;
   }
-  
+
   .neon-purple-glow::after {
     @apply bg-[hsl(var(--primary))];
   }
-  
+
   .neon-blue-glow::after {
     @apply bg-[hsl(var(--secondary))];
   }
-  
+
   .neon-green-glow::after {
     @apply bg-[hsl(var(--accent))];
   }
-  
+
   .neon-pink-glow::after {
     @apply bg-[hsl(var(--destructive))];
   }
-  
+
   .gradient-bg {
     @apply bg-gradient-to-br from-[hsl(var(--background))] to-[hsl(240,25%,8%)];
   }
-  
+
   .glass-panel {
-    @apply bg-card/80 backdrop-blur-md border border-white/10;
+    @apply border border-white/10 bg-card/80 backdrop-blur-md;
   }
-  
+
   /* Cyberpunk Theme Components */
   .cyberpunk-bg {
     @apply bg-gradient-to-b from-black via-purple-950 to-indigo-950;
   }
-  
+
   .cyberpunk-card {
-    @apply bg-black/30 backdrop-blur-sm border border-white/10 rounded-xl;
+    @apply rounded-xl border border-white/10 bg-black/30 backdrop-blur-sm;
   }
-  
+
   .cyberpunk-card-hover {
-    @apply hover:border-fuchsia-500/50 transition-all;
+    @apply transition-all hover:border-fuchsia-500/50;
   }
-  
+
   .cyberpunk-card-hover-blue {
-    @apply hover:border-cyan-500/50 transition-all;
+    @apply transition-all hover:border-cyan-500/50;
   }
-  
+
   .cyberpunk-card-hover-purple {
-    @apply hover:border-purple-500/50 transition-all;
+    @apply transition-all hover:border-purple-500/50;
   }
-  
+
   .cyberpunk-gradient-text {
     @apply bg-gradient-to-r from-fuchsia-500 to-cyan-500 bg-clip-text text-transparent;
   }
-  
+
   .cyberpunk-button {
-    @apply px-6 py-3 rounded-full bg-gradient-to-r from-fuchsia-600 to-cyan-600 hover:from-fuchsia-500 hover:to-cyan-500 transition-all text-center font-medium;
+    @apply rounded-full bg-gradient-to-r from-fuchsia-600 to-cyan-600 px-6 py-3 text-center font-medium transition-all hover:from-fuchsia-500 hover:to-cyan-500;
   }
-  
+
   .cyberpunk-button-outline {
-    @apply px-6 py-3 rounded-full border border-white/20 hover:bg-white/10 transition-all text-center;
+    @apply rounded-full border border-white/20 px-6 py-3 text-center transition-all hover:bg-white/10;
   }
-  
+
   .cyberpunk-icon-bg {
-    @apply rounded-lg bg-gradient-to-br flex items-center justify-center;
+    @apply flex items-center justify-center rounded-lg bg-gradient-to-br;
   }
-  
+
   .cyberpunk-icon-bg-purple {
     @apply bg-gradient-to-br from-fuchsia-600 to-purple-800;
   }
-  
+
   .cyberpunk-icon-bg-blue {
     @apply bg-gradient-to-br from-cyan-600 to-blue-800;
   }
-  
+
   .cyberpunk-icon-bg-green {
     @apply bg-gradient-to-br from-green-600 to-teal-800;
   }
-  
+
   .cyberpunk-icon-bg-pink {
     @apply bg-gradient-to-br from-fuchsia-600 to-pink-800;
   }
-  
+
   .cyberpunk-glow-effect {
-    @apply absolute blur-[100px] opacity-20 rounded-full;
+    @apply absolute rounded-full opacity-20 blur-[100px];
   }
-  
+
   .cyberpunk-grid-overlay {
-    @apply absolute inset-0 bg-[url('/grid-overlay.svg')] opacity-20 z-0;
+    @apply absolute inset-0 z-0 bg-[url('/grid-overlay.svg')] opacity-20;
   }
 }

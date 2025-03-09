@@ -72,4 +72,4 @@ export type MapConfig = {
   };
 };
 
-export type MapViewType = 'biomes' | 'elevation' | 'moisture' | 'stylized'; 
+export type MapViewType = 'biomes' | 'elevation' | 'moisture' | 'stylized';

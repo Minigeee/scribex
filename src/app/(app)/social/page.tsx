@@ -1,29 +1,26 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
+  CalendarIcon,
+  CrownIcon,
+  FlameIcon,
+  GemIcon,
+  ScrollIcon,
+  ShieldIcon,
+  StarIcon,
   TrophyIcon,
   UsersIcon,
-  StarIcon,
-  ShieldIcon,
-  BookOpenIcon,
-  CalendarIcon,
-  FlameIcon,
-  CrownIcon,
-  ScrollIcon,
-  CheckCircleIcon,
-  GemIcon,
-  SwordIcon,
 } from 'lucide-react';
 
 export default function SocialPage() {
@@ -373,14 +370,16 @@ export default function SocialPage() {
           <AvatarImage src={user.avatar} alt={user.name} />
         </Avatar>
         <div>
-          <div className="flex items-center gap-2">
+          <div className='flex items-center gap-2'>
             <p className='font-medium'>{user.name}</p>
-            <Badge variant="outline" className={user.factionColor + " text-xs"}>
+            <Badge variant='outline' className={user.factionColor + ' text-xs'}>
               {user.faction}
             </Badge>
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span>Lvl {user.level} {user.characterClass}</span>
+          <div className='flex items-center gap-2 text-xs text-muted-foreground'>
+            <span>
+              Lvl {user.level} {user.characterClass}
+            </span>
             <span>•</span>
             <span>{user.streak} day streak</span>
           </div>
@@ -411,12 +410,14 @@ export default function SocialPage() {
         <div className='flex h-8 w-8 items-center justify-center rounded-full bg-muted font-semibold'>
           {faction.rank}
         </div>
-        <div className={`flex h-10 w-10 items-center justify-center rounded-full ${faction.color.split(' ')[0]} border`}>
-          <ShieldIcon className="h-5 w-5" />
+        <div
+          className={`flex h-10 w-10 items-center justify-center rounded-full ${faction.color.split(' ')[0]} border`}
+        >
+          <ShieldIcon className='h-5 w-5' />
         </div>
         <div>
           <p className='font-medium'>{faction.name}</p>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className='flex items-center gap-2 text-xs text-muted-foreground'>
             <span>{faction.members} members</span>
             <span>•</span>
             <span>{faction.specialization}</span>
@@ -435,7 +436,8 @@ export default function SocialPage() {
       <div>
         <h1 className='text-3xl font-bold tracking-tight'>Social Hub</h1>
         <p className='mt-2 text-muted-foreground'>
-          Connect with your faction, compete in events, and climb the leaderboards
+          Connect with your faction, compete in events, and climb the
+          leaderboards
         </p>
       </div>
 
@@ -488,48 +490,50 @@ export default function SocialPage() {
 
         {/* Faction Card */}
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className='pb-3'>
             <CardTitle>Your Faction</CardTitle>
             <CardDescription>Word Wizards</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-center">
-              <div className="h-20 w-20 rounded-full bg-blue-100 flex items-center justify-center border-2 border-blue-500">
-                <ShieldIcon className="h-10 w-10 text-blue-700" />
+          <CardContent className='space-y-4'>
+            <div className='flex items-center justify-center'>
+              <div className='flex h-20 w-20 items-center justify-center rounded-full border-2 border-blue-500 bg-blue-100'>
+                <ShieldIcon className='h-10 w-10 text-blue-700' />
               </div>
             </div>
-            
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Faction Level</span>
-                <span className="font-medium">Level {userFaction.level}</span>
+
+            <div className='space-y-2'>
+              <div className='flex justify-between text-sm'>
+                <span className='text-muted-foreground'>Faction Level</span>
+                <span className='font-medium'>Level {userFaction.level}</span>
               </div>
-              <Progress value={userFaction.progress} className="h-2" />
-              <p className="text-xs text-muted-foreground text-right">{userFaction.progress}% to Level {userFaction.level + 1}</p>
+              <Progress value={userFaction.progress} className='h-2' />
+              <p className='text-right text-xs text-muted-foreground'>
+                {userFaction.progress}% to Level {userFaction.level + 1}
+              </p>
             </div>
-            
-            <div className="space-y-1">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Members</span>
+
+            <div className='space-y-1'>
+              <div className='flex justify-between text-sm'>
+                <span className='text-muted-foreground'>Members</span>
                 <span>{userFaction.members}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Your Role</span>
+              <div className='flex justify-between text-sm'>
+                <span className='text-muted-foreground'>Your Role</span>
                 <span>{userFaction.role}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">HQ Rooms</span>
+              <div className='flex justify-between text-sm'>
+                <span className='text-muted-foreground'>HQ Rooms</span>
                 <span>{userFaction.headquarters.rooms}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Trophies</span>
+              <div className='flex justify-between text-sm'>
+                <span className='text-muted-foreground'>Trophies</span>
                 <span>{userFaction.headquarters.trophies}</span>
               </div>
             </div>
           </CardContent>
           <CardFooter>
-            <Button className="w-full">
-              <ShieldIcon className="mr-2 h-4 w-4" />
+            <Button className='w-full'>
+              <ShieldIcon className='mr-2 h-4 w-4' />
               Visit Faction HQ
             </Button>
           </CardFooter>
@@ -538,17 +542,17 @@ export default function SocialPage() {
 
       {/* World Events Section */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight mb-4">World Events</h2>
-        <div className="grid gap-4 md:grid-cols-3">
+        <h2 className='mb-4 text-2xl font-bold tracking-tight'>World Events</h2>
+        <div className='grid gap-4 md:grid-cols-3'>
           {worldEvents.map((event) => (
             <Card key={event.id}>
-              <CardHeader className="pb-3">
-                <div className="flex justify-between items-start">
+              <CardHeader className='pb-3'>
+                <div className='flex items-start justify-between'>
                   <div>
                     <CardTitle>{event.title}</CardTitle>
                     <CardDescription>{event.description}</CardDescription>
                   </div>
-                  <Badge 
+                  <Badge
                     variant={event.status === 'active' ? 'default' : 'outline'}
                     className={event.status === 'active' ? 'bg-green-500' : ''}
                   >
@@ -556,25 +560,25 @@ export default function SocialPage() {
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground flex items-center">
-                    <UsersIcon className="h-4 w-4 mr-1" /> Participants
+              <CardContent className='space-y-3'>
+                <div className='flex justify-between text-sm'>
+                  <span className='flex items-center text-muted-foreground'>
+                    <UsersIcon className='mr-1 h-4 w-4' /> Participants
                   </span>
                   <span>{event.participants}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground flex items-center">
-                    <CalendarIcon className="h-4 w-4 mr-1" /> Time Left
+                <div className='flex justify-between text-sm'>
+                  <span className='flex items-center text-muted-foreground'>
+                    <CalendarIcon className='mr-1 h-4 w-4' /> Time Left
                   </span>
                   <span>{event.daysLeft} days</span>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Rewards:</p>
-                  <ul className="text-sm space-y-1">
+                <div className='space-y-1'>
+                  <p className='text-sm text-muted-foreground'>Rewards:</p>
+                  <ul className='space-y-1 text-sm'>
                     {event.rewards.map((reward, index) => (
-                      <li key={index} className="flex items-center">
-                        <StarIcon className="h-3 w-3 mr-1 text-amber-500" />
+                      <li key={index} className='flex items-center'>
+                        <StarIcon className='mr-1 h-3 w-3 text-amber-500' />
                         {reward}
                       </li>
                     ))}
@@ -582,12 +586,14 @@ export default function SocialPage() {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button 
-                  className="w-full" 
+                <Button
+                  className='w-full'
                   variant={event.status === 'active' ? 'default' : 'outline'}
                   disabled={event.status !== 'active'}
                 >
-                  {event.status === 'active' ? 'Participate Now' : 'Coming Soon'}
+                  {event.status === 'active'
+                    ? 'Participate Now'
+                    : 'Coming Soon'}
                 </Button>
               </CardFooter>
             </Card>
@@ -597,50 +603,58 @@ export default function SocialPage() {
 
       {/* Peer Review Section */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight mb-4">Peer Reviews</h2>
+        <h2 className='mb-4 text-2xl font-bold tracking-tight'>Peer Reviews</h2>
         <Card>
           <CardHeader>
             <CardTitle>Available Reviews</CardTitle>
             <CardDescription>
-              Review other students' work to earn points and improve your critical analysis skills
+              {`Review other students' work to earn points and improve your critical analysis skills`}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className='space-y-4'>
               {peerReviews.map((review) => (
-                <div key={review.id} className="flex items-center justify-between border rounded-lg p-4">
+                <div
+                  key={review.id}
+                  className='flex items-center justify-between rounded-lg border p-4'
+                >
                   <div>
-                    <h3 className="font-medium">{review.title}</h3>
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-sm text-muted-foreground mt-1">
-                      <span className="flex items-center">
-                        <ScrollIcon className="h-3 w-3 mr-1" /> {review.wordCount} words
+                    <h3 className='font-medium'>{review.title}</h3>
+                    <div className='mt-1 flex flex-col gap-1 text-sm text-muted-foreground sm:flex-row sm:items-center sm:gap-3'>
+                      <span className='flex items-center'>
+                        <ScrollIcon className='mr-1 h-3 w-3' />{' '}
+                        {review.wordCount} words
                       </span>
-                      <span className="hidden sm:inline">•</span>
-                      <span className="flex items-center">
-                        <ClockIcon className="h-3 w-3 mr-1" /> {review.timeEstimate}
+                      <span className='hidden sm:inline'>•</span>
+                      <span className='flex items-center'>
+                        <ClockIcon className='mr-1 h-3 w-3' />{' '}
+                        {review.timeEstimate}
                       </span>
-                      <span className="hidden sm:inline">•</span>
-                      <span className="flex items-center">
-                        <CalendarIcon className="h-3 w-3 mr-1" /> Due in {review.dueIn}
+                      <span className='hidden sm:inline'>•</span>
+                      <span className='flex items-center'>
+                        <CalendarIcon className='mr-1 h-3 w-3' /> Due in{' '}
+                        {review.dueIn}
                       </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="text-right hidden sm:block">
-                      <p className="font-medium text-primary">{review.rewardPoints}</p>
-                      <p className="text-xs text-muted-foreground">points</p>
+                  <div className='flex items-center gap-3'>
+                    <div className='hidden text-right sm:block'>
+                      <p className='font-medium text-primary'>
+                        {review.rewardPoints}
+                      </p>
+                      <p className='text-xs text-muted-foreground'>points</p>
                     </div>
-                    <Button size="sm">Review</Button>
+                    <Button size='sm'>Review</Button>
                   </div>
                 </div>
               ))}
             </div>
           </CardContent>
-          <CardFooter className="flex justify-between">
-            <p className="text-sm text-muted-foreground">
-              You've completed 8 reviews this week
+          <CardFooter className='flex justify-between'>
+            <p className='text-sm text-muted-foreground'>
+              {`You've completed 8 reviews this week`}
             </p>
-            <Button variant="outline" size="sm">
+            <Button variant='outline' size='sm'>
               View Your Reviews
             </Button>
           </CardFooter>
@@ -649,13 +663,13 @@ export default function SocialPage() {
 
       {/* Leaderboards Section */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight mb-4">Leaderboards</h2>
+        <h2 className='mb-4 text-2xl font-bold tracking-tight'>Leaderboards</h2>
         <Tabs defaultValue='individual' className='w-full'>
           <TabsList className='grid w-full grid-cols-2'>
             <TabsTrigger value='individual'>Individual Rankings</TabsTrigger>
             <TabsTrigger value='factions'>Faction Rankings</TabsTrigger>
           </TabsList>
-          
+
           {/* Individual Rankings Tab */}
           <TabsContent value='individual' className='mt-6'>
             <Tabs defaultValue='class'>
@@ -675,7 +689,7 @@ export default function SocialPage() {
               </TabsContent>
             </Tabs>
           </TabsContent>
-          
+
           {/* Faction Rankings Tab */}
           <TabsContent value='factions' className='mt-6 space-y-4'>
             {factionLeaderboard.map((faction, index) =>
@@ -692,19 +706,19 @@ export default function SocialPage() {
 function ClockIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      xmlns='http://www.w3.org/2000/svg'
+      width='24'
+      height='24'
+      viewBox='0 0 24 24'
+      fill='none'
+      stroke='currentColor'
+      strokeWidth='2'
+      strokeLinecap='round'
+      strokeLinejoin='round'
       {...props}
     >
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
+      <circle cx='12' cy='12' r='10' />
+      <polyline points='12 6 12 12 16 14' />
     </svg>
   );
 }

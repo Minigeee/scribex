@@ -29,7 +29,7 @@ export async function startQuest(questId: string) {
 
     if (!characterProfile) {
       // Call the database function to create a character profile
-      const { data, error } = await supabase.rpc('create_character_profile', {
+      const { error } = await supabase.rpc('create_character_profile', {
         user_id: user.id,
       });
 

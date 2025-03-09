@@ -3,7 +3,6 @@
 import { completeQuestProject } from '@/app/actions/complete-quest-project';
 import { Button } from '@/components/ui/button';
 import { Tables } from '@/lib/database.types';
-import { createClient } from '@/lib/supabase/client';
 import { CheckCircle2Icon, ChevronRightIcon, MapIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -33,8 +32,6 @@ export function ProjectActionsPanel({
   wordCount,
 }: ProjectActionsPanelProps) {
   const router = useRouter();
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isChangingStatus, setIsChangingStatus] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
   const [localProjectStatus, setLocalProjectStatus] = useState(project.status);
 
@@ -44,70 +41,6 @@ export function ProjectActionsPanel({
   const wordCountTarget = metadata?.word_count_target || 0;
   const hasMetWordCount = wordCount >= wordCountTarget;
   const isCompleted = localProjectStatus === 'completed';
-
-  const handleDelete = async () => {
-    if (
-      !confirm(
-        'Are you sure you want to delete this project? This action cannot be undone.'
-      )
-    ) {
-      return;
-    }
-
-    setIsDeleting(true);
-    const supabase = createClient();
-
-    try {
-      const { error } = await supabase
-        .from('projects')
-        .delete()
-        .eq('id', project.id);
-
-      if (error) throw error;
-
-      toast.success('Project deleted successfully');
-      router.push('/writing');
-    } catch (error) {
-      console.error('Error deleting project:', error);
-      toast.error('Failed to delete project');
-      setIsDeleting(false);
-    }
-  };
-
-  const handleStatusChange = async (newStatus: string) => {
-    setIsChangingStatus(true);
-    const supabase = createClient();
-
-    try {
-      const { error } = await supabase
-        .from('projects')
-        .update({
-          status: newStatus,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', project.id);
-
-      if (error) throw error;
-
-      toast.success(`Project marked as ${newStatus.replace('_', ' ')}`);
-      router.refresh();
-    } catch (error) {
-      console.error('Error updating project status:', error);
-      toast.error('Failed to update project status');
-    } finally {
-      setIsChangingStatus(false);
-    }
-  };
-
-  const handleExport = () => {
-    // This would be implemented to export the project content
-    toast.info('Export functionality coming soon');
-  };
-
-  const handleShare = () => {
-    // This would be implemented to share the project
-    toast.info('Share functionality coming soon');
-  };
 
   const handleCompleteQuest = async () => {
     if (!isQuestProject || isCompleted) return;
@@ -200,7 +133,7 @@ export function ProjectActionsPanel({
               <CheckCircle2Icon className='mx-auto mb-2 h-5 w-5 text-green-500' />
               <p className='font-medium text-green-500'>Quest Completed!</p>
               <p className='mt-1 text-xs text-muted-foreground'>
-                You've successfully completed this quest and earned rewards.
+                {`You've successfully completed this quest and earned rewards.`}
               </p>
               <Button
                 onClick={handleNavigateToMap}

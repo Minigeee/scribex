@@ -2,7 +2,6 @@
 
 import { generateCompletion } from '@/app/actions/generate-completion';
 import { type ConversationStarter as BaseConversationStarter } from '@/app/actions/generate-conversation-starters';
-import { generateResearchQuestions } from '@/app/actions/generate-research-questions';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -103,7 +102,7 @@ export function ChatInterface({
   );
   const [activeSystemPrompt, setActiveSystemPrompt] = useState(systemPrompt);
   const [aiLoading, setAiLoading] = useState(false);
-  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
+  const [isGeneratingQuestions] = useState(false);
   const [
     hasGeneratedQuestionsForCurrentConversation,
     setHasGeneratedQuestionsForCurrentConversation,
@@ -140,86 +139,6 @@ export function ChatInterface({
     if (!project || !project.genres) return false;
     return RESEARCH_GENRES.includes(project.genres.name.toLowerCase());
   }, [project]);
-
-  // Generate research questions when needed
-  const generateResearchQuestionsForProject = useCallback(async () => {
-    if (
-      !project ||
-      !projectContent ||
-      !isResearchGenre ||
-      isGeneratingQuestions ||
-      hasGeneratedQuestionsForCurrentConversation
-    ) {
-      // Log why we're not generating questions for debugging
-      if (isResearchGenre && !isGeneratingQuestions) {
-        console.log('Skipping research questions generation:', {
-          hasProject: !!project,
-          hasContent: !!projectContent,
-          isResearchGenre,
-          isGeneratingQuestions,
-          hasGeneratedQuestionsForCurrentConversation,
-        });
-      }
-      return;
-    }
-
-    console.log('Generating research questions for project:', project.title);
-    setIsGeneratingQuestions(true);
-
-    // Create placeholder starters with loading state
-    const placeholderStarters: ConversationStarter[] = Array(3)
-      .fill(null)
-      .map((_, i) => ({
-        title: `Research question ${i + 1}`,
-        prompt: 'Generating research question...',
-        isLoading: true,
-      }));
-
-    // Update starters with placeholders
-    setConversationStarters((current) => {
-      // Keep any custom starters that aren't research questions
-      const nonResearchStarters = current.filter(
-        (starter) => !starter.title.includes('Research question')
-      );
-      return [...nonResearchStarters, ...placeholderStarters];
-    });
-
-    try {
-      // Generate research questions
-      const researchQuestions = await generateResearchQuestions(
-        project.title,
-        project.prompt || 'None',
-        projectContent,
-        project.genres?.name || null
-      );
-
-      // Update starters with generated questions
-      setConversationStarters((current) => {
-        // Keep any custom starters that aren't research questions
-        const nonResearchStarters = current.filter(
-          (starter) => !starter.title.includes('Research question')
-        );
-        return [
-          ...(customStarters ?? nonResearchStarters),
-          ...researchQuestions,
-        ];
-      });
-
-      // Mark that we've generated questions for this conversation
-      setHasGeneratedQuestionsForCurrentConversation(true);
-    } catch (error) {
-      console.error('Error generating research questions:', error);
-    } finally {
-      setIsGeneratingQuestions(false);
-    }
-  }, [
-    project,
-    projectContent,
-    isResearchGenre,
-    isGeneratingQuestions,
-    hasGeneratedQuestionsForCurrentConversation,
-    customStarters,
-  ]);
 
   // Scroll to the latest message when messages change
   useEffect(() => {

@@ -3,8 +3,8 @@
 import { cn } from '@/lib/utils';
 import {
   HomeIcon,
-  NetworkIcon,
   MapIcon,
+  NetworkIcon,
   TrophyIcon,
   UserIcon,
 } from 'lucide-react';
@@ -61,8 +61,9 @@ export function MobileNav() {
       <div className='mx-auto flex h-16 max-w-md items-center justify-around px-4'>
         {navItems.map((item) => {
           const isActive = pathname === item.href;
-          const gradientClass = navItemGradients[item.href] || 'from-gray-600 to-gray-800';
-          
+          const gradientClass =
+            navItemGradients[item.href] || 'from-gray-600 to-gray-800';
+
           return (
             <Link
               key={item.href}
@@ -75,15 +76,22 @@ export function MobileNav() {
               )}
               aria-label={item.name}
             >
-              <div className={cn(
-                'flex h-8 w-8 items-center justify-center rounded-md',
-                isActive 
-                  ? `bg-gradient-to-br ${gradientClass} shadow-sm` 
-                  : 'bg-transparent'
-              )}>
-                <item.icon className={cn('h-5 w-5', isActive ? 'text-white' : 'text-current')} />
+              <div
+                className={cn(
+                  'flex h-8 w-8 items-center justify-center rounded-md',
+                  isActive
+                    ? `bg-gradient-to-br ${gradientClass} shadow-sm`
+                    : 'bg-transparent'
+                )}
+              >
+                <item.icon
+                  className={cn(
+                    'h-5 w-5',
+                    isActive ? 'text-white' : 'text-current'
+                  )}
+                />
               </div>
-              <span className="text-xs font-medium">{item.name}</span>
+              <span className='text-xs font-medium'>{item.name}</span>
             </Link>
           );
         })}

@@ -158,7 +158,10 @@ const statusStyles: Record<
 function WorldLocationNode({ data }: NodeProps) {
   const location = data.location as LocationWithStatus;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const locationDescription = useMemo(() => location.description?.split('\n\n')?.[0], [location.description]);
+  const locationDescription = useMemo(
+    () => location.description?.split('\n\n')?.[0],
+    [location.description]
+  );
 
   const locationType = location.location_type || 'default';
   const status = location.status || 'locked';
@@ -189,7 +192,11 @@ function WorldLocationNode({ data }: NodeProps) {
         {/* POI Node */}
         <div
           className={`relative flex h-3 w-3 items-center justify-center rounded-full ${
-            status === 'locked' ? 'bg-gray-200' : status === 'completed' ? 'bg-green-200' : 'bg-white'
+            status === 'locked'
+              ? 'bg-gray-200'
+              : status === 'completed'
+                ? 'bg-green-200'
+                : 'bg-white'
           }`}
           style={{
             border: `1px solid ${style.color}`,
@@ -445,7 +452,7 @@ export function WorldMapFlow({ locations, edges, mapData }: WorldMapFlowProps) {
 
   // Set up React Flow state
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edgeList, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [edgeList, , onEdgesChange] = useEdgesState(initialEdges);
 
   // Update nodes when locations change
   useEffect(() => {

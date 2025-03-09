@@ -3,8 +3,8 @@ import { Tables } from '@/lib/database.types';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { Metadata } from 'next';
-import { WorldMapFlow } from './world-map-flow';
 import { redirect } from 'next/navigation';
+import { WorldMapFlow } from './world-map-flow';
 
 export const metadata: Metadata = {
   title: 'World Map | ScribeX',
@@ -158,7 +158,11 @@ export default async function MapPage() {
     .single();
 
   // Redirect to create map page if no world exists or if world data is empty
-  if (!world || !world.data || (typeof world.data === 'object' && Object.keys(world.data).length === 0)) {
+  if (
+    !world ||
+    !world.data ||
+    (typeof world.data === 'object' && Object.keys(world.data).length === 0)
+  ) {
     redirect('/map/create');
   }
 
@@ -168,7 +172,7 @@ export default async function MapPage() {
     .select('*')
     .eq('world_id', world.id);
 
-  let locations: WorldLocation[] = existingLocations || [];
+  const locations: WorldLocation[] = existingLocations || [];
 
   // Get quests for these locations
   const { data: existingQuests } = await supabase
@@ -179,7 +183,7 @@ export default async function MapPage() {
       locations.map((loc) => loc.id)
     );
 
-  let quests: Quest[] = existingQuests || [];
+  const quests: Quest[] = existingQuests || [];
 
   // Get node status for character
   const { data: nodeStatus } = await supabase
@@ -270,10 +274,13 @@ export default async function MapPage() {
               <span className='font-medium'>
                 {
                   locationsWithStatus
-                    .filter(loc => loc.status === 'unlocked' || loc.status === 'completed')
-                    .flatMap(loc => loc.quests)
-                    .length
-                } Available
+                    .filter(
+                      (loc) =>
+                        loc.status === 'unlocked' || loc.status === 'completed'
+                    )
+                    .flatMap((loc) => loc.quests).length
+                }{' '}
+                Available
               </span>
             </div>
           </div>

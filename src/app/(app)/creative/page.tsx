@@ -34,7 +34,7 @@ export default function CreativePage() {
       <div>
         <h1 className='text-3xl font-bold tracking-tight'>Creative Tools</h1>
         <p className='mt-2 text-muted-foreground'>
-          Get inspiration and overcome writer's block
+          {`Get inspiration and overcome writer's block`}
         </p>
       </div>
 
@@ -46,7 +46,7 @@ export default function CreativePage() {
           </TabsTrigger>
           <TabsTrigger value='writers-block'>
             <BrainIcon className='mr-2 h-4 w-4' />
-            Writer's Block
+            {`Writer's Block`}
           </TabsTrigger>
         </TabsList>
 
@@ -129,10 +129,9 @@ export default function CreativePage() {
         <TabsContent value='writers-block' className='mt-6'>
           <Card>
             <CardHeader>
-              <CardTitle>Writer's Block Assistant</CardTitle>
+              <CardTitle>{`Writer's Block Assistant`}</CardTitle>
               <CardDescription>
-                Stuck on your writing? Describe what you're working on and get
-                suggestions to help you move forward.
+                {`Stuck on your writing? Describe what you're working on and get suggestions to help you move forward.`}
               </CardDescription>
             </CardHeader>
             <CardContent className='space-y-4'>
@@ -153,9 +152,7 @@ export default function CreativePage() {
                   Suggestions will appear here
                 </h3>
                 <p className='text-sm text-muted-foreground'>
-                  Enter a description of your writing project or where you're
-                  stuck, and our AI will provide suggestions to help you
-                  overcome writer's block.
+                  {`Enter a description of your writing project or where you're stuck, and our AI will provide suggestions to help you overcome writer's block.`}
                 </p>
               </div>
             </CardContent>

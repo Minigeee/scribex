@@ -1,5 +1,6 @@
 'use client';
 
+import { processNodeCompletion } from '@/app/actions/process-node-completion';
 import { ArticleContent } from '@/components/lessons/article-content';
 import { ExerciseItem } from '@/components/lessons/exercise-item';
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Check, CheckCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { processNodeCompletion } from '@/app/actions/process-node-completion';
 import { toast } from 'sonner';
 
 interface LessonClientProps {
@@ -60,7 +60,7 @@ export function LessonClient({ lesson, userId }: LessonClientProps) {
   // This is a simple approach that doesn't require database queries
   const userLevel = useMemo(() => {
     // Base level is 15, and each completed exercise adds 2 levels, up to a max of 50
-    return Math.min(15 + (completedExercises * 2), 50);
+    return Math.min(15 + completedExercises * 2, 50);
   }, [completedExercises]);
 
   // Update areExercisesCompleted whenever exercises state changes
@@ -74,7 +74,7 @@ export function LessonClient({ lesson, userId }: LessonClientProps) {
   }, [exercises, totalExercises]);
 
   // Query to check if article is read
-  const { data: articleReadData, isLoading: isLoadingArticleRead } = useQuery({
+  const { data: articleReadData } = useQuery({
     queryKey: ['articleRead', lesson.id, userId],
     queryFn: async () => {
       const { data } = await supabase
@@ -193,7 +193,9 @@ export function LessonClient({ lesson, userId }: LessonClientProps) {
       if (completed) {
         toast.success(`Exercise completed with a score of ${score}%!`);
       } else if (score >= 70) {
-        toast.info(`Good progress! Your score: ${score}%. Try again to complete.`);
+        toast.info(
+          `Good progress! Your score: ${score}%. Try again to complete.`
+        );
       } else {
         toast.warning(`Your score: ${score}%. Review feedback and try again.`);
       }
@@ -204,11 +206,11 @@ export function LessonClient({ lesson, userId }: LessonClientProps) {
       // If all exercises are now completed, process the node completion
       if (allCompleted && !areExercisesCompleted) {
         console.log('All exercises completed for lesson:', lesson.id);
-        
+
         // Call the server action to process node completion
         // The server action will verify completion status before awarding rewards
         const result = await processNodeCompletion(userId, lesson.id);
-        
+
         if (result.success) {
           toast.success('Lesson completed! Rewards have been granted.');
         } else {
@@ -234,7 +236,7 @@ export function LessonClient({ lesson, userId }: LessonClientProps) {
   };
 
   return (
-    <div className='container mx-auto max-w-4xl px-5 pt-8 pb-20'>
+    <div className='container mx-auto max-w-4xl px-5 pb-20 pt-8'>
       <div className='mb-8'>
         <Button
           variant='ghost'
@@ -369,7 +371,7 @@ export function LessonClient({ lesson, userId }: LessonClientProps) {
                       All exercises completed!
                     </h3>
                     <p className='text-sm text-green-700'>
-                      Great job! You've completed all exercises in this lesson.
+                      {`Great job! You've completed all exercises in this lesson.`}
                     </p>
                   </div>
                 </CardContent>

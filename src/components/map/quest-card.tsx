@@ -20,8 +20,8 @@ import {
 import { capitalize } from 'lodash';
 import {
   AlertCircleIcon,
-  CoinsIcon,
   ChartBarIcon,
+  CoinsIcon,
   Loader2Icon,
   ScrollIcon,
   TrophyIcon,

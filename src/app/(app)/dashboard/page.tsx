@@ -9,6 +9,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Progress } from '@/components/ui/progress';
 import { createClient } from '@/lib/supabase/server';
 import { CharacterStats } from '@/lib/types/character-stats';
@@ -21,30 +29,19 @@ import {
   CoinsIcon,
   Flame,
   LightbulbIcon,
+  LogOutIcon,
   MapPin,
   NetworkIcon,
   PenToolIcon,
+  SettingsIcon,
   SpeakerIcon,
   Star,
   Trophy,
-  LogOutIcon,
-  SettingsIcon,
   UserIcon,
 } from 'lucide-react';
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import Image from 'next/image';
-import { ItemIcon } from '@/components/ui/item-icon';
-import { Tables } from '@/lib/database.types';
 
 export const metadata: Metadata = {
   title: 'Dashboard | ScribexX',
@@ -192,7 +189,7 @@ export default async function DashboardPage() {
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Avatar className='h-12 w-12 cursor-pointer hover:opacity-80 transition-opacity'>
+              <Avatar className='h-12 w-12 cursor-pointer transition-opacity hover:opacity-80'>
                 <AvatarImage
                   src={profile?.avatar_url || '/avatar-placeholder.png'}
                   alt='Avatar'
@@ -219,7 +216,7 @@ export default async function DashboardPage() {
               <DropdownMenuItem asChild>
                 <Link
                   href='/profile'
-                  className='cursor-pointer flex w-full items-center'
+                  className='flex w-full cursor-pointer items-center'
                 >
                   <UserIcon className='mr-2 h-4 w-4' />
                   <span>Profile</span>
@@ -228,7 +225,7 @@ export default async function DashboardPage() {
               <DropdownMenuItem asChild>
                 <Link
                   href='/settings'
-                  className='cursor-pointer flex w-full items-center'
+                  className='flex w-full cursor-pointer items-center'
                 >
                   <SettingsIcon className='mr-2 h-4 w-4' />
                   <span>Settings</span>
@@ -271,7 +268,7 @@ export default async function DashboardPage() {
                     variant='secondary'
                     className='flex items-center gap-1'
                   >
-                    <CheckCircle className='h-3 w-3' /> Today's Goal Met
+                    <CheckCircle className='h-3 w-3' /> {`Today's Goal Met`}
                   </Badge>
                 ) : (
                   <Badge variant='outline' className='flex items-center gap-1'>

@@ -2,7 +2,7 @@
 
 import { Tables } from '@/lib/database.types';
 import { createClient } from '@/lib/supabase/client';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
 // Define types for projects
@@ -19,8 +19,6 @@ export type Project = Tables<'projects'> & {
  * Hook to fetch and manage user projects
  */
 export function useProjects(userId?: string) {
-  const queryClient = useQueryClient();
-
   // Fetch all projects for a user
   const {
     data: projects = [],

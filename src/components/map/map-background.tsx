@@ -1,8 +1,8 @@
-import { memo, useEffect, useRef } from 'react';
-import { useStore } from '@xyflow/react';
-import { shallow } from 'zustand/shallow';
 import { Center, Corner, Edge, MapViewType } from '@/types/map-types';
 import { renderMap } from '@/utils/canvas-renderers';
+import { useStore } from '@xyflow/react';
+import { memo, useEffect, useRef } from 'react';
+import { shallow } from 'zustand/shallow';
 
 export type MapBackgroundProps = {
   centers: Center[];
@@ -28,26 +28,25 @@ function MapBackgroundComponent({
   view,
   width,
   height,
-  id,
 }: MapBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { transform, dimensions, rfId } = useStore(selector, shallow);
-  
+  const { transform } = useStore(selector, shallow);
+
   // Re-render the map when transform or data changes
   useEffect(() => {
     if (!canvasRef.current) return;
-    
+
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     // Render the map
     renderMap(ctx, centers, edges, corners, view, width, height);
   }, [centers, edges, corners, view, width, height, transform]);
-  
+
   return (
     <div
-      className="react-flow__map-background"
+      className='react-flow__map-background'
       style={{
         position: 'absolute',
         width: '100%',
@@ -67,7 +66,7 @@ function MapBackgroundComponent({
         style={{
           display: 'block',
         }}
-        data-testid="rf__map-background"
+        data-testid='rf__map-background'
       />
     </div>
   );
@@ -75,4 +74,4 @@ function MapBackgroundComponent({
 
 MapBackgroundComponent.displayName = 'MapBackground';
 
-export const MapBackground = memo(MapBackgroundComponent); 
+export const MapBackground = memo(MapBackgroundComponent);

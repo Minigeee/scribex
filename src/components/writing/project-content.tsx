@@ -16,9 +16,7 @@ import {
   BotIcon,
   CheckIcon,
   InfoIcon,
-  MessageSquareIcon,
   PanelRightIcon,
-  WandIcon,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -31,6 +29,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from '../ui/resizable';
+import { ScrollArea } from '../ui/scroll-area';
 import {
   Sheet,
   SheetContent,
@@ -39,7 +38,6 @@ import {
   SheetTrigger,
 } from '../ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { ScrollArea } from '../ui/scroll-area';
 
 type ProjectWithGenre = Tables<'projects'> & {
   genres: Tables<'genres'> | null;
@@ -68,7 +66,6 @@ function SidebarContent({
   onTabChange,
   onProjectUpdate,
   onManualSave,
-  saveStatus,
 }: SidebarContentProps) {
   // Define custom conversation starters with system prompts for the writing project
   const projectConversationStarters: ConversationStarter[] = [
@@ -133,11 +130,14 @@ If they ask you to write the essay/story/article/poem/journal/letter for them, y
 
       <TabsContent value='info' className='flex-1 overflow-auto'>
         <ScrollArea className='h-full'>
-          <div className='px-4 pt-2 pb-20 space-y-4'>
-            <ProjectInfoPanel project={project} onProjectUpdate={onProjectUpdate} />
+          <div className='space-y-4 px-4 pb-20 pt-2'>
+            <ProjectInfoPanel
+              project={project}
+              onProjectUpdate={onProjectUpdate}
+            />
             <ProjectActionsPanel
               project={project}
-          onManualSave={onManualSave}
+              onManualSave={onManualSave}
               wordCount={0}
             />
           </div>

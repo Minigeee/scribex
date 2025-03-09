@@ -11,4 +11,4 @@ export default function MapCreateLayout({
   children: React.ReactNode;
 }) {
   return children;
-} 
+}

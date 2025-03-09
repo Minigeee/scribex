@@ -51,7 +51,10 @@ export default async function SkillTreePage() {
     .order('content_layer_id');
 
   // Fetch character skill node progress if user is logged in
-  let nodeProgress: Record<string, { status: 'locked' | 'unlocked' | 'completed' }> = {};
+  const nodeProgress: Record<
+    string,
+    { status: 'locked' | 'unlocked' | 'completed' }
+  > = {};
 
   if (user) {
     const { data: characterSkillNodes } = await supabase
@@ -63,8 +66,8 @@ export default async function SkillTreePage() {
     if (characterSkillNodes && characterSkillNodes.length > 0) {
       characterSkillNodes.forEach((item) => {
         if (item.node_id) {
-          nodeProgress[item.node_id] = { 
-            status: item.status as 'locked' | 'unlocked' | 'completed'
+          nodeProgress[item.node_id] = {
+            status: item.status as 'locked' | 'unlocked' | 'completed',
           };
         }
       });
@@ -77,11 +80,12 @@ export default async function SkillTreePage() {
   skillTreeNodes?.forEach((node) => {
     // Get node status from character_skill_nodes or default to 'locked'
     const nodeStatus = nodeProgress[node.id]?.status || 'locked';
-    
+
     // For nodes with no prerequisites, default to 'unlocked' if not already set
-    const hasNoPrereqs = !node.prerequisite_nodes || node.prerequisite_nodes.length === 0;
+    const hasNoPrereqs =
+      !node.prerequisite_nodes || node.prerequisite_nodes.length === 0;
     const defaultStatus = hasNoPrereqs ? 'unlocked' : 'locked';
-    
+
     processedNodes.push({
       ...node,
       status: nodeStatus || defaultStatus,
@@ -141,7 +145,9 @@ export default async function SkillTreePage() {
   if (contentLayers) {
     contentLayers.forEach((layer) => {
       const nodes = nodesByLayer[layer.id] || [];
-      const completed = nodes.filter((node) => node.status === 'completed').length;
+      const completed = nodes.filter(
+        (node) => node.status === 'completed'
+      ).length;
       const total = nodes.length;
       const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
 
@@ -205,20 +211,20 @@ export default async function SkillTreePage() {
   const error = contentLayersError || skillTreeNodesError;
 
   return (
-    <div className='flex h-[calc(100vh-4rem)] md:h-screen flex-col bg-gradient-to-b from-background to-background/80 p-0'>
-      <div className='px-5 py-4 md:px-6 md:py-5 border-b'>
-        <div className='flex flex-col gap-2 md:gap-4 md:flex-row md:items-center md:justify-between'>
+    <div className='flex h-[calc(100vh-4rem)] flex-col bg-gradient-to-b from-background to-background/80 p-0 md:h-screen'>
+      <div className='border-b px-5 py-4 md:px-6 md:py-5'>
+        <div className='flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-4'>
           <div>
-            <h1 className='bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-xl md:text-2xl font-bold tracking-tight text-transparent'>
+            <h1 className='bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-xl font-bold tracking-tight text-transparent md:text-2xl'>
               Writing Skill Tree
             </h1>
-            <p className='mt-2 text-muted-foreground hidden md:block'>
+            <p className='mt-2 hidden text-muted-foreground md:block'>
               Complete skill nodes to improve your writing abilities
             </p>
           </div>
 
           {/* Progress indicator */}
-          <div className='flex items-center gap-3 rounded-lg border bg-card px-3 py-2 md:px-3 md:py-3 shadow-sm'>
+          <div className='flex items-center gap-3 rounded-lg border bg-card px-3 py-2 shadow-sm md:px-3 md:py-3'>
             <div className='relative flex h-12 w-12 items-center justify-center'>
               <svg className='h-12 w-12 -rotate-90 transform'>
                 <circle

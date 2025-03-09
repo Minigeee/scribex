@@ -2,6 +2,7 @@
 
 import MapControls from '@/components/map/map-controls';
 import { MapVectorBackground } from '@/components/map/map-vector-background';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,12 +14,8 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { sanitizeMapData } from '@/lib/map-utils';
-import {
-  Center,
-  Corner,
-  Edge,
-  MapConfig,
-} from '@/types/map-types';
+import { createClient } from '@/lib/supabase/client';
+import { Center, Corner, Edge, MapConfig } from '@/types/map-types';
 import { generateMap } from '@/utils/map-generation';
 import { POI, POIGraph, generatePOIs } from '@/utils/poi-generation';
 import {
@@ -30,12 +27,10 @@ import {
   ReactFlowProvider,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState, useRef } from 'react';
-import { toast } from 'sonner';
-import { createClient } from '@/lib/supabase/client';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 export default function MapCreatePage() {
   const router = useRouter();
@@ -134,7 +129,7 @@ export default function MapCreatePage() {
   // Function to poll status updates from the server
   const pollStatusUpdates = async () => {
     if (!worldIdRef.current) return;
-    
+
     try {
       const supabase = createClient();
       const { data, error } = await supabase
@@ -142,15 +137,15 @@ export default function MapCreatePage() {
         .select('status_text')
         .eq('id', worldIdRef.current)
         .single();
-      
+
       if (error) {
         console.error('Error polling status:', error);
         return;
       }
-      
+
       if (data && data.status_text) {
         setStatusText(data.status_text);
-        
+
         // If status indicates completion, stop polling
         if (data.status_text.includes('completed successfully')) {
           if (pollingIntervalRef.current) {
@@ -182,17 +177,19 @@ export default function MapCreatePage() {
 
     setIsSaving(true);
     setStatusText('Initializing map save...');
-    
+
     try {
       // Get current classroom info to find the world ID
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) {
         toast.error('You must be logged in to save a map');
         return;
       }
-      
+
       // Get classroom for teacher
       /* TODO : (When we have teacher/student roles) const { data: classroom } = await supabase
         .from('classrooms')
@@ -208,27 +205,27 @@ export default function MapCreatePage() {
         toast.error('No classroom found for this account');
         return;
       }
-      
+
       // Get world for classroom
       const { data: world } = await supabase
         .from('worlds')
         .select('id')
         .eq('classroom_id', classroom.id)
         .single();
-      
+
       if (!world) {
         toast.error('No world found for classroom');
         return;
       }
-      
+
       // Store world ID for polling
       worldIdRef.current = world.id;
-      
+
       // Start polling for status updates
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
       }
-      
+
       pollingIntervalRef.current = setInterval(pollStatusUpdates, 1000);
 
       // Sanitize the map data to remove circular references
@@ -489,11 +486,11 @@ export default function MapCreatePage() {
 
       {/* Display save status */}
       {isSaving && statusText && (
-        <div className="fixed bottom-4 left-4 right-4 z-50 max-w-md mx-auto">
+        <div className='fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-md'>
           <Alert>
-            <div className="flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin text-primary" />
-              <AlertDescription className="font-medium text-foreground">
+            <div className='flex items-center gap-2'>
+              <Loader2 className='h-4 w-4 animate-spin text-primary' />
+              <AlertDescription className='font-medium text-foreground'>
                 {statusText}
               </AlertDescription>
             </div>

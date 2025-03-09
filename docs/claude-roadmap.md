@@ -2,24 +2,26 @@
 
 ## Personal To Do List
 
-- [X] Look into map / canvas solutions
-- [X] Add basic trees to REDI 1 + 3
-- [X] Add quest stat prereqs
+- [x] Look into map / canvas solutions
+- [x] Add basic trees to REDI 1 + 3
+- [x] Add quest stat prereqs
   - Difficulty determined by distance from starting town
   - Stats (types) required determined by genre (maps to a set of one or two types + chance for random additional stat)
   - Stat points required determined by difficulty
-- [X] Add leaderboard points `points` to reward generation
-  - [X] REDI
-  - [X] OWL
-- [X] Test quest completion by adding a "[TEST] Complete Quest" button
+- [x] Add leaderboard points `points` to reward generation
+  - [x] REDI
+  - [x] OWL
+- [x] Test quest completion by adding a "[TEST] Complete Quest" button
 - [ ] Implement leaderboard
 
 Do if have time:
+
 - [ ] Add AI grading
   - [ ] REDI
   - [ ] OWL
 
 ## Ideas
+
 - What can stat points be used for? It can be used to gate harder/more specialized quests
 - How will leaderboard + factions work? What incentive is there to do well?
   - In terms of personal incentives, a cool looking avatar can be a good incentive for some
@@ -49,17 +51,17 @@ Do if have time:
 
 ## Phase 3: RPG Framework (4-5 weeks)
 
-- [X] Design skill tree visualization
-  - [X] Seed item templates (find an icon pack online)
-  - [X] Add rewards section
-- [X] Design simple world map system
+- [x] Design skill tree visualization
+  - [x] Seed item templates (find an icon pack online)
+  - [x] Add rewards section
+- [x] Design simple world map system
   - [ ] Clean up world map creation screen
   - [ ] Hide locked locations
 - [ ] Implement character profile system
   - [ ] Implement level updating system (rn only xp is added but new levels are not calculated)
-- [X] Create basic inventory system
-- [X] Build quest tracking system
-- [X] Implement reward distribution mechanics
+- [x] Create basic inventory system
+- [x] Build quest tracking system
+- [x] Implement reward distribution mechanics
 - [ ] Create daily quest system
 
 ## Phase 4: Social & Engagement Features (3-4 weeks)

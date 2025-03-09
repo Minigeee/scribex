@@ -416,7 +416,7 @@ export const generatePOIs = async (
 
     // Calculate suitability for all centers for this location type
     let suitableCenters;
-    
+
     if (locationType === 'lake') {
       // For lake POIs, only consider water cells that aren't ocean
       suitableCenters = centers
@@ -456,15 +456,19 @@ export const generatePOIs = async (
           poi.position,
           candidate.center.point
         );
-        
+
         // Apply normal distance check for standard POIs
         if (distance < minDistanceBetweenPOIs) {
           tooClose = true;
           break;
         }
-        
+
         // Apply special constraint for castles - they must be far from other castles
-        if (locationType === 'castle' && poi.locationType === 'castle' && distance < castleMinDistance) {
+        if (
+          locationType === 'castle' &&
+          poi.locationType === 'castle' &&
+          distance < castleMinDistance
+        ) {
           tooClose = true;
           break;
         }
@@ -569,25 +573,20 @@ export const generatePOIs = async (
   // First, identify all disconnected clusters
   const clusters: Set<string>[] = [];
   const visitedPOIs = new Set<string>();
-  
-  // Helper function to find a POI's cluster
-  const findCluster = (poiId: string): Set<string> | undefined => {
-    return clusters.find(cluster => cluster.has(poiId));
-  };
-  
+
   // Helper function for BFS to find connected components
   const bfs = (startPoi: POI): Set<string> => {
     const cluster = new Set<string>();
     const queue: string[] = [startPoi.id];
-    
+
     while (queue.length > 0) {
       const currentId = queue.shift()!;
       if (visitedPOIs.has(currentId)) continue;
-      
+
       visitedPOIs.add(currentId);
       cluster.add(currentId);
-      
-      const currentPoi = pois.find(p => p.id === currentId);
+
+      const currentPoi = pois.find((p) => p.id === currentId);
       if (currentPoi) {
         for (const connectedId of currentPoi.connections) {
           if (!visitedPOIs.has(connectedId)) {
@@ -596,10 +595,10 @@ export const generatePOIs = async (
         }
       }
     }
-    
+
     return cluster;
   };
-  
+
   // Identify all clusters using BFS
   for (const poi of pois) {
     if (!visitedPOIs.has(poi.id)) {
@@ -607,26 +606,26 @@ export const generatePOIs = async (
       clusters.push(newCluster);
     }
   }
-  
+
   // If there's more than one cluster, connect them
   while (clusters.length > 1) {
     let minDistance = Infinity;
     let closestPair: [string, string] = ['', ''];
-    
+
     // Find the closest pair of POIs between different clusters
     for (let i = 0; i < clusters.length - 1; i++) {
       const clusterA = clusters[i];
-      
+
       for (let j = i + 1; j < clusters.length; j++) {
         const clusterB = clusters[j];
-        
+
         // Find closest POIs between clusters
         for (const idA of Array.from(clusterA)) {
-          const poiA = pois.find(p => p.id === idA)!;
-          
+          const poiA = pois.find((p) => p.id === idA)!;
+
           for (const idB of Array.from(clusterB)) {
-            const poiB = pois.find(p => p.id === idB)!;
-            
+            const poiB = pois.find((p) => p.id === idB)!;
+
             const distance = calculateDistance(poiA.position, poiB.position);
             if (distance < minDistance) {
               minDistance = distance;
@@ -636,27 +635,27 @@ export const generatePOIs = async (
         }
       }
     }
-    
+
     if (closestPair[0] && closestPair[1]) {
       // Connect the closest pair
-      const poiA = pois.find(p => p.id === closestPair[0])!;
-      const poiB = pois.find(p => p.id === closestPair[1])!;
-      
+      const poiA = pois.find((p) => p.id === closestPair[0])!;
+      const poiB = pois.find((p) => p.id === closestPair[1])!;
+
       // Add to connections
       poiA.connections.push(poiB.id);
       poiB.connections.push(poiA.id);
-      
+
       // Add to edges
       poiGraph.edges.push({
         source: poiA.id,
         target: poiB.id,
         distance: minDistance,
       });
-      
+
       // Merge the clusters
-      const clusterAIndex = clusters.findIndex(c => c.has(poiA.id));
-      const clusterBIndex = clusters.findIndex(c => c.has(poiB.id));
-      
+      const clusterAIndex = clusters.findIndex((c) => c.has(poiA.id));
+      const clusterBIndex = clusters.findIndex((c) => c.has(poiB.id));
+
       if (clusterAIndex !== -1 && clusterBIndex !== -1) {
         // Merge B into A
         for (const id of Array.from(clusters[clusterBIndex])) {
@@ -670,41 +669,45 @@ export const generatePOIs = async (
 
   // Step 3.6: Optimize connectivity by adding shortcuts between POIs
   // Find POI pairs with the largest discrepancy between direct distance and path distance
-  
+
   // Calculate shortest paths between all POI pairs using Floyd-Warshall algorithm
   // Initialize distance matrix with Infinity
-  const n = pois.length;
   const directDistances: Record<string, Record<string, number>> = {};
   const connectedDistances: Record<string, Record<string, number>> = {};
-  
+
   // Initialize distance matrices
   for (const poi of pois) {
     directDistances[poi.id] = {};
     connectedDistances[poi.id] = {};
-    
+
     for (const other of pois) {
       // Direct distances (as the crow flies)
-      directDistances[poi.id][other.id] = 
-        poi.id === other.id ? 0 : calculateDistance(poi.position, other.position);
-      
+      directDistances[poi.id][other.id] =
+        poi.id === other.id
+          ? 0
+          : calculateDistance(poi.position, other.position);
+
       // Connected distances (initialize with direct edge distances, or Infinity if not connected)
-      const edge = poiGraph.edges.find(e => 
-        (e.source === poi.id && e.target === other.id) || 
-        (e.source === other.id && e.target === poi.id)
+      const edge = poiGraph.edges.find(
+        (e) =>
+          (e.source === poi.id && e.target === other.id) ||
+          (e.source === other.id && e.target === poi.id)
       );
-      
-      connectedDistances[poi.id][other.id] = poi.id === other.id ? 0 : edge ? edge.distance : Infinity;
+
+      connectedDistances[poi.id][other.id] =
+        poi.id === other.id ? 0 : edge ? edge.distance : Infinity;
     }
   }
-  
+
   // Helper function to run Floyd-Warshall algorithm
   const runFloydWarshall = () => {
     for (const k of pois) {
       for (const i of pois) {
         for (const j of pois) {
-          const throughK = (connectedDistances[i.id][k.id] || Infinity) + 
-                           (connectedDistances[k.id][j.id] || Infinity);
-          
+          const throughK =
+            (connectedDistances[i.id][k.id] || Infinity) +
+            (connectedDistances[k.id][j.id] || Infinity);
+
           if (throughK < (connectedDistances[i.id][j.id] || Infinity)) {
             connectedDistances[i.id][j.id] = throughK;
           }
@@ -712,7 +715,7 @@ export const generatePOIs = async (
       }
     }
   };
-  
+
   // Helper function to calculate discrepancies
   const calculateDiscrepancies = (): {
     sourceId: string;
@@ -728,77 +731,77 @@ export const generatePOIs = async (
       connectedDistance: number;
       ratio: number;
     }[] = [];
-    
+
     for (let i = 0; i < pois.length - 1; i++) {
       for (let j = i + 1; j < pois.length; j++) {
         const sourceId = pois[i].id;
         const targetId = pois[j].id;
-        
+
         // Skip if already directly connected
         const alreadyConnected = pois[i].connections.includes(targetId);
         if (alreadyConnected) continue;
-        
+
         const directDistance = directDistances[sourceId][targetId];
         const connectedDistance = connectedDistances[sourceId][targetId];
-        
+
         // Only consider pairs that have a valid path between them
         if (connectedDistance !== Infinity && directDistance > 0) {
           const ratio = connectedDistance / directDistance;
-          
+
           discrepancies.push({
             sourceId,
             targetId,
             directDistance,
             connectedDistance,
-            ratio
+            ratio,
           });
         }
       }
     }
-    
+
     // Sort by ratio (highest discrepancy first)
     return discrepancies.sort((a, b) => b.ratio - a.ratio);
   };
-  
+
   // Initial Floyd-Warshall calculation
   runFloydWarshall();
-  
+
   // Add new connections for top 3-5 discrepancies, one at a time
   const maxNewConnections = Math.min(5, pois.length);
   let connectionsAdded = 0;
-  
+
   while (connectionsAdded < maxNewConnections) {
     // Calculate current discrepancies
     const discrepancies = calculateDiscrepancies();
-    
+
     // If no more valid discrepancies, break
     if (discrepancies.length === 0) break;
-    
+
     // Get the highest discrepancy
     const { sourceId, targetId, directDistance } = discrepancies[0];
-    
+
     // Get POIs
-    const sourcePOI = pois.find(p => p.id === sourceId)!;
-    const targetPOI = pois.find(p => p.id === targetId)!;
-    
+    const sourcePOI = pois.find((p) => p.id === sourceId)!;
+    const targetPOI = pois.find((p) => p.id === targetId)!;
+
     // Add connection
     sourcePOI.connections.push(targetId);
     targetPOI.connections.push(sourceId);
-    
+
     // Add to edges
     poiGraph.edges.push({
       source: sourceId,
       target: targetId,
-      distance: directDistance
+      distance: directDistance,
     });
-    
+
     // Update the connected distances matrix for the new direct connection
     connectedDistances[sourceId][targetId] = directDistance;
     connectedDistances[targetId][sourceId] = directDistance;
-    
+
     // Re-run Floyd-Warshall to update all shortest paths
     runFloydWarshall();
-    
+
     connectionsAdded++;
   }
 
@@ -831,12 +834,13 @@ export const generatePOIs = async (
   } else {
     // Use enhanced placeholder names when skipping LLM generation
     pois.forEach((poi) => {
-      const typeFormatted = poi.locationType.charAt(0).toUpperCase() + poi.locationType.slice(1);
+      const typeFormatted =
+        poi.locationType.charAt(0).toUpperCase() + poi.locationType.slice(1);
       const randomSuffix = Math.floor(Math.random() * 100);
-      poi.name = poi.isInitialNode 
-        ? `Starting ${typeFormatted}` 
+      poi.name = poi.isInitialNode
+        ? `Starting ${typeFormatted}`
         : `${typeFormatted} ${randomSuffix}`;
-      
+
       // Add minimal placeholder descriptions
       poi.description = `A ${poi.locationType} located at coordinates (${Math.round(poi.position.x)}, ${Math.round(poi.position.y)})`;
       poi.appearance = `A typical ${poi.locationType} with common features.`;

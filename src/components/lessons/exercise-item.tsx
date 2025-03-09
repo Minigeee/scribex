@@ -90,7 +90,7 @@ export function ExerciseItem({
     !exercise.user_progress?.completed
   );
   const [userAnswers, setUserAnswers] = useState<Record<string, any>>({});
-  const [feedback, setFeedback] = useState<{
+  const [, setFeedback] = useState<{
     message: string;
     isCorrect: boolean;
   } | null>(null);

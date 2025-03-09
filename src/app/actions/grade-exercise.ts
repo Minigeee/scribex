@@ -3,7 +3,12 @@
 import { generateCompletion, systemMessage, userMessage } from '@/lib/utils/ai';
 
 // Define the grading scale
-export type GradeLevel = 'bad' | 'needs improvement' | 'satisfactory' | 'good' | 'excellent';
+export type GradeLevel =
+  | 'bad'
+  | 'needs improvement'
+  | 'satisfactory'
+  | 'good'
+  | 'excellent';
 
 // Define user proficiency levels
 export type UserLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert';
@@ -16,29 +21,29 @@ const GRADE_SCORE_MAP: Record<UserLevel, Record<GradeLevel, number>> = {
     'needs improvement': 85,
     satisfactory: 90,
     good: 95,
-    excellent: 100
+    excellent: 100,
   },
   intermediate: {
     bad: 70,
     'needs improvement': 80,
     satisfactory: 90,
     good: 95,
-    excellent: 100
+    excellent: 100,
   },
   advanced: {
     bad: 65,
     'needs improvement': 75,
     satisfactory: 85,
     good: 95,
-    excellent: 100
+    excellent: 100,
   },
   expert: {
     bad: 60,
     'needs improvement': 70,
     satisfactory: 80,
     good: 90,
-    excellent: 100
-  }
+    excellent: 100,
+  },
 };
 
 // Interface for the grading result
@@ -93,8 +98,8 @@ export async function gradeRewriteExercise(
   exerciseContext: string,
   userLevel: UserLevel = 'intermediate'
 ): Promise<GradingResult> {
-  const criteriaText = criteria.map(c => `- ${c}`).join('\n');
-  
+  const criteriaText = criteria.map((c) => `- ${c}`).join('\n');
+
   const prompt = `
 You are grading a rewrite exercise for a ${userLevel} level student where they had to rewrite a text according to specific criteria.
 
@@ -130,15 +135,19 @@ Feedback: [your feedback]
  */
 export async function gradeFreeResponseExercise(
   userAnswer: string,
-  evaluationCriteria: Array<{ criterion: string; weight: number; description: string }>,
+  evaluationCriteria: Array<{
+    criterion: string;
+    weight: number;
+    description: string;
+  }>,
   exampleSolution: string,
   exerciseContext: string,
   userLevel: UserLevel = 'intermediate'
 ): Promise<GradingResult> {
   const criteriaText = evaluationCriteria
-    .map(c => `- ${c.criterion} (${c.weight}%): ${c.description}`)
+    .map((c) => `- ${c.criterion} (${c.weight}%): ${c.description}`)
     .join('\n');
-  
+
   const prompt = `
 You are grading a free response exercise for a ${userLevel} level student where they had to write a response according to specific criteria.
 
@@ -190,13 +199,18 @@ function getLevelSpecificInstructions(userLevel: UserLevel): string {
 /**
  * Helper function to call the AI and parse the response
  */
-async function gradeWithAI(prompt: string, userLevel: UserLevel = 'intermediate'): Promise<GradingResult> {
+async function gradeWithAI(
+  prompt: string,
+  userLevel: UserLevel = 'intermediate'
+): Promise<GradingResult> {
   try {
     const response = await generateCompletion(
       {
         messages: [
-          systemMessage('You are an expert educational grader. Grade the student response according to the provided criteria and their proficiency level.'),
-          userMessage(prompt)
+          systemMessage(
+            'You are an expert educational grader. Grade the student response according to the provided criteria and their proficiency level.'
+          ),
+          userMessage(prompt),
         ],
         temperature: 0.3, // Lower temperature for more consistent grading
       },
@@ -208,34 +222,37 @@ async function gradeWithAI(prompt: string, userLevel: UserLevel = 'intermediate'
 
     // Parse the response to extract grade and feedback
     const text = response.text.trim();
-    
+
     // Extract grade level
-    const gradeMatch = text.match(/Grade:\s*(bad|needs improvement|satisfactory|good|excellent)/i);
-    const gradeLevel = gradeMatch 
-      ? (gradeMatch[1].toLowerCase() as GradeLevel) 
+    const gradeMatch = text.match(
+      /Grade:\s*(bad|needs improvement|satisfactory|good|excellent)/i
+    );
+    const gradeLevel = gradeMatch
+      ? (gradeMatch[1].toLowerCase() as GradeLevel)
       : 'satisfactory'; // Default to satisfactory if parsing fails
-    
+
     // Extract feedback
     const feedbackMatch = text.match(/Feedback:\s*([\s\S]*)/i);
-    const feedback = feedbackMatch 
-      ? feedbackMatch[1].trim() 
+    const feedback = feedbackMatch
+      ? feedbackMatch[1].trim()
       : 'No specific feedback provided.';
-    
+
     // Get numeric score from grade level based on user level
     const score = GRADE_SCORE_MAP[userLevel][gradeLevel];
-    
+
     return {
       score,
       feedback,
-      gradeLevel
+      gradeLevel,
     };
   } catch (error) {
     console.error('Error grading with AI:', error);
     // Fallback to a default grade if AI fails
     return {
       score: 85,
-      feedback: 'Your answer has been automatically graded due to a technical issue with the AI grader.',
-      gradeLevel: 'satisfactory'
+      feedback:
+        'Your answer has been automatically graded due to a technical issue with the AI grader.',
+      gradeLevel: 'satisfactory',
     };
   }
-} 
+}

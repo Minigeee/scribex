@@ -23,7 +23,7 @@ export default function VerifyEmailPage() {
           Check your email
         </h1>
         <p className='text-sm text-muted-foreground'>
-          We've sent you a verification link to complete your registration
+          {`We've sent you a verification link to complete your registration`}
         </p>
       </div>
 
@@ -56,8 +56,7 @@ export default function VerifyEmailPage() {
           </div>
           <div className='text-center text-sm text-muted-foreground'>
             <p>
-              Didn't receive an email? Check your spam folder or try signing up
-              with a different email address.
+              {`Didn't receive an email? Check your spam folder or try signing up with a different email address.`}
             </p>
           </div>
         </CardContent>

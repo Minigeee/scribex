@@ -3,11 +3,11 @@
 import { cn } from '@/lib/utils';
 import {
   HomeIcon,
-  NetworkIcon,
   MapIcon,
+  NetworkIcon,
+  PenToolIcon,
   TrophyIcon,
   UserIcon,
-  PenToolIcon,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -78,8 +78,9 @@ export function DesktopNav() {
         <div className='flex flex-1 flex-col items-center justify-center gap-4 py-8'>
           {navItems.map((item) => {
             const isActive = pathname === item.href;
-            const gradientClass = navItemGradients[item.href] || 'from-gray-600 to-gray-800';
-            
+            const gradientClass =
+              navItemGradients[item.href] || 'from-gray-600 to-gray-800';
+
             return (
               <Tooltip key={item.href} delayDuration={0}>
                 <TooltipTrigger asChild>
@@ -98,9 +99,7 @@ export function DesktopNav() {
                 </TooltipTrigger>
                 <TooltipContent side='right' className='flex flex-col'>
                   <span className='font-medium'>{item.name}</span>
-                  <span className='text-xs'>
-                    {item.description}
-                  </span>
+                  <span className='text-xs'>{item.description}</span>
                 </TooltipContent>
               </Tooltip>
             );

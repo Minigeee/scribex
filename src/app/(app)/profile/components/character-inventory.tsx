@@ -8,10 +8,10 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { ItemIcon } from '@/components/ui/item-icon';
+import { ItemPopover } from '@/components/ui/item-popover';
 import { RarityBadge, type Rarity } from '@/components/ui/rarity';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ItemPopover } from '@/components/ui/item-popover';
 import { Tables } from '@/lib/database.types';
 
 interface InventoryItem extends Tables<'character_inventory'> {
@@ -52,7 +52,9 @@ export function CharacterInventory({ inventory }: CharacterInventoryProps) {
           description: item_template.description || undefined,
           rarity: item_template.rarity,
           item_type: item_template.item_type,
-          stat_bonuses: item_template.stat_bonuses as Record<string, number> | undefined,
+          stat_bonuses: item_template.stat_bonuses as
+            | Record<string, number>
+            | undefined,
         }}
         quantity={quantity}
         equipped={equipped}
