@@ -53,11 +53,33 @@ const config: Config = {
           '4': 'hsl(var(--chart-4))',
           '5': 'hsl(var(--chart-5))',
         },
+        // ScribexX Theme Colors
+        'neon-purple': 'hsl(var(--primary))',
+        'electric-blue': 'hsl(var(--secondary))',
+        'cyber-green': 'hsl(var(--accent))',
+        'neon-pink': 'hsl(var(--destructive))',
+        'digital-teal': 'hsl(var(--digital-teal))',
+        'sunset-orange': 'hsl(var(--sunset-orange))',
+        'metallic-gray': 'hsl(var(--muted))',
       },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
+      },
+      // Synthwave/Cyberpunk effects
+      boxShadow: {
+        'neon-purple': '0 0 5px hsl(var(--primary)), 0 0 20px hsl(var(--primary))',
+        'neon-blue': '0 0 5px hsl(var(--secondary)), 0 0 20px hsl(var(--secondary))',
+        'neon-green': '0 0 5px hsl(var(--accent)), 0 0 20px hsl(var(--accent))',
+        'neon-pink': '0 0 5px hsl(var(--destructive)), 0 0 20px hsl(var(--destructive))',
+      },
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+        'cyber-grid': 'linear-gradient(rgba(0, 194, 255, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 194, 255, 0.1) 1px, transparent 1px)',
+      },
+      backgroundSize: {
+        'cyber-grid': '20px 20px',
       },
     },
   },

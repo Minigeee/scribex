@@ -192,12 +192,12 @@ export default async function DashboardPage() {
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Avatar className='h-12 w-12 border-2 border-primary cursor-pointer hover:opacity-80 transition-opacity'>
+              <Avatar className='h-12 w-12 cursor-pointer hover:opacity-80 transition-opacity'>
                 <AvatarImage
                   src={profile?.avatar_url || '/avatar-placeholder.png'}
                   alt='Avatar'
                 />
-                <AvatarFallback className='bg-primary/20 text-primary'>
+                <AvatarFallback>
                   {profile?.display_name?.charAt(0).toUpperCase() ||
                     user.email?.charAt(0).toUpperCase() ||
                     'U'}
